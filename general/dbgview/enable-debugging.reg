@@ -1,0 +1,21 @@
+Windows Registry Editor Version 5.00
+
+; This enables the standard level of debugging within all Exclaimer products
+; this is then readable via dbgview from live.sysinternals.com
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Exclaimer Ltd]
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Exclaimer Ltd\DebugAreas]
+"*"=dword:00000000
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Exclaimer Ltd\Signature Manager 2.0]
+"RuntimeTraceEnabled"=dword:00000001
+ 
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Exclaimer Ltd]
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Exclaimer Ltd\DebugAreas]
+"*"=dword:00000000
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Exclaimer Ltd\Signature Manager 2.0]
+"RuntimeTraceEnabled"=dword:00000001

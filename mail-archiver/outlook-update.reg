@@ -1,0 +1,21 @@
+Windows Registry Editor Version 5.00
+
+; Reg file to add keys relating to Outlook updates
+; that cause the operation failed issues to occur
+
+; Remember this will need to be run by the user launching Outlook.
+; If the end user cannot do this, then deploy the keys via a GPO
+
+; Relevant Product - Mail Archiver
+
+; Outlook 2010
+[HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Office\14.0\Outlook\Security]
+"EnableRoamingFolderHomepages"=dword:00000001
+
+; Outlook 2013
+[HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Office\15.0\Outlook\Security]
+"EnableRoamingFolderHomepages"=dword:00000001
+
+; Outlook 2016 and 2019
+[HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Office\16.0\Outlook\Security]
+"EnableRoamingFolderHomepages"=dword:00000001

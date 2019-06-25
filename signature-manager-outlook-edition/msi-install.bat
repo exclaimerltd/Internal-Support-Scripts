@@ -1,0 +1,1 @@
+Msiexec.exe /I "C:\path\to\Exclaimer Outlook Settings Update Client.msi" /q /l*v "Log location" /qn UI_SMTPADDRESS="smtp address" UI_REMOTELOCATIONURL="Remote sigs location"

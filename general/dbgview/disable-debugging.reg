@@ -1,0 +1,14 @@
+Windows Registry Editor Version 5.00
+
+; When you have completed you debugging run this to clear up
+; all registry keys as debugging can affect performance
+ 
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Exclaimer Ltd\DebugAreas]
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Exclaimer Ltd\Signature Manager 2.0]
+"RuntimeTraceEnabled"=-
+ 
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Exclaimer Ltd\DebugAreas]
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Exclaimer Ltd\Signature Manager 2.0]
+"RuntimeTraceEnabled"=-

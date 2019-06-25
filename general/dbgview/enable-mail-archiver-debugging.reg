@@ -1,0 +1,29 @@
+Windows Registry Editor Version 5.00
+
+; The below keys enable full debugging within Exclaimer Mail Archiver
+; to output to dbgview from live.sysinternals.com
+
+; This is a very verbose method and for most issues the standard
+; keys will suffice
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Exclaimer Ltd]
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Exclaimer Ltd\DebugAreas]
+"*"=dword:00000000
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Exclaimer Ltd\DebugAreas]
+"+"=dword:00000000
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Exclaimer Ltd\DebugAreas]
+"native"=dword:00000000
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Exclaimer Ltd]
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Exclaimer Ltd\DebugAreas]
+"*"=dword:00000000
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Exclaimer Ltd\DebugAreas]
+"+"=dword:00000000
+ 
+[HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Exclaimer Ltd\DebugAreas]
+"native"=dword:00000000
