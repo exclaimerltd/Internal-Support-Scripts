@@ -15,15 +15,17 @@
     - Latest Mail Archiver install
     - Reindex tool
 .HISTORY
-    - Initial resync done.  Message output to console for each completed store.
+    - Indexes mail when run for all stores.  Only runs resync
+    - Adds date to log file it creates
 #>
 
 $path = 'HKLM:\SOFTWARE\Exclaimer Ltd\Mail Archiver 1.0\Configuration'
 $stores = Get-ChildItem $path | Get-ItemProperty | Select-Object -ExpandProperty PSChildName
 
 ForEach ($store in $stores) {
-    $logs = "C:\ProgramData\Exclaimer Ltd\reindex\logs.txt"
+    $date = Get-Date -Format "dd.MM.yy"
+    $logs = "C:\ProgramData\Exclaimer Ltd\reindex\logs.$store.$date.txt"
     C:\ProgramData\"Exclaimer Ltd"\reindex\reindex.exe $store > $logs
     write-output "This store has been completed $store"
-    rm $logs
+    #rm $logs
 }
