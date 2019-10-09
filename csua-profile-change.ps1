@@ -19,8 +19,12 @@
 #>
 
 # Variables
-$regkey="Computer\HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\Outlook\Profiles\Outlook\9375CFF0413111d3B88A00104B2A6676\00000002"
-$regstr="AccountName"
-$olddomain="nccmedia.com"
-$newdomain="ampersand.tv"
+$regkey="HKCU:\Software\Microsoft\Office\16.0\Outlook\Profiles\Outlook\9375CFF0413111d3B88A00104B2A6676\00000002"
+$regstr="Account Name"
+$olddomain="UPDATE WITH OLD DOMAIN"
+$newdomain="UPDATE WITH NEW DOMAIN"
 
+$currentaccount = (Get-ItemProperty -path $regkey).$regstr
+$newaccount = $currentaccount.Replace($olddomain,$newdomain)
+
+Set-ItemProperty -Path $regkey -Name $regstr -Value $newaccount
