@@ -8,7 +8,8 @@ add-pssnapin Microsoft.Exchange.Management.PowerShell.E2010
 ## Query for AD accounts
 # Below commands queries the top level OU for the company you created and then outputs the details into a CSV
 $toplevelOU = Read-Host ("What is the company OU?")
-Get-ADUser -Filter * -SearchBase "OU=$toplevelOU,DC=$env:USERDOMAIN,DC=local" | `
+$OUlookup = Get-ADOrganizationalUnit -Filter 'Name -eq $toplevelOU'
+Get-ADUser -Filter * -SearchBase $OUlookup.DistinguishedName | `
 Select Name,SamAccountName,UserPrincipalName | `
 Export-Csv -Path $env:tmp\output.csv -NoTypeInformation
 
