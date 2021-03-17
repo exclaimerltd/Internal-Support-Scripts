@@ -12,6 +12,7 @@
     None
 .VERSION
     1.0 - Removes all OWA signatures
+    1.1 - Updated to support Modern Authentication
 #>
 
 # Function to connect to Office 365 in current Window
