@@ -12,14 +12,15 @@
     None
 .VERSION
     1.0 - Removes all OWA signatures
+    1.1 - Updated to support Modern Authentication
 #>
 
 # Function to connect to Office 365 in current Window
 function o365_connect {
-    # below connects to Office 365
-    $credential = Get-Credential
-    $session = New-PSSession -ConfigurationName Microsoft.Exchange -Credential $credential -ConnectionUri https://ps.outlook.com/powershell -Authentication Basic -AllowRedirection
-    Import-PSSession $session
+    # below should connect to Office 365
+    Write-Host ("A prompt to login to Microsoft 365 will appear shortly. If any errors appear after this message, please provide a copy of these errors to Exclaimer Support")
+    Import-Module ExchangeOnlineManagement
+    Connect-ExchangeOnline -UserPrincipalName $upn -ShowProgress $true
 }
 
 # Function exchange connect
