@@ -29,11 +29,24 @@
     Import-PSSession $session
 }#>
 
-function o365_connect {
-    Write-Host ("A prompt to login to Microsoft 365 will appear shortly. If any errors appear after this message, please provide a copy of these errors to Exclaimer Support")
-    Import-Module ExchangeOnlineManagement
-    Connect-ExchangeOnline -UserPrincipalName $upn -ShowProgress $true
+function basic-auth-connect {
+    $LiveCred = Get-Credential  
+    $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell/ -Credential $LiveCred -Authentication Basic -AllowRedirection
+    Import-PSSession $Session   
 }
+
+function modern-auth-mfa-connect {
+    Import-Module ExchangeOnlineManagement
+    $upn = Read-Host ("Enter the UPN for your Global Administrator")
+    Connect-ExchangeOnline -UserPrincipalName $upn
+}
+
+function modern-auth-no-mfa-connect {
+    Import-Module ExchangeOnlineManagement
+    $LiveCred = Get-Credential
+    Connect-ExchangeOnline -Credential $LiveCred
+}
+ 
  
 function o365_gather {
     # Check for O365 groups
@@ -68,7 +81,20 @@ function o365_change {
     Disconnect-ExchangeOnline | echo a
     Write-Host ("This script will now end") -ForegroundColor Green
 }
- 
-o365_connect
+$authtype = Read-Host ("Do you have basic auth enabled? Y/n")
+
+If ($authtype -eq "y") {
+    basic-auth-connect
+}
+Else {
+    $mfa = Read-Host ("Do you have MFA enabled? Y/n")
+    if ($mfa -eq "y") {
+        modern-auth-mfa-connect
+    }
+    Else {
+        modern-auth-no-mfa-connect
+    }
+}
+
 o365_gather
 o365_change

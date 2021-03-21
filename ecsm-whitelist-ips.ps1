@@ -17,14 +17,38 @@
 .HISTORY
     1.0 - Commit of original script
 #>
-
-function connect {
+function basic-auth-connect {
     $LiveCred = Get-Credential  
     $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell/ -Credential $LiveCred -Authentication Basic -AllowRedirection
     Import-PSSession $Session   
 }
+
+function modern-auth-mfa-connect {
+    Import-Module ExchangeOnlineManagement
+    $upn = Read-Host ("Enter the UPN for your Global Administrator")
+    Connect-ExchangeOnline -UserPrincipalName $upn
+}
+
+function modern-auth-no-mfa-connect {
+    Import-Module ExchangeOnlineManagement
+    $LiveCred = Get-Credential
+    Connect-ExchangeOnline -Credential $LiveCred
+}
     
-connect
+$authtype = Read-Host ("Do you have basic auth enabled? Y/n")
+
+If ($authtype -eq "y") {
+    basic-auth-connect
+}
+Else {
+    $mfa = Read-Host ("Do you have MFA enabled? Y/n")
+    if ($mfa -eq "y") {
+        modern-auth-mfa-connect
+    }
+    Else {
+        modern-auth-no-mfa-connect
+    }
+}
     
 New-TransportRule -Name "Bypass Spam for Exclaimer IP" `
 -SenderIpRanges `

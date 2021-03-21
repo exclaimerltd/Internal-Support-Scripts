@@ -18,7 +18,40 @@
 .REQUIREMENTS
     - Global Administrator Account
 #>
- 
+
+function basic-auth-connect {
+    $LiveCred = Get-Credential  
+    $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell/ -Credential $LiveCred -Authentication Basic -AllowRedirection
+    Import-PSSession $Session   
+}
+
+function modern-auth-mfa-connect {
+    Import-Module ExchangeOnlineManagement
+    $upn = Read-Host ("Enter the UPN for your Global Administrator")
+    Connect-ExchangeOnline -UserPrincipalName $upn
+}
+
+function modern-auth-no-mfa-connect {
+    Import-Module ExchangeOnlineManagement
+    $LiveCred = Get-Credential
+    Connect-ExchangeOnline -Credential $LiveCred
+}
+    
+$authtype = Read-Host ("Do you have basic auth enabled? Y/n")
+
+If ($authtype -eq "y") {
+    basic-auth-connect
+}
+Else {
+    $mfa = Read-Host ("Do you have MFA enabled? Y/n")
+    if ($mfa -eq "y") {
+        modern-auth-mfa-connect
+    }
+    Else {
+        modern-auth-no-mfa-connect
+    }
+}
+
 $users = Get-User | Select UserPrincipalName,"<field1>","<field2>" | Export-CSV -Path $env:APPDATA\Users.csv -NoTypeInformation
 $out = Get-User | Select UserPrincipalName,"<field1>","<field2>"
  

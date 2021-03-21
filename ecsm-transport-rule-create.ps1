@@ -23,13 +23,24 @@
     2.0 - Removal of previous configuration
 #>
 
-function eonline_connect {
-    # below connects to Exchange Online
-    $credential = Get-Credential -Message "Please enter a Global Administrator Account"
-    $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential $Credential -Authentication Basic -AllowRedirection
-    Import-PSSession $session -AllowClobber
+function basic-auth-connect {
+    $LiveCred = Get-Credential  
+    $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell/ -Credential $LiveCred -Authentication Basic -AllowRedirection
+    Import-PSSession $Session   
 }
 
+function modern-auth-mfa-connect {
+    Import-Module ExchangeOnlineManagement
+    $upn = Read-Host ("Enter the UPN for your Global Administrator")
+    Connect-ExchangeOnline -UserPrincipalName $upn
+}
+
+function modern-auth-no-mfa-connect {
+    Import-Module ExchangeOnlineManagement
+    $LiveCred = Get-Credential
+    Connect-ExchangeOnline -Credential $LiveCred
+}
+ 
 function remove_previous {
     # Removes previous Transport Rules and Connectors
 
@@ -159,7 +170,20 @@ function allowed_ips {
     Set-HostedConnectionFilterPolicy "Default" -IPAllowList $iplist
 }
 
-eonline_connect
+$authtype = Read-Host ("Do you have basic auth enabled? Y/n")
+
+If ($authtype -eq "y") {
+    basic-auth-connect
+}
+Else {
+    $mfa = Read-Host ("Do you have MFA enabled? Y/n")
+    if ($mfa -eq "y") {
+        modern-auth-mfa-connect
+    }
+    Else {
+        modern-auth-no-mfa-connect
+    }
+}
 
 remove_previous
 
