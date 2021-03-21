@@ -10,7 +10,7 @@
 
     Please refer to the REQUIREMENTS for the information needed to run this script correctly.
 .NOTES
-    Email: support@exclaimer.com
+    Email: helpdesk@exclaimer.com
 	Date: 3rd December 2018
 .PRODUCTS
 	Signature Manager Office 365 Edition

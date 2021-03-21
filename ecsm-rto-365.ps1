@@ -10,7 +10,7 @@
     The script is a quicker corrective measure to the issue that setting it manually and can be used regularly to
     ensure all groups are set correctly.
 .NOTES
-    Email: support@exclaimer.com
+    Email: helpdesk@exclaimer.com
     Date: 13th May 2017
     Updated: 1st October 2020
 .PRODUCTS

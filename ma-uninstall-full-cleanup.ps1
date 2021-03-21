@@ -5,7 +5,7 @@
 .USAGE
     Designed to clean up a lab environment of the installation post usage without requiring the lab to be rebuilt
 .NOTES
-    Email: david.milward@exclaimer.com
+    Email: helpdesk@exclaimer.com
     Date: 10th August 2018
 .PRODUCTS
     Mail Archiver

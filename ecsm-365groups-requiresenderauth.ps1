@@ -8,7 +8,7 @@
  
     This script aims to achieve the steps in that guide en masse
 .NOTES
-    Email: support@exclaimer.com
+    Email: helpdesk@exclaimer.com
     Date: 30th August 2017
 .PRODUCTS
     Exclaimer Cloud - Signature for Office 365

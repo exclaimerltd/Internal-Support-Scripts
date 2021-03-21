@@ -5,8 +5,7 @@
 .DESCRIPTION
     This script loops the Rebuild tool for repairing BIN files based on a store variable
 .NOTES
-    Authored By: Anthony Skilton
-    Email: support@exclaimer.com
+    Email: helpdesk@exclaimer.com
     Date: 22nd January 2019
 .PRODUCTS
     Mail Archiver

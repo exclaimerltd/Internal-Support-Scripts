@@ -7,8 +7,7 @@
     domain to another.  The client-side feature utilises the AccountName string value in the 
     Computer\HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\Outlook\Profiles\{ProfileName}\9375CFF0413111d3B88A00104B2A6676\00000002 registry key
 .NOTES
-    Authored By: David Milward
-    Email: support@exclaimer.com
+    Email: helpdesk@exclaimer.com
     Date: 27th September 2019
 .PRODUCTS
     Exclaimer Cloud - Signatures for Office 365

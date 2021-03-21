@@ -7,7 +7,6 @@
     our service being incorrectly identified as spam by Microsoft.
     This workaround was provided as part of a Microsoft Premier Support Ticket
 .NOTES
-    Authored By: David Milward
     Email: helpdesk@exclaimer.com
     Date: 15th August 2019
 .PRODUCTS

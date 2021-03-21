@@ -8,7 +8,7 @@
     Signature Manager Office 365 Edition and Exclaimer Cloud Click Once
     applications
 .NOTES
-    Email: support@exclaimer.com
+    Email: helpdesk@exclaimer.com
     Date: 20th January 2019
 .PRODUCTS
     Signature Manager Office 365 Edition

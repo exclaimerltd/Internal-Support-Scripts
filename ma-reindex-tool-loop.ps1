@@ -6,8 +6,7 @@
     This script will obtain a list of stores from the registry and 
     the reindex tool through this array
 .NOTES
-    Authored By: David Milward
-    Email: support@exclaimer.com
+    Email: helpdesk@exclaimer.com
     Date: 12th August 2019
 .PRODUCTS
     Mail Archiver 4.0

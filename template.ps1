@@ -5,7 +5,6 @@
 .DESCRIPTION
     Description of the role of the script
 .NOTES
-    Authored By: {creator}
     Email: {creator email}
     Date: {date created}
 .PRODUCTS

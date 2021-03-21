@@ -5,7 +5,7 @@
 .DESCRIPTION
     This script copies the data from a user defined to another user defined field
 .NOTES
-    Email: support@exclaimer.com
+    Email: helpdesk@exclaimer.com
     Date: 31st August 2016
 .USAGE
     As the attributes cannot be specified using variables you will need to do the following to tailor the script to your use

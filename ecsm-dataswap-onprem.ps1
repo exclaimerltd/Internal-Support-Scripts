@@ -5,7 +5,7 @@
 .DESCRIPTION
     This script copies the data from a user defined to another user defined field
 .NOTES
-    Email: support@exclaimer.com
+    Email: helpdesk@exclaimer.com
     Date: 31st August 2016
 .PRODUCTS
     Exclaimer Cloud - Signatures for Office 365

@@ -13,7 +13,7 @@
 
     A log file will be created in "C:\Windows\Temp\", location can be changes by editiing variable "$SaveToLog"
 .NOTES
-    Email: nuno.chaves@exclaimer.com
+    Email: helpdesk@exclaimer.com
     Date: 10th September 2018
 .PRODUCT
     Signature Manager Office 365 Edition

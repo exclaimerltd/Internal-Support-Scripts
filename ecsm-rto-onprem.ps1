@@ -13,7 +13,7 @@
     This script requires the ADSchema to have been updated for Exchange.  Without this, the field does not exist
     on premise and when the group syncs it will always be $false.
 .NOTES
-    Email: support@exclaimer.com
+    Email: helpdesk@exclaimer.com
     Date: 13th May 2017
 .PRODUCTS
     Exclaimer Cloud - Signatures for Office 365
