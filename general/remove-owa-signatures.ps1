@@ -16,17 +16,51 @@
 #>
 
 # Function to connect to Office 365 in current Window
-function o365_connect {
-    # below should connect to Office 365
-    Write-Host ("A prompt to login to Microsoft 365 will appear shortly. If any errors appear after this message, please provide a copy of these errors to Exclaimer Support")
+function basic-auth-connect {
+    $LiveCred = Get-Credential  
+    $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell/ -Credential $LiveCred -Authentication Basic -AllowRedirection
+    Import-PSSession $Session   
+}
+
+function modern-auth-mfa-connect {
     Import-Module ExchangeOnlineManagement
-    Connect-ExchangeOnline -UserPrincipalName $upn -ShowProgress $true
+    $upn = Read-Host ("Enter the UPN for your Global Administrator")
+    Connect-ExchangeOnline -UserPrincipalName $upn
+}
+
+function modern-auth-no-mfa-connect {
+    Import-Module ExchangeOnlineManagement
+    $LiveCred = Get-Credential
+    Connect-ExchangeOnline -Credential $LiveCred
 }
 
 # Function exchange connect
 function exchange_connect {
     add-pssnapin Microsoft.Exchange.Management.PowerShell.E2010
 }
+
+$exchange = Read-Host ("Do you use Microsoft 365? Y/n")
+
+if ($exchange -eq "y"){
+    exchange_connect
+}
+Else {
+$authtype = Read-Host ("Do you have basic auth enabled? Y/n")
+
+If ($authtype -eq "y") {
+    basic-auth-connect
+}
+Else {
+    $mfa = Read-Host ("Do you have MFA enabled? Y/n")
+    if ($mfa -eq "y") {
+        modern-auth-mfa-connect
+    }
+    Else {
+        modern-auth-no-mfa-connect
+    }
+}
+}
+
 # Function to remove all mailboxes signature
 function remove-owa {
     $mailboxes = Get-Mailbox -ResultSize unlimited  
