@@ -39,9 +39,9 @@ function exchange_connect {
     add-pssnapin Microsoft.Exchange.Management.PowerShell.E2010
 }
 
-$exchange = Read-Host ("Do you use Microsoft 365? Y/n")
+$exchange = Read-Host ("Do you use Microsoft 365? y/N")
 
-if ($exchange -eq "y"){
+if ($exchange -eq "n"){
     exchange_connect
 }
 Else {
