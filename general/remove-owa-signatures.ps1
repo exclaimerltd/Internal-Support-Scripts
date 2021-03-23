@@ -73,16 +73,6 @@ function remove-autoadd {
     $mailboxes | ForEach-Object { Set-MailboxMessageConfiguration -identity $_.alias -autoaddsignature $false }
 }
 
-$environment = Read-Host ("Are you on Office 365? Y/n")
-
-If ($environment -eq "y") {
-    o365_connect
-    remove-autoadd
-    remove-owa
-} else {
-    exchange_connect
-    remove-autoadd
-    remove-owa
-}
-
+remove-owa
+remove-autoadd
 
