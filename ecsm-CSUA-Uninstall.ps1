@@ -18,7 +18,7 @@
 $app = "Exclaimer Cloud Signature Update Agent"
 
 $InstalledApplicationNotMSI = Get-ChildItem HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall | foreach-object {Get-ItemProperty $_.PsPath}
-$UninstallString = $InstalledApplicationNotMSI | ? { $_.displayname -match "$app" } | Select-Object UninstallString 
+$UninstallString = $InstalledApplicationNotMSI | Where-Object { $_.displayname -match "$app" } | Select-Object UninstallString 
 
 if (!$UninstallString.UninstallString) {
 Write-Output "No ClickOnce agent found"
