@@ -10,7 +10,7 @@
     Update 22/11/2021 - Correction for missing product codes for some versions
                       - Added search for product codes for future versions
                       - Added registry locations for Intune Managed deployments
-    Update 22/11/2021 - Additional correction for missing product codes for one version
+    Update 05/01/2022 - Additional correction for missing product codes for one version
 .PRODUCTS
     Exclaimer Cloud - Signatures for Office 365
 .REQUIREMENTS
