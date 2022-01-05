@@ -10,6 +10,7 @@
     Update 22/11/2021 - Correction for missing product codes for some versions
                       - Added search for product codes for future versions
                       - Added registry locations for Intune Managed deployments
+    Update 22/11/2021 - Additional correction for missing product codes for one version
 .PRODUCTS
     Exclaimer Cloud - Signatures for Office 365
 .REQUIREMENTS
@@ -60,6 +61,7 @@
     '{A171FDEC-A09F-4EE9-9D4E-D326F8FC40C3}'
     '{593415AE-79DC-4C83-B95F-D3BF0623CC0A}'
     '{401ED04C-D64D-4132-B729-496BE9361CDC}'
+    '{2BD32D76-AAFE-4D32-BCF9-D5055B1F244A}'
     )
 #Declaring Known CSUA Product IDs
     $CSUAProdID = @(
@@ -85,6 +87,7 @@
     'CEDF171AF90A9EE4D9E43D628FCF043C'
     'EA514395CD9738C49BF53DFB6032CCA0'
     'C40DE104D46D23147B9294B69E63C1CD'
+    '67D23DB2EFAA23D49FCBA442F1B5505D'
     )
 #Declaring Component IDs
     $ComponentID = @(
