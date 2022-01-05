@@ -262,3 +262,6 @@ Write-Host "Complete." -ForegroundColor Green
 Write-Host "Writing log file..." -ForegroundColor Cyan
 $Error | Out-File -FilePath $env:LOCALAPPDATA\Temp\CSUACleanupScript.log
 Write-Host "Script Complete.. Log saved to $env:LOCALAPPDATA\Temp\CSUACleanupScript.log" -ForegroundColor Green
+    Write-Host "Writing log file..." -ForegroundColor Cyan
+    $Error | Out-File -FilePath $env:LOCALAPPDATA\Temp\CSUACleanupScript.log
+    Write-Host "Script Complete.. Log saved to $env:LOCALAPPDATA\Temp\CSUACleanupScript.log" -ForegroundColor Green
