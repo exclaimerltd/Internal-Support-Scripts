@@ -20,7 +20,6 @@
 
 .VERSION
 		1.0.0
-			- Checks and outputs the configuration of Transport Rule and Connectors that may affected routing of emails to Exclaimer.
 			- Check if the required Module is installed, installs it if not present
 			- Calls for Login with Microsoft using Modern-Auth
 			- Checks if "C:\Temp" exists, creates it if nor found
