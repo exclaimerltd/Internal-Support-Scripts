@@ -116,7 +116,7 @@ function get-DistributionGroups {
         Write-Output ("See article'https://support.exclaimer.com/hc/en-gb/articles/4406732893457'") | Out-File $LogFile -Append
     }
     Else {
-        Write-Output ("There are no Distribution Groups with 'ReportToOriginatorEnabled' set to 'False'") | Out-File $LogFile -Append
+        Write-Output ("There are no Distribution Groups for which 'ReportToOriginatorEnabled' is not set to 'True'") | Out-File $LogFile -Append
         }
 }
 
