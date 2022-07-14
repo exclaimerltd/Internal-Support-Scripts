@@ -22,7 +22,7 @@
 		1.0.0
 			- Check if the required Module is installed, installs it if not present
 			- Calls for Login with Microsoft using Modern-Auth
-			- Checks if "C:\Temp" exists, creates it if nor found
+			- Checks if "C:\Temp" exists, creates it if not found
 			- Stamps Date/Time when ran
 			- Gets Mail Flow Configuration relevant to Exclaimer
 			- Gets an Output of all Distribution Groups with "ReportToOriginatorEnabled" not set to "True"
