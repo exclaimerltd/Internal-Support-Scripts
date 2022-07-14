@@ -30,7 +30,7 @@
 			- Gets all AcceptedDomains
 			- Gets Default IPAllowList settings
 			- Gets Remote Domain settings relevant to Exlcaimer (based on previous tickets)
-			- Displays a Message pop-up asking that the file/outpt is sent back to Support
+			- Displays a Message pop-up asking that the file/output is sent back to Support
 			- Opens Directory where the Output file was saved
 			
 .INSTRUCTIONS
