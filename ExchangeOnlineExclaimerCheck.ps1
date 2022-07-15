@@ -52,7 +52,7 @@ Add-Type -AssemblyName PresentationFramework
 
 
 #Getting Exchange Online Module
-function checkExchnageOnline-Module {
+function checkExchangeOnline-Module {
     if (Get-Module -ListAvailable -Name ExchangeOnlineManagement) {
         #[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
         #[System.Windows.MessageBox]::Show('ExchangeOnlineManagement module already installed, will continue..."', 'ExchangeOnlineExclaimerCheck', 'OK', 'Information')
@@ -152,7 +152,7 @@ function user-Message {
 [System.Windows.MessageBox]::Show('Please provide Support the output file named "ExchangeOnlineExclaimerCheck.txt"', 'ExchangeOnlineExclaimerCheck', 'OK', 'Information')
 }
 
-checkExchnageOnline-Module
+checkExchangeOnline-Module
 modern-auth-connect
 path-checkTemp
 stampIt
