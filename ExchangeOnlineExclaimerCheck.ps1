@@ -33,7 +33,7 @@
 			- Displays a Message pop-up asking that the file/output is sent back to Support
 			- Opens Directory where the Output file was saved
 			
-.INSTRUCTIONS
+.USAGE
 		- Open PowerShell as Administrator
 		- Run: set-executionpolicy unrestricted
 		- Go to directory where the Scrit is saved (i.e 'cd "C:\Users\ReplaceWithUserNAme\Downloads"')
