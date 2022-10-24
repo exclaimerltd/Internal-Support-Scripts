@@ -7,12 +7,15 @@
 .NOTES
     Date: 23rd September 2021
     Update: 30/09/2021 - Correction for Current user SID variable in Registry values list. Correction for $false result when stopping CSUA.
-    Update 22/11/2021 - Correction for missing product codes for some versions.
-                      - Added search for product codes for future versions.
-                      - Added registry locations for Intune Managed deployments.
-    Update 05/01/2022 - Additional correction for missing product codes for one version.
-                      - Added correction for future version checker.
-    Update 11/04/2022 - Added additional registry locations.
+    Update 22/11/2021  - Correction for missing product codes for some versions.
+                       - Added search for product codes for future versions.
+                       - Added registry locations for Intune Managed deployments.
+    Update 05/01/2022  - Additional correction for missing product codes for one version.
+                       - Added correction for future version checker.
+    Update 11/04/2022  - Added additional registry locations.
+    Update 17/10/2022  - Added additional registry locations.
+                       - Added search for group policy deployments
+
 .PRODUCTS
     Exclaimer Cloud - Signatures for Office 365
 .REQUIREMENTS
@@ -156,6 +159,31 @@ $SearchCode1 = $null
 $SearchCode2 = $null
 $SearchCode3 = $null
 $AddCode = $null
+#Declaring Group Policy deployment keys to be removed
+$GPRegKey = @(
+)
+#Searching for User-specific Group Policy deployments
+$SearchUGP1 = Get-ChildItem -path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt"
+$SearchUGP2 = $SearchUGP1 | ForEach-Object {
+Get-ItemProperty -path Registry::$psitem | Where-Object {$_."Deployment Name" -clike "*Cloud Signature Update Agent*"} | Select-Object PSPath
+}
+$SearchUGP3 = $SearchUGP2 -replace".*{", "{" -replace "}}", "}"
+#Adding User-specific Group Policy IDs to array
+ForEach ($SearchUGP in $SearchUGP3) { $GPRegKey += "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt\$SearchUGP"}
+$SearchUGP1 = $null
+$SearchUGP2 = $null
+$SearchUGP3 = $null
+#Searching for machine-specific Group Policy deployments
+$SearchMGP1 = Get-ChildItem -path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt"
+$SearchMGP2 = $SearchMGP1 | ForEach-Object {
+Get-ItemProperty -path Registry::$psitem | Where-Object {$_."Deployment Name" -clike "*Cloud Signature Update Agent*"} | Select-Object PSPath
+}
+$SearchMGP3 = $SearchMGP2 -replace".*{", "{" -replace "}}", "}"
+#Adding machine-specific Group Policy IDs to array
+ForEach ($SearchMGP in $SearchMGP3) { $GPRegKey += "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt\$SearchMGP"}
+$SearchMGP1 = $null
+$SearchMGP2 = $null
+$SearchMGP3 = $null
 #Declaring Product ID-specific registry keys to be removed
     $CSUAPIDSRegKey = $CSUAProdID | foreach-object {
     "HKCR:\Installer\Features\$PSItem"
@@ -187,11 +215,12 @@ $AddCode = $null
     'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Exclaimer Cloud Signature Update Agent'
     )
 #Combining Reg key Arrays
-    $CSUARegKey= $CSUAPIDSRegKey + $CSUAPCSRegKey + $CSUACIDSRegKey + $CSUAGenRegKey
+    $CSUARegKey= $CSUAPIDSRegKey + $CSUAPCSRegKey + $CSUACIDSRegKey + $CSUAGenRegKey + $GPRegKey
     $CSUAPIDSRegKey = $null
     $CSUAPCSRegKey = $null
     $CSUACIDSRegKey = $null
     $CSUAGenRegKey = $null
+    $GPRegKey = $null
 #Declaring Product ID-specific registry entries to be removed
     $CSUAPIDSRegEnt = $CSUAProdID | foreach-object {
         [pscustomobject]@{CSUARegPath='HKCR:\Installer\UpgradeCodes\5D8BC74BCE235884C8D7107332DA40E5\';CSUARegName=$PSItem}
@@ -209,6 +238,8 @@ $CSUAPCodeSRegEnt = $CSUAProdCode | foreach-object {
     $CSUAGenRegEnt = @(
     [pscustomobject]@{CSUARegPath='HKCU:\Software\Microsoft\Windows\CurrentVersion\Run\';CSUARegName='Cloud Signature Update Agent'}
     [pscustomobject]@{CSUARegPath='HKCU:\Software\Microsoft\Windows\CurrentVersion\Run\';CSUARegName='Exclaimer Cloud Signature Update Agent'}
+    [pscustomobject]@{CSUARegPath='HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run';CSUARegName='Exclaimer Cloud Signature Update Agent'}
+    [pscustomobject]@{CSUARegPath='HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run';CSUARegName='Exclaimer Cloud Signature Update Agent'}
     [pscustomobject]@{CSUARegPath='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders\';CSUARegName='C:\Program Files (x86)\Exclaimer Ltd\'}
     [pscustomobject]@{CSUARegPath='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders\';CSUARegName='C:\Program Files (x86)\Exclaimer Ltd\Cloud Signature Update Agent\'}
     [pscustomobject]@{CSUARegPath='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders\';CSUARegName='C:\Program Files (x86)\Exclaimer Ltd\Cloud Signature Update Agent\de\'}
@@ -217,6 +248,7 @@ $CSUAPCodeSRegEnt = $CSUAProdCode | foreach-object {
     [pscustomobject]@{CSUARegPath='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders\';CSUARegName='C:\Program Files (x86)\Exclaimer Ltd\Cloud Signature Update Agent\it\'}
     [pscustomobject]@{CSUARegPath='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders\';CSUARegName='C:\Program Files (x86)\Exclaimer Ltd\Cloud Signature Update Agent\nl\'}
     [pscustomobject]@{CSUARegPath='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders\';CSUARegName='C:\Program Files (x86)\Exclaimer Ltd\Cloud Signature Update Agent\pt\'}
+    [pscustomobject]@{CSUARegPath='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders\';CSUARegName="C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Exclaimer\"}
     [pscustomobject]@{CSUARegPath='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders\';CSUARegName="$env:LOCALAPPDATA\Programs\Exclaimer Ltd\"}
     [pscustomobject]@{CSUARegPath='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders\';CSUARegName="$env:LOCALAPPDATA\Programs\Exclaimer Ltd\Cloud Signature Update Agent\"}
     [pscustomobject]@{CSUARegPath='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders\';CSUARegName="$env:LOCALAPPDATA\Programs\Exclaimer Ltd\Cloud Signature Update Agent\de\"}
