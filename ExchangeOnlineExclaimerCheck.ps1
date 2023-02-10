@@ -28,7 +28,7 @@
 		- Conditioned getting of Transport Rules output by pre-checking for its existence (avoiding errors)
 		
 	1.0.0
-		- Check if the required Module is installed, installs it if not present
+		- Check if the required Module is installed, installs if not present
 		- Calls for Login with Microsoft using Modern-Auth
 		- Checks if "C:\Temp" exists, creates it if not found
 		- Stamps Date/Time when ran
