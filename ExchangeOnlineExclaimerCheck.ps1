@@ -14,7 +14,7 @@
     Exclaimer Signature Management - Microsoft 365
 
 .REQUIREMENTS
-    - Global Administrator Account
+    - Global Administrator
     - Requires path "C:\Temp"
     - ExchangeOnlineManagement - https://www.powershellgallery.com/packages/ExchangeOnlineManagement/0.4578.0
 
