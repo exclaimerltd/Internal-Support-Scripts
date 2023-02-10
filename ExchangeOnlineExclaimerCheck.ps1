@@ -44,7 +44,7 @@
 .INSTRUCTIONS
 	- Open PowerShell as Administrator
 	- Run: set-executionpolicy unrestricted
-	- Go to directory where the Script is saved (i.e 'cd "C:\Users\ReplaceWithUserNAme\Downloads"')
+	- Go to directory where the Script is saved (i.e 'cd "C:\Users\ReplaceWithUserNamE\Downloads"')
 	- Run the Script (i.e '.\ExchangeOnlineExclaimerCheck.ps1')
 #>
 
