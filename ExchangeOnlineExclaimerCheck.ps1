@@ -11,7 +11,7 @@
     Date: 27th June 2021
 
 .PRODUCTS
-    Exclaimer Cloud - Signatures for Office 365
+    Exclaimer Signature Management - Microsoft 365
 
 .REQUIREMENTS
     - Global Administrator Account
