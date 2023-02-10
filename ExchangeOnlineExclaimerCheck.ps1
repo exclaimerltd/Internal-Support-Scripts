@@ -21,7 +21,7 @@
 .VERSION
 
 
-	1.0.2
+	1.0.1
 		- Added call to get other transport rules
 		- Added check for Out of Office Transport Rule
 		- Added "Priority" to info collected from Transport Rules
