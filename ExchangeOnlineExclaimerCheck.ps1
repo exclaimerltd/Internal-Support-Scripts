@@ -15,7 +15,7 @@
 
 .REQUIREMENTS
     - Global Administrator access to the Microsoft Tenant
-    - Requires path "C:\Temp"
+    - Requires path "C:\Temp\"
     - ExchangeOnlineManagement - https://www.powershellgallery.com/packages/ExchangeOnlineManagement/0.4578.0
 
 .VERSION
