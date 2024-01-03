@@ -143,12 +143,12 @@ function find-users{
     foreach ($user in $getUsers) {
         $userId = $user.Id
         $userDN = $user.DisplayName
-        $OutFile = "$Path/$userDN - $userId.txt"
+        $OutFile = "$Path\$userDN - $userId.txt"
         Write-Host "User:" $userDN
         userInfo
-        tryAgain
         }
-    }
+    }    
+    tryAgain
 }
 
 
@@ -157,6 +157,7 @@ function userInfo {
     checkTemp
     Write-Output "$DateTimeRun" | Out-File $OutFile
     (Get-MgBetaUser -UserId $userId).PSObject.Properties | Where-Object {$_.Value -notlike "Microsoft*" -and $_.Name -notlike "Security*"} | Format-Table Name,Value | Out-File $OutFile -Append
+    Write-Host "`nOutput is saved in $OutFile" -ForegroundColor Green
 }
 
 function tryAgain {
@@ -170,12 +171,17 @@ function tryAgain {
         }
 }
 
-function endSession {            
-        Write-Host "`nTerminating Session" -ForegroundColor Green
-        Disconnect-MgGraph
-        Write-Host "Session Ended" -ForegroundColor Green
-        Exit
+function openOutFile {
+        $openOutFile = Read-Host ("Do you want to open the output file? Y/n")
+            if ($openOutFile -eq "y") {
+                Write-Host "Trying to open $OutFile`n" -ForegroundColor Green
+                Start-Process $OutFile
+            }
+            Else {            
+                Write-Host "`nWill not open the output file" -ForegroundColor Green
+            }
 }
+
 
 checkMicrosoftGraphUsersModule
 connect-MicrosoftGraph
