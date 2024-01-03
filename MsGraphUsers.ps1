@@ -35,7 +35,6 @@
 
 #Setting variables to use later
 $Path = "$PSScriptRoot\Exclaimer"
-$DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:MM 'UTC' K"
 
 #Getting Exchange Online Module
 function checkMicrosoftGraphUsersModule {
@@ -106,11 +105,8 @@ function findBy {
             if ($tryAgain -eq "y") {
                 findBy
             }
-            Else {
-                Write-Host "We are unable to continue, now exiting" -ForegroundColor Red
-                Disconnect-MgGraph
-                Write-Host "Session Ended" -ForegroundColor Green
-                Exit
+            Else {            
+                endSession
             }
 
     } finally {
@@ -133,7 +129,8 @@ function findBy {
 }
 
 
-function find-users{            
+function find-users{
+    $DateTimeRun = (Get-Date -Format "dddd MM/dd/yyyy HH:mm '- UTC' K")            
     $searchText = Read-Host ("$searchPrompt")
     $getUsers = (Get-MgBetaUser | Where-Object {$_.$searchPropriety -like "*$searchText*"} | Select-Object DisplayName,Id) 
     Write-Host ("Starting search: $DateTimeRun") -ForegroundColor Green
@@ -155,10 +152,11 @@ function find-users{
 }
 
 
-function userInfo {
+function userInfo {    
+    $DateTimeRun = (Get-Date -Format "dddd MM/dd/yyyy HH:mm '- UTC' K")
     checkTemp
     Write-Output "$DateTimeRun" | Out-File $OutFile
-    (Get-MgBetaUser -UserId $userId).PSObject.Properties | Where-Object {$_.Value -notlike "Microsoft*" -and $_.Name -notlike "Security*"} | Format-Table Name,Value| Out-File $OutFile -Append
+    (Get-MgBetaUser -UserId $userId).PSObject.Properties | Where-Object {$_.Value -notlike "Microsoft*" -and $_.Name -notlike "Security*"} | Format-Table Name,Value | Out-File $OutFile -Append
 }
 
 function tryAgain {
@@ -167,12 +165,16 @@ function tryAgain {
             findBy
         }
         Else {          
-            Start-Process $Path            
-            Write-Host "`nTerminating Session" -ForegroundColor Green
-            Disconnect-MgGraph
-            Write-Host "Session Ended" -ForegroundColor Green
-            Exit
+            Start-Process $Path
+            endSession
         }
+}
+
+function endSession {            
+        Write-Host "`nTerminating Session" -ForegroundColor Green
+        Disconnect-MgGraph
+        Write-Host "Session Ended" -ForegroundColor Green
+        Exit
 }
 
 checkMicrosoftGraphUsersModule
