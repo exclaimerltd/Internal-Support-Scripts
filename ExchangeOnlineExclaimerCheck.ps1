@@ -1,52 +1,52 @@
-﻿<#
-.SYNOPSIS
-    Checks and outputs the configuration of Transport Rule and Connectors that may affected routing of emails to Exclaimer.
-
-.DESCRIPTION
-    It will first prompt to login with Microsoft, then it will check and outputs the configuration of Transport Rule and Connectors that may affected routing of emails to Exclaimer.
-    Output filename is "ExchangeOnlineExclaimerCheck.txt"
-
-.NOTES
-    Email: helpdesk@exclaimer.com
-    Date: 27th June 2021
-
-.PRODUCTS
-    Exclaimer Signature Management - Microsoft 365
-
-.REQUIREMENTS
-    - Global Administrator access to the Microsoft Tenant
-    - Requires path "C:\Temp"
-    - ExchangeOnlineManagement - https://www.powershellgallery.com/packages/ExchangeOnlineManagement/0.4578.0
-
-.VERSION
-
-
-	1.0.1
-		- Added call to get other transport rules
-		- Added check for Out of Office Transport Rule
-		- Added "Priority" to info collected from Transport Rules
-		- Conditioned getting of Transport Rules output by pre-checking for its existence (avoiding errors)
-		
-	1.0.0
-		- Check if the required Module is installed, installs if not present
-		- Calls for Login with Microsoft using Modern-Auth
-		- Checks if "C:\Temp" exists, creates it if not found
-		- Stamps Date/Time when ran
-		- Gets Mail Flow Configuration relevant to Exclaimer
-		- Gets an Output of all Distribution Groups with "ReportToOriginatorEnabled" not set to "True"
-		- Gets "JournalingReportNdrTo" mailbox
-		- Gets all AcceptedDomains
-		- Gets Default IPAllowList settings
-		- Gets Remote Domain settings relevant to Exlcaimer (based on previous tickets)
-		- Displays a Message pop-up asking that the file/output is sent back to Support
-		- Opens Directory where the Output file was saved
-
-.INSTRUCTIONS
-	- Open PowerShell as Administrator
-	- Run: set-executionpolicy unrestricted
-	- Go to directory where the Script is saved (i.e 'cd "C:\Users\ReplaceWithUserName\Downloads"')
-	- Run the Script (i.e '.\ExchangeOnlineExclaimerCheck.ps1')
-#>
+#﻿<#
+#.SYNOPSIS
+#    Checks and outputs the configuration of Transport Rule and Connectors that may affected routing of emails to Exclaimer.
+#
+#.DESCRIPTION
+#    It will first prompt to login with Microsoft, then it will check and outputs the configuration of Transport Rule and Connectors that may affected routing of emails to Exclaimer.
+#    Output filename is "ExchangeOnlineExclaimerCheck.txt"
+#
+#.NOTES
+#    Email: helpdesk@exclaimer.com
+#    Date: 27th June 2021
+#
+#.PRODUCTS
+#    Exclaimer Signature Management - Microsoft 365
+#
+#.REQUIREMENTS
+#    - Global Administrator access to the Microsoft Tenant
+#    - Requires path "C:\Temp\"
+#    - ExchangeOnlineManagement - https://www.powershellgallery.com/packages/ExchangeOnlineManagement/0.4578.0
+#
+#.VERSION
+#
+#
+#	1.0.1
+#		- Added call to get other transport rules
+#		- Added check for Out of Office Transport Rule
+#		- Added "Priority" to info collected from Transport Rules
+#		- Conditioned getting of Transport Rules output by pre-checking for its existence (avoiding errors)
+#		
+#	1.0.0
+#		- Check if the required Module is installed, installs if not present
+#		- Calls for Login with Microsoft using Modern-Auth
+#		- Checks if "C:\Temp" exists, creates it if not found
+#		- Stamps Date/Time when ran
+#		- Gets Mail Flow Configuration relevant to Exclaimer
+#		- Gets an Output of all Distribution Groups with "ReportToOriginatorEnabled" not set to "True"
+#		- Gets "JournalingReportNdrTo" mailbox
+#		- Gets all AcceptedDomains
+#		- Gets Default IPAllowList settings
+#		- Gets Remote Domain settings relevant to Exlcaimer (based on previous tickets)
+#		- Displays a Message pop-up asking that the file/output is sent back to Support
+#		- Opens Directory where the Output file was saved
+#
+#.INSTRUCTIONS
+#	- Open PowerShell as Administrator
+#	- Run: set-executionpolicy unrestricted
+#	- Go to directory where the Script is saved (i.e 'cd "C:\Users\ReplaceWithUserName\Downloads"')
+#	- Run the Script (i.e '.\ExchangeOnlineExclaimerCheck.ps1')
+##>
 
 #Setting variables to use later
 $Path = "C:\Temp"
