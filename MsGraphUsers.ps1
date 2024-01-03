@@ -34,11 +34,11 @@
 
 
 #Setting variables to use later
-$Path = "C:\Temp"
+$Path = "$PSScriptRoot\Exclaimer"
 $DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:MM 'UTC' K"
 
 #Getting Exchange Online Module
-function checkMicrosoftGraphUsers-Module {
+function checkMicrosoftGraphUsersModule {
     if (Get-Module -ListAvailable -Name Microsoft.Graph.Authentication) {
         Write-Host "`nThe Microsoft.Graph.Authentication Module is already installed" -ForegroundColor Green
     } 
@@ -108,6 +108,8 @@ function findBy {
             }
             Else {
                 Write-Host "We are unable to continue, now exiting" -ForegroundColor Red
+                Disconnect-MgGraph
+                Write-Host "Session Ended" -ForegroundColor Green
                 Exit
             }
 
@@ -156,7 +158,7 @@ function find-users{
 function userInfo {
     checkTemp
     Write-Output "$DateTimeRun" | Out-File $OutFile
-    (Get-MgBetaUser -UserId $userId).PSObject.Properties | ?{$_.Value -notlike "Microsoft*" -and $_.Name -notlike "Security*"} | Format-Table Name,Value| Out-File $OutFile -Append
+    (Get-MgBetaUser -UserId $userId).PSObject.Properties | Where-Object {$_.Value -notlike "Microsoft*" -and $_.Name -notlike "Security*"} | Format-Table Name,Value| Out-File $OutFile -Append
 }
 
 function tryAgain {
@@ -165,12 +167,14 @@ function tryAgain {
             findBy
         }
         Else {          
-            Start-Process $Path
-            Write-Host "Ended" -ForegroundColor Green
+            Start-Process $Path            
+            Write-Host "`nTerminating Session" -ForegroundColor Green
+            Disconnect-MgGraph
+            Write-Host "Session Ended" -ForegroundColor Green
             Exit
         }
 }
 
-checkMicrosoftGraphUsers-Module
+checkMicrosoftGraphUsersModule
 connect-MicrosoftGraph
 findBy
