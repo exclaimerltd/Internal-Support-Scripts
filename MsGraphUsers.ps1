@@ -133,7 +133,7 @@ function find-users{
     $DateTimeRun = (Get-Date -Format "dddd MM/dd/yyyy HH:mm '- UTC' K")            
     $searchText = Read-Host ("$searchPrompt")
     $getUsers = (Get-MgBetaUser | Where-Object {$_.$searchPropriety -like "*$searchText*"} | Select-Object DisplayName,Id) 
-    Write-Host ("Starting search: $DateTimeRun") -ForegroundColor Green
+    Write-Host ("`nStarting search: $DateTimeRun`n") -ForegroundColor Green
     $found=$getUsers | Measure-Object
     Write-Host "Number of matches found:" $found.Count
     if (([string]::IsNullOrEmpty($getUsers))) {
@@ -147,8 +147,10 @@ function find-users{
         Write-Host "User:" $userDN
         userInfo
         }
-    }    
+    }          
+    openOutPath    
     tryAgain
+
 }
 
 
@@ -157,7 +159,7 @@ function userInfo {
     checkTemp
     Write-Output "$DateTimeRun" | Out-File $OutFile
     (Get-MgBetaUser -UserId $userId).PSObject.Properties | Where-Object {$_.Value -notlike "Microsoft*" -and $_.Name -notlike "Security*"} | Format-Table Name,Value | Out-File $OutFile -Append
-    Write-Host "`nOutput is saved in $OutFile" -ForegroundColor Green
+    Write-Host "Output is saved in $OutFile`n" -ForegroundColor Green
 }
 
 function tryAgain {
@@ -165,23 +167,29 @@ function tryAgain {
         if ($repeat -eq "y") {
             findBy
         }
-        Else {          
-            Start-Process $Path
+        Else {
             endSession
         }
 }
 
-function openOutFile {
-        $openOutFile = Read-Host ("Do you want to open the output file? Y/n")
-            if ($openOutFile -eq "y") {
-                Write-Host "Trying to open $OutFile`n" -ForegroundColor Green
-                Start-Process $OutFile
+function openOutPath {
+        $openOutPath = Read-Host ("Do you want to open the output folder? Y/n")
+            if ($openOutPath -eq "y") {
+                Write-Host "Trying to open $Path`n" -ForegroundColor Green
+                Start-Sleep 2
+                Start-Process $Path
             }
             Else {            
-                Write-Host "`nWill not open the output file" -ForegroundColor Green
+                Write-Host "Will not open the output folder..." -ForegroundColor Green
             }
 }
 
+function endSession {            
+        Write-Host "`nTerminating Session" -ForegroundColor Green
+        Disconnect-MgGraph
+        Write-Host "Session Ended" -ForegroundColor Green
+        Exit
+}
 
 checkMicrosoftGraphUsersModule
 connect-MicrosoftGraph
