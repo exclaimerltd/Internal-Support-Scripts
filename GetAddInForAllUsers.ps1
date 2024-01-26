@@ -25,10 +25,8 @@
 # 	- Run: set-executionpolicy unrestricted
 # 	- Go to directory where the Script is saved (i.e 'cd "C:\Users\ReplaceWithUserName\Downloads"')
 # 	- Run the Script (i.e '.\GetAddInForAllUsers.ps1')
-
-
-
-
+#
+#
 #Setting variables to use later
 $Path = "$PSScriptRoot\Exclaimer"
 $addin = "efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
