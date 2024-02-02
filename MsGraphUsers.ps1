@@ -27,10 +27,9 @@
 # 	- Run: set-executionpolicy unrestricted
 # 	- Go to directory where the Script is saved (i.e 'cd "C:\Users\ReplaceWithUserName\Downloads"')
 # 	- Run the Script (i.e '.\MsGraphUsers.ps1')
-
-
-
-
+#
+#
+#
 #Setting variables to use later
 $Path = "$PSScriptRoot\Exclaimer"
 

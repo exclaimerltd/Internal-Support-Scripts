@@ -77,7 +77,7 @@ function findMailboxes {
     $mailboxes = Get-Mailbox -ResultSize Unlimited | Where-Object {$_.AccountDisabled -eq $false}
     foreach ($mailbox in $mailboxes) {
         # Extract the first part of the email address
-        $appIdentity = ($mailbox.PrimarySmtpAddress -split "@")[0] + "\efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
+        $appIdentity = ($mailbox.UserPrincipalName -split "@")[0] + "\efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
 
         # Get the app version
         $appVersion = Get-App -Identity $appIdentity -ErrorAction SilentlyContinue
