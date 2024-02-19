@@ -89,7 +89,7 @@ function findMailboxes {
         [array]$result += New-Object psobject -Property @{
             Mailbox = $mailbox.DisplayName
             AppVersion = $appVersion.AppVersion
-            Status =$appVersion.Enabled
+            Enabled =$appVersion.Enabled
         }
 
     }
