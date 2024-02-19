@@ -7,7 +7,8 @@
 # 
 # .NOTES
 #     Email: helpdesk@exclaimer.com
-#     Date: 25th January 2024
+#     Created: 25th January 2024
+#     Update: 19th February 2024
 # 
 # .PRODUCTS
 #     Exclaimer Signature Management - Microsoft 365
