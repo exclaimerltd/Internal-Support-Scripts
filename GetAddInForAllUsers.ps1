@@ -18,15 +18,17 @@
 # 
 # .VERSION 
 # 
-# 	1.0.1
+# 	1.0.0
 # 
 # .INSTRUCTIONS
 # 	- Open PowerShell as Administrator
 # 	- Run: set-executionpolicy unrestricted
 # 	- Go to directory where the Script is saved (i.e 'cd "C:\Users\ReplaceWithUserName\Downloads"')
 # 	- Run the Script (i.e '.\GetAddInForAllUsers.ps1')
-#
-#
+
+
+
+
 #Setting variables to use later
 $Path = "$PSScriptRoot\Exclaimer"
 $addin = "efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
@@ -75,6 +77,7 @@ function findMailboxes {
     $result = @()
     # Get all mailboxes that are not in a disabled state (intended to filter service mailboxes, but may cause it to miss some shared mailboxes)
     $mailboxes = Get-Mailbox -ResultSize Unlimited | Where-Object {$_.AccountDisabled -eq $false}
+    Write-Host "`nGathering information, please wait..........." -ForegroundColor Green
     foreach ($mailbox in $mailboxes) {
         # Extract the first part of the email address
         $appIdentity = ($mailbox.UserPrincipalName -split "@")[0] + "\efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
@@ -86,6 +89,7 @@ function findMailboxes {
         [array]$result += New-Object psobject -Property @{
             Mailbox = $mailbox.DisplayName
             AppVersion = $appVersion.AppVersion
+            Status =$appVersion.Enabled
         }
 
     }
@@ -96,9 +100,9 @@ function findMailboxes {
 
 function openOutPath {
             # Tries to open the directory the output is saved in, and provides full path
-            Write-Host "Trying to open $Path`n" -ForegroundColor Green
+            Write-Host "`nTrying to open $Path`n" -ForegroundColor Green
             Start-Process $Path           
-            Write-Host "Will now open the output folder...`n" -ForegroundColor Green
+            Write-Host "Please find the output file in folder $Path`n" -ForegroundColor Green
 }
 
 function endSession {            
