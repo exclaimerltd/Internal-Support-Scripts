@@ -153,7 +153,7 @@ function transport_rule_create {
 
 function transport_rule_create_ooo {
         # Creates transport rule for all
-        New-TransportRule -Name "Prevent Out of Office messages being sent to Exclaimer" `
+        New-TransportRule -Name "Prevent Out of Office messages being sent to Exclaimer Cloud" `
         -Priority 0 `
         -Mode Enforce `
         -RuleErrorAction Ignore `
