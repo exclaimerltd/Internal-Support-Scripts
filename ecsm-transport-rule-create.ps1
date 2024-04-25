@@ -110,7 +110,7 @@ function transport_rule_create {
         -ExceptIfHasNoClassification $false `
         -ExceptIfHeaderMatchesMessageHeader X-ExclaimerHostedSignatures-MessageProcessed `
 		-ExceptIfHeaderContainsMessageHeader "X-MS-Exchange-UnifiedGroup-SubmittedViaGroupAddress" `
-		-ExceptIfHeaderContainsWords "{/o=ExchangeLabs/ou=Exchange Administrative Group}" `
+		-ExceptIfHeaderContainsWords '/o=ExchangeLabs/ou=Exchange Administrative Group' `
         -ExceptIfHeaderMatchesPatterns "true" `
         -ExceptIfFromAddressMatchesPatterns '&lt;&gt;' `
         -ExceptIfMessageSizeOver 23592960 `
@@ -140,7 +140,7 @@ function transport_rule_create {
         -ExceptIfHasNoClassification $false `
         -ExceptIfHeaderMatchesMessageHeader X-ExclaimerHostedSignatures-MessageProcessed `
 		-ExceptIfHeaderContainsMessageHeader "X-MS-Exchange-UnifiedGroup-SubmittedViaGroupAddress" `
-		-ExceptIfHeaderContainsWords "{/o=ExchangeLabs/ou=Exchange Administrative Group}" `
+		-ExceptIfHeaderContainsWords '/o=ExchangeLabs/ou=Exchange Administrative Group' `
         -ExceptIfHeaderMatchesPatterns "true" `
         -ExceptIfFromAddressMatchesPatterns '&lt;&gt;' `
         -ExceptIfMessageSizeOver 23592960 `
