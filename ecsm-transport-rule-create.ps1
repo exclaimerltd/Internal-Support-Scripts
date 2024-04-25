@@ -23,23 +23,11 @@
     2.0 - Removal of previous configuration
 #>
 
-function basic-auth-connect {
-    $LiveCred = Get-Credential  
-    $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell/ -Credential $LiveCred -Authentication Basic -AllowRedirection
-    Import-PSSession $Session   
-}
-
 function modern-auth-mfa-connect {
     Import-Module ExchangeOnlineManagement
-    $upn = Read-Host ("Enter the UPN for your Global Administrator")
-    Connect-ExchangeOnline -UserPrincipalName $upn
+    Connect-ExchangeOnline
 }
 
-function modern-auth-no-mfa-connect {
-    Import-Module ExchangeOnlineManagement
-    $LiveCred = Get-Credential
-    Connect-ExchangeOnline -Credential $LiveCred
-}
  
 function remove_previous {
     # Removes previous Transport Rules and Connectors
@@ -54,7 +42,9 @@ function remove_previous {
     }
     Else {
         Write-Host "Removing Exclaimer Transport Rule"
-        Remove-TransportRule -Identity *Exclaimer* -Confirm:$false -ErrorAction SilentlyContinue
+		foreach ($t in $tr){
+        Remove-TransportRule -Identity $t.Name -Confirm:$false -ErrorAction SilentlyContinue
+		}
         Write-Host "Removing Exclaimer Receive Connector"
         Remove-InboundConnector -Identity *Exclaimer* -Confirm:$false -ErrorAction SilentlyContinue
         Write-Host "Removing Exclaimer Send Connector"
@@ -119,8 +109,10 @@ function transport_rule_create {
         -AttachmentIsPasswordProtected $false `
         -ExceptIfHasNoClassification $false `
         -ExceptIfHeaderMatchesMessageHeader X-ExclaimerHostedSignatures-MessageProcessed `
+		-ExceptIfHeaderContainsMessageHeader "X-MS-Exchange-UnifiedGroup-SubmittedViaGroupAddress" `
+		-ExceptIfHeaderContainsWords "{/o=ExchangeLabs/ou=Exchange Administrative Group}" `
         -ExceptIfHeaderMatchesPatterns "true" `
-        -ExceptIfFromAddressMatchesPatterns "<>" `
+        -ExceptIfFromAddressMatchesPatterns "{&lt;&gt;}" `
         -ExceptIfMessageSizeOver 23592960 `
         -ExceptIfMessageTypeMatches Calendaring `
         -StopRuleProcessing $true `
@@ -147,8 +139,10 @@ function transport_rule_create {
         -AttachmentIsPasswordProtected $false `
         -ExceptIfHasNoClassification $false `
         -ExceptIfHeaderMatchesMessageHeader X-ExclaimerHostedSignatures-MessageProcessed `
+		-ExceptIfHeaderContainsMessageHeader "X-MS-Exchange-UnifiedGroup-SubmittedViaGroupAddress" `
+		-ExceptIfHeaderContainsWords "{/o=ExchangeLabs/ou=Exchange Administrative Group}" `
         -ExceptIfHeaderMatchesPatterns "true" `
-        -ExceptIfFromAddressMatchesPatterns "<>" `
+        -ExceptIfFromAddressMatchesPatterns "{&lt;&gt;}" `
         -ExceptIfMessageSizeOver 23592960 `
         -ExceptIfMessageTypeMatches Calendaring `
         -StopRuleProcessing $true `
@@ -156,6 +150,28 @@ function transport_rule_create {
         -RouteMessageOutboundConnector "Send to Exclaimer Cloud"
     }
 }
+
+function transport_rule_create_ooo {
+        # Creates transport rule for all
+        New-TransportRule -Name "Prevent Out of Office messages being sent to Exclaimer" `
+        -Priority 0 `
+        -Mode Enforce `
+        -RuleErrorAction Ignore `
+        -SenderAddressLocation Envelope `
+        -RuleSubType None `
+        -UseLegacyRegex $false `
+        -MessageTypeMatches OOF `
+        -HasNoClassification $false `
+        -AttachmentIsUnsupported $false `
+        -AttachmentProcessingLimitExceeded $false `
+        -AttachmentHasExecutableContent $false `
+        -AttachmentIsPasswordProtected $false `
+        -ExceptIfHasNoClassification $false `
+		-SetHeaderName "X-ExclaimerHostedSignatures-MessageProcessed"`
+		-SetHeaderValue "true"
+}
+
+
 
 function allowed_ips {
     $iplist = @("104.210.80.79","13.70.157.244"`
@@ -168,25 +184,8 @@ function allowed_ips {
     Set-HostedConnectionFilterPolicy "Default" -IPAllowList $iplist
 }
 
-$authtype = Read-Host ("Do you have basic auth enabled? Y/n")
-
-If ($authtype -eq "y") {
-    basic-auth-connect
-}
-Else {
-    $mfa = Read-Host ("Do you have MFA enabled? Y/n")
-    if ($mfa -eq "y") {
-        modern-auth-mfa-connect
-    }
-    Else {
-        modern-auth-no-mfa-connect
-    }
-}
-
-remove_previous
-
 # User inputs
-$accepteddomain = Read-Host ("Please enter the smtp.exclaimer.cloud domain here") 
+$accepteddomain = Read-Host ("Please enter the smtp.excl.cloud domain here") 
 write-host ("")
 $region = Read-Host("Which region are you in?")
 $smarthost = "smtp." + $region + "1.exclaimer.net"
@@ -195,7 +194,10 @@ $smarthost = "smtp." + $region + "1.exclaimer.net"
 $date = (Get-Date -Format "dd/MM/yyyy")
 $comment = "Connector created by Exclaimer Support on $date"
 
+modern-auth-mfa-connect
+remove_previous
 send_connector
 receive_connector
 transport_rule_create
+transport_rule_create_ooo
 allowed_ips
