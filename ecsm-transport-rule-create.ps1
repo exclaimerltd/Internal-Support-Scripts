@@ -113,7 +113,6 @@ function transport_rule_create {
         -UseLegacyRegex $false `
         -FromScope InOrganization `
         -HasNoClassification $false `
-        -HasSenderOverride $false `
         -AttachmentIsUnsupported $false `
         -AttachmentProcessingLimitExceeded $false `
         -AttachmentHasExecutableContent $false `
@@ -142,7 +141,6 @@ function transport_rule_create {
         -FromScope InOrganization `
         -FromMemberOf $usegroup `
         -HasNoClassification $false `
-        -HasSenderOverride $false `
         -AttachmentIsUnsupported $false `
         -AttachmentProcessingLimitExceeded $false `
         -AttachmentHasExecutableContent $false `
