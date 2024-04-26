@@ -109,8 +109,8 @@ function transport_rule_create {
         -AttachmentIsPasswordProtected $false `
         -ExceptIfHasNoClassification $false `
         -ExceptIfHeaderMatchesMessageHeader X-ExclaimerHostedSignatures-MessageProcessed `
-		-ExceptIfHeaderContainsMessageHeader "X-MS-Exchange-UnifiedGroup-SubmittedViaGroupAddress" `
-		-ExceptIfHeaderContainsWords '/o=ExchangeLabs/ou=Exchange Administrative Group' `
+        -ExceptIfHeaderContainsMessageHeader "X-MS-Exchange-UnifiedGroup-SubmittedViaGroupAddress" `
+        -ExceptIfHeaderContainsWords "{/o=ExchangeLabs/ou=Exchange Administrative Group}" `
         -ExceptIfHeaderMatchesPatterns "true" `
         -ExceptIfFromAddressMatchesPatterns '&lt;&gt;' `
         -ExceptIfMessageSizeOver 23592960 `
@@ -139,8 +139,8 @@ function transport_rule_create {
         -AttachmentIsPasswordProtected $false `
         -ExceptIfHasNoClassification $false `
         -ExceptIfHeaderMatchesMessageHeader X-ExclaimerHostedSignatures-MessageProcessed `
-		-ExceptIfHeaderContainsMessageHeader "X-MS-Exchange-UnifiedGroup-SubmittedViaGroupAddress" `
-		-ExceptIfHeaderContainsWords '/o=ExchangeLabs/ou=Exchange Administrative Group' `
+        -ExceptIfHeaderContainsMessageHeader "X-MS-Exchange-UnifiedGroup-SubmittedViaGroupAddress" `
+        -ExceptIfHeaderContainsWords "{/o=ExchangeLabs/ou=Exchange Administrative Group}" `
         -ExceptIfHeaderMatchesPatterns "true" `
         -ExceptIfFromAddressMatchesPatterns '&lt;&gt;' `
         -ExceptIfMessageSizeOver 23592960 `
@@ -167,9 +167,11 @@ function transport_rule_create_ooo {
         -AttachmentHasExecutableContent $false `
         -AttachmentIsPasswordProtected $false `
         -ExceptIfHasNoClassification $false `
-		-SetHeaderName "X-ExclaimerHostedSignatures-MessageProcessed"`
-		-SetHeaderValue "true"
+        -SetHeaderName "X-ExclaimerHostedSignatures-MessageProcessed"`
+        -SetHeaderValue "true"
 }
+
+
 
 function allowed_ips {
     $iplist = @("104.210.80.79","13.70.157.244"`
