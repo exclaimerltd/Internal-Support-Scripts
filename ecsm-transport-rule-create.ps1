@@ -187,7 +187,9 @@ function allowed_ips {
 }
 
 # User inputs
-$accepteddomain = Read-Host ("Please enter the smtp.excl.cloud domain here") 
+Write-Host "`nThe 'To get the Exclaimer domain name go to 'https://admin.exchange.microsoft.com/#/accepteddomains' or," -ForegroundColor Green
+Write-Host "after you log in to your Exchange Admin Center go to Mail Flow -> Accepted domains" -ForegroundColor Green
+$accepteddomain = Read-Host ("Please enter the xxxxxxxxxxxxxxxxxxxxx.smtp.excl.cloud domain here") 
 write-host ("")
 $region = Read-Host("Which region are you in?")
 $smarthost = "smtp." + $region + "1.exclaimer.net"
