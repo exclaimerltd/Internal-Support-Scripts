@@ -23,6 +23,20 @@
     2.0 - Removal of previous configuration
 #>
 
+Add-Type -AssemblyName PresentationFramework
+#Getting Exchange Online Module
+function checkExchangeOnline-Module {
+    if (Get-Module -ListAvailable -Name ExchangeOnlineManagement) {
+        #[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
+        #[System.Windows.MessageBox]::Show('ExchangeOnlineManagement module already installed, will continue..."', 'ExchangeOnlineExclaimerCheck', 'OK', 'Information')
+    } 
+    else {
+        [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
+        [System.Windows.MessageBox]::Show('ExchangeOnlineManagement module not installed, will attempt to install it now...', 'ExchangeOnlineExclaimerCheck', 'OK', 'Information')
+        Install-Module ExchangeOnlineManagement
+    }
+}
+
 function modern-auth-mfa-connect {
     Import-Module ExchangeOnlineManagement
     Connect-ExchangeOnline
@@ -198,6 +212,7 @@ $smarthost = "smtp." + $region + "1.exclaimer.net"
 $date = (Get-Date -Format "dd/MM/yyyy")
 $comment = "Connector created by Exclaimer Support on $date"
 
+checkExchangeOnline-Module
 modern-auth-mfa-connect
 remove_previous
 send_connector
