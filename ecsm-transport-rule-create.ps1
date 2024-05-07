@@ -197,6 +197,7 @@ function allowed_ips {
     ,"191.237.4.149","104.209.35.28"`
     ,"20.52.124.58","20.113.192.118"`
     ,"20.233.10.24","20.74.156.16")
+    Set-InboundConnector -Identity "Receive from Exclaimer Cloud v2" -EFSkipLastIP $true
     Set-HostedConnectionFilterPolicy "Default" -IPAllowList $iplist
 }
 
