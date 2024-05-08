@@ -61,7 +61,7 @@ Add-Type -AssemblyName PresentationFramework
 
 
 #Getting Exchange Online Module
-function checkExchangeOnline-Module {
+function checkExchangeOnlineModule {
     if (Get-Module -ListAvailable -Name ExchangeOnlineManagement) {
         #[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
         #[System.Windows.MessageBox]::Show('ExchangeOnlineManagement module already installed, will continue..."', 'ExchangeOnlineExclaimerCheck', 'OK', 'Information')
@@ -74,12 +74,12 @@ function checkExchangeOnline-Module {
 }
 
 #Connecting to Exchange Online
-function modern-auth-connect {
+function modernAuthConnect {
     Connect-ExchangeOnline
 }
 
 #Check "C:\Temp"
-function path-checkTemp {
+function pathCheckTemp {
     if (Test-Path -Path $Path){
     Write-Output ("Temp folder exists") | Out-File $LogFile
     }
@@ -200,7 +200,7 @@ function get-IPAllowList {
 
 function get-RemoteDomainOutput {    
     Write-Output ("###########---Getting Remote Domain Configuration.....---###########") | Out-File $LogFile -Append
-    Get-RemoteDomain * | Select-Object Name, DomainName, CharacterSet, ContentType, TNEFEnabled | Out-File $LogFile -Append    
+    Get-RemoteDomain | Select-Object Name, DomainName, CharacterSet, ContentType, TNEFEnabled | Out-File $LogFile -Append    
 }
 
 #Open Ouput directory
@@ -209,14 +209,14 @@ function open-OutputDir {
 }
 
 #Message
-function user-Message {
+function userMessage {
     [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
     [System.Windows.MessageBox]::Show('Please provide Support the output file named "ExchangeOnlineExclaimerCheck.txt"', 'ExchangeOnlineExclaimerCheck', 'OK', 'Information')
 }
 
-checkExchangeOnline-Module
-modern-auth-connect
-path-checkTemp
+checkExchangeOnlineModule
+modernAuthConnect
+pathCheckTemp
 stampIt
 get-ConfigOutput
 get-DistributionGroups
@@ -224,5 +224,5 @@ get-JournalingReportNdrTo
 get-AcceptedDomains
 get-IPAllowList
 get-RemoteDomainOutput
-user-Message
+userMessage
 open-OutputDir
