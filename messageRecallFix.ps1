@@ -48,14 +48,14 @@ function modern-auth-mfa-connect {
     Connect-ExchangeOnline
 }
 
- 
+
 function remove_previous {
 
     # Does previous config exist?
     $tr = Get-TransportRule -Identity "Message Recall Fix - TR*" -ErrorAction SilentlyContinue
 
     If ($tr -eq $null) {
-        write-host "Creating Transport Rules"
+        write-host "Please wait..." -ForegroundColor Yellow
     }
     Else {
         Write-Host "Removing the pre-existing 'Message Recall Fix - TR*' rules before continuing..."
@@ -66,6 +66,7 @@ function remove_previous {
 }
 
 function transport_rule_tr {
+    write-host "Creating Transport Rules..."  -ForegroundColor Green
     Write-Host "`n============ Creating the first rule, please wait ============" -ForegroundColor Yellow
 
         New-TransportRule -Name "Message Recall Fix - TR1" `
