@@ -110,7 +110,7 @@ function get-ConfigOutput {
         if ($CountTransportRuleOOOExclaimer.Count -ne "0") {
             Get-TransportRule | Where {$_.Name -like $TransportRuleOOOExclaimer} | Select-Object Name, State, Priority | Out-File $LogFile -Append
             }else{
-                Write-Output ("`n##### NOTE #####`nNo 'Prevent Out of Office messages being sent to Exclaimer Cloud' Transport Rule Found`
+                Write-Output ("`n##### NOTE #####`nThe 'Prevent Out of Office messages being sent to Exclaimer Cloud' Transport Rule was NOT Found`
 Issues expected with Automated emails, see article below section 'The email was an out of office email':`
 'https://support.exclaimer.com/hc/en-gb/articles/4406732893457'") | Out-File $LogFile -Append
         }
@@ -128,14 +128,14 @@ Issues expected with Automated emails, see article below section 'The email was 
         if ($CountExclaimerOutboundConnector.Count -ne "0") {
             Get-OutboundConnector | Where {$_.Name -like $OutboundConnector} | Select-Object Identity, Enabled, SmartHosts | Out-File $LogFile -Append
             }else{
-            Write-Output ("`nNo Exclaimer Outbound Connector Found Found") | Out-File $LogFile -Append
+            Write-Output ("`nNo Exclaimer Outbound Connector Found") | Out-File $LogFile -Append
         }
 
     #Checking for the Exclaimer Inbound Connector
         if ($CountExclaimerInboundConnector.Count -ne "0") {
             Get-InboundConnector | Where {$_.Name -like $InboundConnector} | Select-Object Identity, Enabled, TlsSenderCertificateName | Out-File $LogFile -Append
             }else{
-            Write-Output ("`nNo Exclaimer Inbound Connector Found Found") | Out-File $LogFile -Append
+            Write-Output ("`nNo Exclaimer Inbound Connector Found") | Out-File $LogFile -Append
         }
 
     Write-Output ("`n----------- Other Outbound Connectors..... -----------") | Out-File $LogFile -Append
@@ -162,16 +162,16 @@ function get-DistributionGroups {
     Write-Output ("###########---Getting Distribution Groups with where 'ReportToOriginatorEnabled' is not 'TRUE'.....---###########") | Out-File $LogFile -Append
 
     If ($groups -ne $null) {
-        Write-Output ("`nBelow are the Office 365 Distribution Groups currently set to False") | Out-File $LogFile -Append
-        Write-Output $groups | Select DisplayName,ReportToOriginatorEnabled | Format-Table | Out-File $LogFile -Append
+        Write-Output ("`nBelow are the Office 365 Distribution Groups where 'ReportToOriginatorEnabled' is not 'True'") | Out-File $LogFile -Append
+        Write-Output $groups | Select DisplayName,PrimarySmtpAddress,ReportToOriginatorEnabled | Format-Table | Out-File $LogFile -Append
     }
     If ($dirsync -ne $null) {
-        Write-Output ("`nBelow are the Office 365 Distribution groups sync'd from AD with the value of False") | Out-File $LogFile -Append
-        Write-Output $dirsync | Select DisplayName,ReportToOriginatorEnabled | Format-Table | Out-File $LogFile -Append
+        Write-Output ("`nBelow are the Distribution Groups sync'd from AD where 'ReportToOriginator' is not 'True'") | Out-File $LogFile -Append
+        Write-Output $dirsync | Select DisplayName,PrimarySmtpAddress,ReportToOriginatorEnabled | Format-Table | Out-File $LogFile -Append
     }
     If ($dynamicgroups -ne $null) {
-        Write-Output ("`nBelow are the Office 365 Dynamic groups with the value of False") | Out-File $LogFile -Append
-        Write-Output $dynamicgroups | Select DisplayName,ReportToOriginatorEnabled | Format-Table | Out-File $LogFile -Append
+        Write-Output ("`nBelow are the Office 365 Dynamic Groups where 'ReportToOriginatorEnabled' is not 'True'") | Out-File $LogFile -Append
+        Write-Output $dynamicgroups | Select DisplayName,PrimarySmtpAddress,ReportToOriginatorEnabled | Format-Table | Out-File $LogFile -Append
     }
     If ($groups -ne $null -OR $dirsync -ne $null -OR $dynamicgroups -ne $null) {
         Write-Output ("##### NOTE #####`nAny Groups that emails are sent to should have 'ReportToOriginatorEnabled' set to 'True' or`
