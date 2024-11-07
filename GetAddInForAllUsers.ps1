@@ -3,12 +3,12 @@
 # 
 # .DESCRIPTION
 #     Will first check for required Module and prompt to install them if not present.
-#     It will then prompt the user to Sign in with Microsoft
+#     It will then prompt the user to Sign in with Microsoft.
 # 
 # .NOTES
 #     Email: helpdesk@exclaimer.com
 #     Created: 25th January 2024
-#     Update: 19th February 2024
+#     Updated: 7th October 2024
 # 
 # .PRODUCTS
 #     Exclaimer Signature Management - Microsoft 365
@@ -18,106 +18,131 @@
 #     - ExchangeOnlineManagement - https://learn.microsoft.com/en-us/powershell/exchange/exchange-online-powershell-v2?view=exchange-ps
 # 
 # .VERSION 
-# 
-# 	1.0.0
+#     1.1.0
 # 
 # .INSTRUCTIONS
-# 	- Open PowerShell as Administrator
-# 	- Run: set-executionpolicy unrestricted
-# 	- Go to directory where the Script is saved (i.e 'cd "C:\Users\ReplaceWithUserName\Downloads"')
-# 	- Run the Script (i.e '.\GetAddInForAllUsers.ps1')
+#     - Open PowerShell as Administrator
+#     - Run: set-executionpolicy unrestricted
+#     - Go to the directory where the Script is saved (i.e 'cd "C:\Users\ReplaceWithUserName\Downloads"')
+#     - Run the Script (i.e '.\GetAddInForAllUsers.ps1')
 
+# Script Parameters
+param(
+    [string]$OutputPath = "$PSScriptRoot\Exclaimer",
+    [string]$AddInID = "efc30400-2ac5-48b7-8c9b-c0fd5f266be2",
+    [switch]$VerboseLogging = $false
+)
 
+# Setting up logging if enabled
+if ($VerboseLogging) {
+    $LogFile = "$OutputPath\ScriptLog.txt"
+    Write-Output "Verbose Logging Enabled: $LogFile"
+    Start-Transcript -Path $LogFile -Append -NoClobber
+}
 
-
-#Setting variables to use later
-$Path = "$PSScriptRoot\Exclaimer"
-$addin = "efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
-
-#Getting Exchange Online Module
-function checkRequiredModules {
-    if (Get-Module -ListAvailable -Name ExchangeOnlineManagement) {
-        # If module is aleady installed, continue 
-        Write-Host "`nThe 'ExchangeOnlineManagement' Module is already installed" -ForegroundColor Green
-    } 
-    else {       
-        Write-Host "The required 'ExchangeOnlineManagement' Module is NOT installed" -ForegroundColor Red
+# Function to check and install required module
+function Ensure-ModuleInstalled {
+    if (-not (Get-Module -ListAvailable -Name ExchangeOnlineManagement)) {
+        Write-Host "`nThe required 'ExchangeOnlineManagement' Module is NOT installed" -ForegroundColor Red
         $installMsModule = Read-Host ("Do you want to install the required 'ExchangeOnlineManagement' Module? Y/n")
-            if ($installMsModule -eq "y") {
-                # If the module is not installed, offer to start Module install
-                Install-Module ExchangeOnlineManagement -Scope CurrentUser
-            }
-            Else {
-                # If user does not accept to install the module, terminates
-                Write-Host "We are unable to continue, now exiting" -ForegroundColor Red
+        if ($installMsModule -eq "Y") {
+            try {
+                Install-Module ExchangeOnlineManagement -Scope CurrentUser -Force
+                Write-Host "`n'ExchangeOnlineManagement' Module installed successfully." -ForegroundColor Green
+            } catch {
+                Write-Host "Failed to install module. Error: $_" -ForegroundColor Red
                 Exit
             }
-
+        } else {
+            Write-Host "Cannot continue without 'ExchangeOnlineManagement'. Exiting..." -ForegroundColor Red
+            Exit
+        }
+    } else {
+        Write-Host "`nThe 'ExchangeOnlineManagement' Module is already installed" -ForegroundColor Green
     }
 }
 
-# Check if Path exists
-function checkPath {
-    if (Test-Path -Path $Path){
-    # Check for directory "Exclaimer" exists or not in the same directory as the script is stored
-    Write-Output ("Output Path exists")
-    }
-    Else {
-    # Creates directory "Exclaimer" if it does not exist in the same directory as the script store
-    New-Item $Path -ItemType Directory
+# Ensure output directory exists
+function Ensure-DirectoryExists {
+    if (-not (Test-Path -Path $OutputPath)) {
+        try {
+            New-Item $OutputPath -ItemType Directory -Force | Out-Null
+            Write-Host "Created directory: $OutputPath" -ForegroundColor Green
+        } catch {
+            Write-Host "Failed to create directory: $OutputPath. Error: $_" -ForegroundColor Red
+            Exit
+        }
+    } else {
+        Write-Host "Output directory already exists: $OutputPath" -ForegroundColor Green
     }
 }
 
-
-function connectExchangeOnlineManagement {
-    #Connecting to Connect-ExchangeOnline
-    Connect-ExchangeOnline
+# Function to connect to Exchange Online
+function Connect-ExchangeSession {
+    try {
+        #$session = Get-Module ExchangeOnlineManagement | Format-Table -Property Name,Version
+        $getsessions = Get-PSSession | Select-Object -Property State, Name
+        $session = (@($getsessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*').Count -gt 0
+        if (-not $session) {
+            Write-Host "Starting a new session..." -ForegroundColor Green
+            Connect-ExchangeOnline
+        } else {
+            Write-Host "Exchange Online session is already active." -ForegroundColor Green
+        }
+    } catch {
+        Write-Host "Failed to connect to Exchange Online. Error: $_" -ForegroundColor Red
+        Exit
+    }
 }
 
-function findMailboxes {
-    $result = @()
-    # Get all mailboxes that are not in a disabled state (intended to filter service mailboxes, but may cause it to miss some shared mailboxes)
-    $mailboxes = Get-Mailbox -ResultSize Unlimited | Where-Object {$_.AccountDisabled -eq $false}
-    Write-Host "`nGathering information, please wait..........." -ForegroundColor Green
-    foreach ($mailbox in $mailboxes) {
-        # Extract the first part of the email address
-        $appIdentity = ($mailbox.UserPrincipalName -split "@")[0] + "\efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
+# Function to gather mailbox add-in versions
+function Get-MailboxAddInVersions {
+    $results = @()
+    try {
+        $mailboxes = Get-Mailbox -ResultSize Unlimited | Where-Object { $_.AccountDisabled -eq $false }
+        Write-Host "`nGathering information, please wait..........." -ForegroundColor Green
+        Write-Host "`nPlease Note:" -ForegroundColor Red
+        Write-Host "Some mailboxes may not list an Add-in, you should try again after the specific mailbox has logged on to 'https://outlook.office.com/'...`n" -ForegroundColor Yellow
 
-        # Get the app version
-        $appVersion = Get-App -Identity $appIdentity -ErrorAction SilentlyContinue
-
-        # Add results to array
-        [array]$result += New-Object psobject -Property @{
-            Mailbox = $mailbox.DisplayName
-            AppVersion = $appVersion.AppVersion
-            Enabled =$appVersion.Enabled
+        foreach ($mailbox in $mailboxes) {
+            $appIdentity = ($mailbox.UserPrincipalName -split "@")[0] + "\" + $AddInID
+            $appVersion = Get-App -Identity $appIdentity -ErrorAction SilentlyContinue
+            [array]$results += [pscustomobject]@{
+                Mailbox    = $mailbox.DisplayName
+                AppVersion = $appVersion.AppVersion
+                Enabled    = $appVersion.Enabled
+            }
         }
 
+        # Output to CSV
+        $results | Export-Csv -Path "$OutputPath\GetAddInForAllUsers.csv" -NoTypeInformation
+        Write-Host "Output saved to $OutputPath\GetAddInForAllUsers.csv" -ForegroundColor Green
+    } catch {
+        Write-Host "Failed to retrieve mailbox information. Error: $_" -ForegroundColor Red
     }
-    # Output it all to a file named "GetAddInForAllUsers.txt"
-    $result | Out-File "$Path\GetAddInForAllUsers.txt"
-
 }
 
-function openOutPath {
-            # Tries to open the directory the output is saved in, and provides full path
-            Write-Host "`nTrying to open $Path`n" -ForegroundColor Green
-            Start-Process $Path           
-            Write-Host "Please find the output file in folder $Path`n" -ForegroundColor Green
+# Function to end the session
+function End-ExchangeSession {
+    try {
+        Disconnect-ExchangeOnline -Confirm:$false
+        Write-Host "Disconnected from Exchange Online." -ForegroundColor Green
+    } catch {
+        Write-Host "Error disconnecting session. Error: $_" -ForegroundColor Red
+    }
 }
 
-function endSession {            
-            # Disconnecting from Exchange Online
-            Disconnect-ExchangeOnline -Confirm:$false
-            Write-Host "Session Ended" -ForegroundColor Green
-            Break
-            Exit
+#Open Ouput directory
+function open-OutputDir {
+    Start "$OutputPath"
 }
 
-#Calling each function
-checkRequiredModules
-checkPath
-connectExchangeOnlineManagement
-findMailboxes
-openOutPath
-endSession
+# Main Script Execution
+Ensure-ModuleInstalled
+Ensure-DirectoryExists
+Connect-ExchangeSession
+Get-MailboxAddInVersions
+End-ExchangeSession
+open-OutputDir
+
+if ($VerboseLogging) { Stop-Transcript }
