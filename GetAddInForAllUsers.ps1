@@ -101,7 +101,7 @@ function Get-MailboxAddInVersions {
     try {
         $mailboxes = Get-Mailbox -ResultSize Unlimited | Where-Object { $_.AccountDisabled -eq $false }
         Write-Host "`nGathering information, please wait..........." -ForegroundColor Green
-        Write-Host "`nPlease Note:" -ForegroundColor Red
+        Write-Host "`nNote:" -ForegroundColor Red
         Write-Host "Some mailboxes may not list an Add-in, you should try again after the specific mailbox has logged on to 'https://outlook.office.com/'...`n" -ForegroundColor Yellow
 
         foreach ($mailbox in $mailboxes) {
@@ -111,6 +111,7 @@ function Get-MailboxAddInVersions {
                 Mailbox    = $mailbox.DisplayName
                 AppVersion = $appVersion.AppVersion
                 Enabled    = $appVersion.Enabled
+                Deployment_Method       = $appVersion.Scope
             }
         }
 
