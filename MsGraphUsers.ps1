@@ -1,4 +1,4 @@
-﻿# .SYNOPSIS
+# .SYNOPSIS
 #     Script to get and Output User data using Microsoft Graph.
 # 
 # .DESCRIPTION

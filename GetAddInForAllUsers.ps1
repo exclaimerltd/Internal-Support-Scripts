@@ -1,4 +1,4 @@
-﻿# .SYNOPSIS
+# .SYNOPSIS
 #     Script to check what version of the Exclaimer Cloud Add-in is on each mailbox.
 # 
 # .DESCRIPTION

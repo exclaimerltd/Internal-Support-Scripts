@@ -1,4 +1,4 @@
-﻿## 
+## 
 #<#
 #.SYNOPSIS
 #    Reconfigure Third-Paty outbound connector (Mimecast, Proofpoint, Barracuda, or other) to be managed by a Transport Rule
