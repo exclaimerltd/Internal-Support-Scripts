@@ -1,4 +1,4 @@
-﻿# ﻿<#
+# ﻿<#
 # .SYNOPSIS
 #     Gathers diagnostics and configuration data relevant to Exclaimer Add-In and signature deployment across Outlook clients.
 #
@@ -33,7 +33,7 @@
 # .INSTRUCTIONS
 #     1. Open PowerShell (Administrator if possible)
 #     2. Set execution policy, e.g. `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
-#     3. Navigate to script folder, e.g. `cd $env:USERPROFILE\Downloads`
+#     3. Navigate to the script folder, e.g. `cd c:\temp`
 #     4. Execute: `.\AddInChecks.ps1`
 # >
 #  
@@ -78,6 +78,7 @@ $DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:mm 'UTC' K"
     <title>Exclaimer Diagnostics Report</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f9f9f9; color: #333; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
         h1 { color: #003366; }
         h2 { color: #2a52be; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 30px; }
         .section { margin-bottom: 30px; }
@@ -92,6 +93,7 @@ $DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:mm 'UTC' K"
     </style>
 </head>
 <body>
+<div class="container">
 <h1>Exclaimer Diagnostics Script Report</h1>
 <p><strong>Run Date:</strong> $DateTimeRun</p>
 "@ | Set-Content -Path $FullLogFilePath -Encoding UTF8
@@ -112,31 +114,114 @@ $ProdID = "efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
 $PreviewID = "a8d42ca1-6f1f-43b5-84e1-9ff40e967ccc"
 
 
-# -------------------------------
-# Prompt for user email and get domain-based cloud geolocation info
-# -------------------------------
-function getRegion {
-    # Loop until a valid email is provided
-    while ($true) {
-        $email = Read-Host -Prompt "Enter the affected user's email address"
-        $email = $email.ToLower().Trim()
+function Get-ExclaimerUserInput {
+    [CmdletBinding()]
+    param ()
 
-        # Validate basic email format (simple regex)
-        if ($email -match '^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,4}$') {
-            Write-Host "`nEmail address entered: $email" -ForegroundColor Green
-            Add-Content $FullLogFilePath "<div class='section'><h2>🌐 Domain Name Checks</h2><p><strong>Email address:</strong> $email</p></div>"
-            break  # exit loop once valid
-        } else {
-            Write-Host "Invalid email format. Please try again." -ForegroundColor Red
-            #Add-Content $FullLogFilePath "<p class='fail'>❌ Invalid email format entered: $email, please try again</p>"
+    do {
+        $userInput = [PSCustomObject]@{
+            Purpose         = $null
+            Email           = $null
+            UsersAffected   = $null
+            OutlookAffected = $null
+            Network         = $null
         }
+
+        # Get email address with validation loop
+        while ($true) {
+            $email = Read-Host "`nEnter the email address"
+            if ($email -match '^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,4}$') {
+                $userInput.Email = $email
+                break
+            } else {
+                Write-Host "Invalid email format. Please try again." -ForegroundColor Red
+            }
+        }
+
+        # Ask for purpose
+        do {
+            Clear-Host
+            Write-Host "`nAre you troubleshooting an issue, or reviewing your configuration?" -ForegroundColor Cyan
+            Write-Host "`nChoose an option:"
+            Write-Host "1 - Troubleshooting"
+            Write-Host "2 - Configuration Overview"
+            $purpose = Read-Host "`nEnter your choice (1 or 2)"
+        } while ($purpose -notmatch '^[12]$')
+
+        $userInput.Purpose = if ($purpose -eq '1') { 'Troubleshooting' } else { 'Configuration Overview' }
+
+        if ($userInput.Purpose -eq 'Troubleshooting') {
+
+            # Number of users affected
+            do {
+                Clear-Host
+                Write-Host "`nHow many users are affected?" -ForegroundColor Cyan
+                Write-Host "`nChoose an option:"
+                Write-Host "1 - All users"
+                Write-Host "2 - Enter a number"
+                $userCountOption = Read-Host "`nEnter your choice (1 or 2)"
+            } while ($userCountOption -notmatch '^[12]$')
+
+            if ($userCountOption -eq '1') {
+                $userInput.UsersAffected = 'All'
+            } else {
+                do {
+                    $userCount = Read-Host "Enter the approximate number of users affected"
+                } while ($userCount -notmatch '^\d+$')
+                $userInput.UsersAffected = $userCount
+            }
+
+            # Affected Outlook versions
+            $userInput.OutlookAffected = Read-Host "`nWhich Outlook version(s) are affected? (e.g., Desktop, Web, Mobile)"
+
+            # Network information
+            $userInput.Network = Read-Host "`nIs this issue seen on Internal network, External, or Both?"
+        }
+
+        # --- Write formatted HTML summary section ---
+        Add-Content $FullLogFilePath "<div class='section'>"
+        Add-Content $FullLogFilePath "<h2>🧾 User Input Summary</h2>"
+        Add-Content $FullLogFilePath "<table>"
+        Add-Content $FullLogFilePath "<tr><td><strong>Purpose:</strong></td><td>$($userInput.Purpose)</td></tr>"
+        Add-Content $FullLogFilePath "<tr><td><strong>Email:</strong></td><td>$($userInput.Email)</td></tr>"
+
+        if ($userInput.Purpose -eq 'Troubleshooting') {
+            Add-Content $FullLogFilePath "<tr><td><strong>Users Affected:</strong></td><td>$($userInput.UsersAffected)</td></tr>"
+            Add-Content $FullLogFilePath "<tr><td><strong>Outlook Affected:</strong></td><td>$($userInput.OutlookAffected)</td></tr>"
+            Add-Content $FullLogFilePath "<tr><td><strong>Network Scope:</strong></td><td>$($userInput.Network)</td></tr>"
+        }
+
+        Add-Content $FullLogFilePath "</table></div>"
+
+        return $userInput
+
+    } while ($false)
+}
+
+function Get-Region {
+    param (
+        [PSCustomObject]$userInput
+    )
+
+    # Define log file path (adjust as needed)
+
+    $email = $userInput.Email.ToLower().Trim()
+
+    # Validate email format (extra check just in case)
+    if ($email -match '^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,4}$') {
+        Write-Host "`nEmail address entered: $email" -ForegroundColor Green
+        Add-Content $FullLogFilePath "<div class='section'><h2>🌐 Domain Name Checks</h2><p><strong>Email address:</strong> $email</p></div>"
+    }
+    else {
+        Write-Host "Invalid email format detected. This should not happen because of prior validation." -ForegroundColor Red
+        return
     }
 
-    # Extract domain from email
+    # Extract domain
     $domain = $email.Split("@")[1]
 
     # Host to test connectivity
-    $hostToTest = "outlookclient.exclaimer.net"  # Make sure this is correct
+    $hostToTest = "outlookclient.exclaimer.net"
 
     Write-Host "`nChecking connectivity to $hostToTest..." -ForegroundColor Cyan
     Add-Content $FullLogFilePath "<p>Checking connectivity to <strong>$hostToTest</strong>...</p>"
@@ -147,11 +232,10 @@ function getRegion {
     if (-not $connectionTest) {
         Write-Host "Unable to connect to $hostToTest on port 443. Please check network connectivity." -ForegroundColor Red
         Add-Content $FullLogFilePath "<p class='fail'>❌ Unable to connect to $hostToTest on port 443.</p>"
-        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ Check your Internet connection, your network could also be blocking the connection `
-         (<a href='https://support.exclaimer.com/hc/en-gb/articles/7317900965149-Ports-and-URLs-used-by-the-Exclaimer-Outlook-Add-In' target='_blank'>see article</a>).</p>"
-        # Fallback: set endpoint to hostToTest and stop further processing
-        $OutlookSignaturesEndpoint = $hostToTest
-        $global:OutlookSignaturesEndpoint = $OutlookSignaturesEndpoint
+        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ Check your Internet connection or network blocking (` +
+            `<a href='https://support.exclaimer.com/hc/en-gb/articles/7317900965149-Ports-and-URLs-used-by-the-Exclaimer-Outlook-Add-In' target='_blank'>see article</a>).</p>"
+
+        $global:OutlookSignaturesEndpoint = $hostToTest
         return
     }
 
@@ -161,11 +245,9 @@ function getRegion {
     Write-Host "Proceeding to fetch data for domain: '$domain'" -ForegroundColor Yellow
     Add-Content $FullLogFilePath "<p>Fetching cloud geolocation data for domain: <strong>$domain</strong></p>"
 
-    # Construct URL
     $url = "https://$hostToTest/cloudgeolocation/$domain"
 
     try {
-        # Get JSON content
         $response = Invoke-RestMethod -Uri $url -Method Get -ErrorAction Stop
 
         if ($response.PSObject.Properties.Name -contains 'OutlookSignaturesEndpoint' -and
@@ -173,55 +255,43 @@ function getRegion {
 
             $endpoint = $response.OutlookSignaturesEndpoint
 
-            # Clean up URL
-            if ($endpoint.StartsWith("https://")) {
-                $endpoint = $endpoint.Substring(8)
-            }
-            if ($endpoint.EndsWith("/")) {
-                $endpoint = $endpoint.TrimEnd('/')
-            }
+            # Clean endpoint URL
+            if ($endpoint.StartsWith("https://")) { $endpoint = $endpoint.Substring(8) }
+            if ($endpoint.EndsWith("/")) { $endpoint = $endpoint.TrimEnd('/') }
 
             if (-not [string]::IsNullOrEmpty($endpoint)) {
-                $OutlookSignaturesEndpoint = $endpoint
-
-                Write-Host "`nOutlookSignaturesEndpoint found: '$OutlookSignaturesEndpoint'" -ForegroundColor Green
-                Add-Content $FullLogFilePath "<p class='pass'>✅ OutlookSignaturesEndpoint found: <strong>$OutlookSignaturesEndpoint</strong></p>"
+                $global:OutlookSignaturesEndpoint = $endpoint
+                Write-Host "`nOutlookSignaturesEndpoint found: '$endpoint'" -ForegroundColor Green
+                Add-Content $FullLogFilePath "<p class='pass'>✅ OutlookSignaturesEndpoint found: <strong>$endpoint</strong></p>"
             }
             else {
                 Write-Host "'OutlookSignaturesEndpoint' is empty after cleanup." -ForegroundColor Yellow
                 Add-Content $FullLogFilePath "<p class='warn'>⚠️ 'OutlookSignaturesEndpoint' is empty after cleanup.</p>"
-                Add-Content $FullLogFilePath "<p class='warn'>This may happen if your Exclaimer subscription is not synced with your your Microsoft 365 tenant.</p>"
-                # Fallback if empty
-                $OutlookSignaturesEndpoint = $hostToTest
+                Add-Content $FullLogFilePath "<p class='warn'>This may happen if your Exclaimer subscription is not synced with your Microsoft 365 tenant.</p>"
+                $global:OutlookSignaturesEndpoint = $hostToTest
             }
         }
         else {
-            Write-Host "'OutlookSignaturesEndpoint' not found in the response." -ForegroundColor Yellow
-            Add-Content $FullLogFilePath "<p class='warn'>⚠️ 'OutlookSignaturesEndpoint' not found in the response.</p>"
-            # Fallback if not found
-            $OutlookSignaturesEndpoint = $hostToTest
+            Write-Host "'OutlookSignaturesEndpoint' not found in response." -ForegroundColor Yellow
+            Add-Content $FullLogFilePath "<p class='warn'>⚠️ 'OutlookSignaturesEndpoint' not found in response.</p>"
+            $global:OutlookSignaturesEndpoint = $hostToTest
         }
-
-    } catch {
-        Write-Host "No data found for domain '$domain'" -ForegroundColor Red
-        Add-Content $FullLogFilePath "<p class='fail'>❌ No data found for domain '$domain'.</p>"
-        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ This may happen if your Exclaimer subscription is not synced with your Microsoft 365 tenant `
-         (<a href='https://support.exclaimer.com/hc/en-gb/articles/6389214769565-Synchronize-user-data' target='_blank'>see article</a>).</p>"
-        # Fallback on error
-        $OutlookSignaturesEndpoint = $hostToTest
     }
-
-    # Set the global variable for caller use
-    $global:OutlookSignaturesEndpoint = $OutlookSignaturesEndpoint
+    catch {
+        Write-Host "No data found for domain '$domain'." -ForegroundColor Red
+        Add-Content $FullLogFilePath "<p class='fail'>❌ No data found for domain '$domain'.</p>"
+        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ This may happen if your Exclaimer subscription is not synced with your Microsoft 365 tenant (` +
+            `<a href='https://support.exclaimer.com/hc/en-gb/articles/6389214769565-Synchronize-user-data' target='_blank'>see article</a>).</p>"
+        $global:OutlookSignaturesEndpoint = $hostToTest
+    }
 }
 
-
-
+# --- Script execution ---
 
 # -------------------------------
 # Endpoint Connectivity Tests
 # -------------------------------
-function checkEndpoints {
+function CheckEndpoints {
     Write-Host "`n========== Endpoint Connectivity Tests ==========" -ForegroundColor Cyan
     Add-Content $FullLogFilePath "<div class='section'>"
     Add-Content $FullLogFilePath "<h2>📡 Endpoint Connectivity Tests</h2>"
@@ -279,11 +349,29 @@ function checkEndpoints {
 }
 
 
+$userData = Get-ExclaimerUserInput
+Get-Region -userInput $userData
+CheckEndpoints
 
-getRegion
-checkEndpoints
+    # -------------------------------
+    # Getting Windows version
+    # -------------------------------
 
-function Inspect-OutlookConfiguration {
+
+
+function Get-WindowsVersion {
+    Write-Host "`n========== Microsoft Windows Version ==========" -ForegroundColor Cyan
+    Add-Content $FullLogFilePath "<div class='section'>"
+    Add-Content $FullLogFilePath "<h2>💻 Microsoft Windows Version</h2>"
+    $os = Get-CimInstance -ClassName Win32_OperatingSystem
+    $version = $os.Version
+    $caption = $os.Caption
+    Write-Host "Windows Version: $caption ($version)"
+    Add-Content $FullLogFilePath "<p>Windows Version: <strong>$caption ($version)</strong></p>"
+}
+Get-WindowsVersion
+
+function InspectOutlookConfiguration {
     # -------------------------------
     # Local Function Scope Variables
     # -------------------------------
@@ -302,6 +390,14 @@ function Inspect-OutlookConfiguration {
         "HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration",
         "HKLM:\SOFTWARE\Microsoft\Office\16.0\Common\ProductVersion"
     )
+
+    # Compatibility Requirements Table
+    # https://support.exclaimer.com/hc/en-gb/articles/4406058988945
+    $minimumSupportedBuilds = @{
+        "Subscription (Microsoft 365)"        = "18025.20000"
+        "Retail (Perpetual or Subscription)"  = "18429.20132"
+        "Volume Licensed (Perpetual)"         = "17932.20222"
+    }
 
     # -------------------------------
     # Nested Functions
@@ -382,7 +478,7 @@ function Inspect-OutlookConfiguration {
         return Get-AppxPackage -Name Microsoft.OutlookForWindows -ErrorAction SilentlyContinue
     }
 
-    function Is-NewOutlookAppInstalled {
+    function IsNewOutlookAppInstalled {
         return [bool](Get-NewOutlookPackage)
     }
 
@@ -392,7 +488,7 @@ function Inspect-OutlookConfiguration {
         return $null
     }
 
-    function Is-NewOutlookEnabled {
+    function IsNewOutlookEnabled {
         $registryPaths = @(
             "HKCU:\Software\Microsoft\Office\Outlook\Settings",
             "HKCU:\Software\Microsoft\Office\Outlook\Profiles",
@@ -419,7 +515,7 @@ function Inspect-OutlookConfiguration {
         return $false
     }
 
-    function Is-ClassicOutlookInstalled {
+    function IsClassicOutlookInstalled {
         $classicPaths = @(
             "${env:ProgramFiles}\Microsoft Office\root\Office16\Outlook.exe",
             "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16\Outlook.exe"
@@ -443,9 +539,9 @@ function Inspect-OutlookConfiguration {
     Add-Content $FullLogFilePath "<div class='section'>"
     Add-Content $FullLogFilePath "<h2>✉️ Mail Client Checks</h2>"
 
-    $classicInstalled     = Is-ClassicOutlookInstalled
-    $newOutlookInstalled  = Is-NewOutlookAppInstalled
-    $newOutlookEnabled    = Is-NewOutlookEnabled
+    $classicInstalled     = IsClassicOutlookInstalled
+    $newOutlookInstalled  = IsNewOutlookAppInstalled
+    $newOutlookEnabled    = IsNewOutlookEnabled
 
     $installedSummary = "<ul>"
     if ($classicInstalled -and $newOutlookInstalled) {
@@ -513,13 +609,6 @@ function Inspect-OutlookConfiguration {
         $licenseType = Get-OfficeLicenseType
         Write-Host "License Type: $licenseType"
 
-        # Compatibility Requirements Table
-        # https://support.exclaimer.com/hc/en-gb/articles/4406058988945
-        $minimumSupportedBuilds = @{
-            "Subscription (Microsoft 365)"        = "18025.20000"
-            "Retail (Perpetual or Subscription)"  = "18429.20132"
-            "Volume Licensed (Perpetual)"         = "17932.20222"
-        }
 
         # Build Comparison Helper
         function Compare-Build {
@@ -631,15 +720,15 @@ if ($classicInstalled) {
 
             } else {
                 Write-Host "`nNo .htm signature files found in $signaturePath" -ForegroundColor DarkGray
-                Add-Content $FullLogFilePath "<p class='warning'>No .htm signature files found in $signaturePath</p>"
+                Add-Content $FullLogFilePath "<p>✅ No local signature files found in $signaturePath</p>"
             }
         }
 
     }
-    Add-Content $FullLogFilePath "</div>"
+    
 }
 
-Inspect-OutlookConfiguration
+InspectOutlookConfiguration
 
 
 
@@ -695,10 +784,10 @@ if ($foundApps.Count -gt 0) {
     Add-Content $FullLogFilePath "</table>"
 } else {
     Write-Host "The Exclaimer Cloud Signature Update Agent is not installed." -ForegroundColor Yellow
-    Add-Content $FullLogFilePath "<p class='warning'>The Exclaimer Cloud Signature Update Agent is not installed.</p>"
+    Add-Content $FullLogFilePath "<p>✅ The Exclaimer Cloud Signature Update Agent is not installed.</p>"
 }
 
-
+Add-Content $FullLogFilePath "</div>"
 
 # Define registry paths for 64-bit and 32-bit uninstall keys
 $registryPaths = @(
@@ -757,13 +846,13 @@ Write-Host "=========================================`n"
 Add-Content -Path $FullLogFilePath -Value @"
 <div class='section'>
   <h2>📄 Output Log Location</h2>
-  <p class='info'>This report has been saved to:<br><code>$FullLogFilePath</code></p>
+  <p>This report has been saved to:<br><code>$FullLogFilePath</code></p>
 </div>
 "@
 
 # Client-Side
 # Try get "Connected Experience" on/off (not possible for user on/off, only if managed policy which is very uncommonly used)
-# Get WebView version
+
 
 
 # EXO
@@ -776,6 +865,7 @@ Add-Content -Path $FullLogFilePath -Value @"
 
 
 @"
+</div>
 </body>
 </html>
 "@ | Add-Content -Path $FullLogFilePath -Encoding UTF8
