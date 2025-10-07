@@ -113,12 +113,12 @@ $DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:MM 'UTC' K"
 $ProdID = "efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
 $PreviewID = "a8d42ca1-6f1f-43b5-84e1-9ff40e967ccc"
 
-
 function Get-ExclaimerUserInput {
     [CmdletBinding()]
     param ()
 
-    do {
+    while ($true) {
+        # Initialize object
         $userInput = [PSCustomObject]@{
             Purpose         = $null
             Email           = $null
@@ -127,75 +127,128 @@ function Get-ExclaimerUserInput {
             Network         = $null
         }
 
-        # Get email address with validation loop
+        # --- 1) Email (validated) ---
         while ($true) {
-            $email = Read-Host "`nEnter the email address"
-            if ($email -match '^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,4}$') {
-                $userInput.Email = $email
+            $email = Read-Host "`nEnter the user's email address (e.g. user@company.com)"
+            if ($email -match '^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,}$') {
+                $userInput.Email = $email.Trim()
                 break
             } else {
-                Write-Host "Invalid email format. Please try again." -ForegroundColor Red
+                Write-Host "Invalid email format. Try again." -ForegroundColor Red
             }
         }
 
-        # Ask for purpose
+        # --- 2) Purpose ---
         do {
             Clear-Host
-            Write-Host "`nAre you troubleshooting an issue, or reviewing your configuration?" -ForegroundColor Cyan
-            Write-Host "`nChoose an option:"
-            Write-Host "1 - Troubleshooting"
-            Write-Host "2 - Configuration Overview"
-            $purpose = Read-Host "`nEnter your choice (1 or 2)"
-        } while ($purpose -notmatch '^[12]$')
+            Write-Host "`nWhat would you like to do?" -ForegroundColor Cyan
+            Write-Host "  1) Troubleshoot an issue"
+            Write-Host "  2) Review configuration overview"
+            $choice = Read-Host "`nEnter choice (1 or 2)"
+        } while ($choice -notmatch '^[12]$')
 
-        $userInput.Purpose = if ($purpose -eq '1') { 'Troubleshooting' } else { 'Configuration Overview' }
+        $userInput.Purpose = if ($choice -eq '1') { 'Troubleshooting' } else { 'Configuration Overview' }
 
+        # --- 3) If troubleshooting, ask follow-ups ---
         if ($userInput.Purpose -eq 'Troubleshooting') {
-
-            # Number of users affected
+            # Users affected
             do {
                 Clear-Host
                 Write-Host "`nHow many users are affected?" -ForegroundColor Cyan
-                Write-Host "`nChoose an option:"
-                Write-Host "1 - All users"
-                Write-Host "2 - Enter a number"
-                $userCountOption = Read-Host "`nEnter your choice (1 or 2)"
-            } while ($userCountOption -notmatch '^[12]$')
+                Write-Host "  1) All users"
+                Write-Host "  2) Specify number"
+                $uc = Read-Host "`nEnter choice (1 or 2)"
+            } while ($uc -notmatch '^[12]$')
 
-            if ($userCountOption -eq '1') {
-                $userInput.UsersAffected = 'All'
+            if ($uc -eq '1') {
+                $userInput.UsersAffected = 'All Users'
             } else {
                 do {
-                    $userCount = Read-Host "Enter the approximate number of users affected"
-                } while ($userCount -notmatch '^\d+$')
-                $userInput.UsersAffected = $userCount
+                    $num = Read-Host "Enter the approximate number of affected users (digits only)"
+                } while ($num -notmatch '^\d+$')
+                $userInput.UsersAffected = [int]$num
             }
 
-            # Affected Outlook versions
-            $userInput.OutlookAffected = Read-Host "`nWhich Outlook version(s) are affected? (e.g., Desktop, Web, Mobile)"
+            # Outlook versions
+            do {
+                Clear-Host
+                Write-Host "`nWhich Outlook version(s) are affected?" -ForegroundColor Cyan
+                Write-Host "  1) Outlook Desktop"
+                Write-Host "  2) Outlook Web"
+                Write-Host "  3) Outlook Mobile"
+                Write-Host "  4) Multiple / All"
+                $oChoice = Read-Host "`nEnter choice (1-4)"
+            } while ($oChoice -notmatch '^[1-4]$')
 
-            # Network information
-            $userInput.Network = Read-Host "`nIs this issue seen on Internal network, External, or Both?"
+            switch ($oChoice) {
+                1 { $userInput.OutlookAffected = 'Outlook Desktop' }
+                2 { $userInput.OutlookAffected = 'Outlook Web' }
+                3 { $userInput.OutlookAffected = 'Outlook Mobile' }
+                4 { $userInput.OutlookAffected = 'Multiple / All' }
+            }
+
+            # Network scope
+            do {
+                Clear-Host
+                Write-Host "`nWhere does the issue occur?" -ForegroundColor Cyan
+                Write-Host "  1) Internal network only"
+                Write-Host "  2) External network only"
+                Write-Host "  3) Both internal and external"
+                $nChoice = Read-Host "`nEnter choice (1-3)"
+            } while ($nChoice -notmatch '^[1-3]$')
+
+            switch ($nChoice) {
+                1 { $userInput.Network = 'Internal Only' }
+                2 { $userInput.Network = 'External Only' }
+                3 { $userInput.Network = 'Both Networks' }
+            }
         }
 
-        # --- Write formatted HTML summary section ---
-        Add-Content $FullLogFilePath "<div class='section'>"
-        Add-Content $FullLogFilePath "<h2>🧾 User Input Summary</h2>"
-        Add-Content $FullLogFilePath "<table>"
-        Add-Content $FullLogFilePath "<tr><td><strong>Purpose:</strong></td><td>$($userInput.Purpose)</td></tr>"
-        Add-Content $FullLogFilePath "<tr><td><strong>Email:</strong></td><td>$($userInput.Email)</td></tr>"
+        # --- 4) Show console summary ---
+        Clear-Host
+        Write-Host ""
+        Write-Host "========================================" -ForegroundColor DarkGray
+        Write-Host "            Summary captured" -ForegroundColor Green
+        Write-Host "========================================" -ForegroundColor DarkGray
+
+        Write-Host ("Purpose:          {0}" -f $userInput.Purpose) -ForegroundColor Cyan
+        Write-Host ("Email:            {0}" -f $userInput.Email) -ForegroundColor Yellow
 
         if ($userInput.Purpose -eq 'Troubleshooting') {
-            Add-Content $FullLogFilePath "<tr><td><strong>Users Affected:</strong></td><td>$($userInput.UsersAffected)</td></tr>"
-            Add-Content $FullLogFilePath "<tr><td><strong>Outlook Affected:</strong></td><td>$($userInput.OutlookAffected)</td></tr>"
-            Add-Content $FullLogFilePath "<tr><td><strong>Network Scope:</strong></td><td>$($userInput.Network)</td></tr>"
+            Write-Host ("Users Affected:   {0}" -f $userInput.UsersAffected) -ForegroundColor White
+            Write-Host ("Outlook Affected: {0}" -f $userInput.OutlookAffected) -ForegroundColor White
+            Write-Host ("Network Scope:    {0}" -f $userInput.Network) -ForegroundColor White
         }
 
-        Add-Content $FullLogFilePath "</table></div>"
+        Write-Host ""
+        do {
+            $confirm = Read-Host "Is the information correct? (Y/N) [Y]"
+            if ([string]::IsNullOrWhiteSpace($confirm)) { $confirm = 'Y' }
+            $confirm = $confirm.Substring(0,1).ToUpper()
+        } while ($confirm -notin @('Y','N'))
 
-        return $userInput
+        if ($confirm -eq 'Y') {
+            # ✅ Write to HTML log *only once, after confirmation*
+            Add-Content $FullLogFilePath "<div class='section'>"
+            Add-Content $FullLogFilePath "<h2>🧾 User Input Summary</h2>"
+            Add-Content $FullLogFilePath "<table>"
+            Add-Content $FullLogFilePath "<tr><td><strong>Purpose:</strong></td><td>$($userInput.Purpose)</td></tr>"
+            Add-Content $FullLogFilePath "<tr><td><strong>Email:</strong></td><td>$($userInput.Email)</td></tr>"
 
-    } while ($false)
+            if ($userInput.Purpose -eq 'Troubleshooting') {
+                Add-Content $FullLogFilePath "<tr><td><strong>Users Affected:</strong></td><td>$($userInput.UsersAffected)</td></tr>"
+                Add-Content $FullLogFilePath "<tr><td><strong>Outlook Affected:</strong></td><td>$($userInput.OutlookAffected)</td></tr>"
+                Add-Content $FullLogFilePath "<tr><td><strong>Network Scope:</strong></td><td>$($userInput.Network)</td></tr>"
+            }
+
+            Add-Content $FullLogFilePath "</table></div>"
+            return $userInput
+        } else {
+            Write-Host "`nLet's try again..." -ForegroundColor Yellow
+            Start-Sleep -Seconds 1
+            Clear-Host
+        }
+    }
 }
 
 function Get-Region {
