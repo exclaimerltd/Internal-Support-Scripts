@@ -75,7 +75,7 @@ $DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:mm 'UTC' K"
 <html>
 <head>
     <meta charset='UTF-8'>
-    <title>Exclaimer Diagnostics Report</title>
+    <title>Exclaimer Diagnostics Report - Client-Side</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f9f9f9; color: #333; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; }
@@ -94,7 +94,7 @@ $DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:mm 'UTC' K"
 </head>
 <body>
 <div class="container">
-<h1>Exclaimer Diagnostics Script Report</h1>
+<h1>Exclaimer Diagnostics Report - Client-Side</h1>
 <p><strong>Run Date:</strong> $DateTimeRun</p>
 "@ | Set-Content -Path $FullLogFilePath -Encoding UTF8
 
@@ -422,7 +422,7 @@ function Get-WindowsVersion {
 }
 Get-WindowsVersion
 
-function Inspect-OutlookConfiguration {
+function InspectOutlookConfiguration {
     # -------------------------------
     # Local Function Scope Variables
     # -------------------------------
@@ -779,9 +779,7 @@ if ($classicInstalled) {
     
 }
 
-Inspect-OutlookConfiguration
-
-
+InspectOutlookConfiguration
 
 # Define registry paths to search
 $registryPaths = @(
@@ -890,20 +888,245 @@ if ($webviewApps.Count -gt 0) {
 }
 
 
-Write-Host "`n========================================="
-Write-Host "  Script completed successfully." -ForegroundColor Green
-Write-Host "  Log file location:'$FullLogFilePath'"
-Write-Host "=========================================`n"
-
-Add-Content -Path $FullLogFilePath -Value @"
-<div class='section'>
-  <h2>📄 Output Log Location</h2>
-  <p>This report has been saved to:<br><code>$FullLogFilePath</code></p>
-</div>
-"@
-
 # Client-Side
 # Try get "Connected Experience" on/off (not possible for user on/off, only if managed policy which is very uncommonly used)
+
+# -------------------------------------------------------------------
+# 📨 EXCLAIMER ADD-IN DETAILS COLLECTION (User or Admin)
+# -------------------------------------------------------------------
+
+Write-Host ""
+Write-Host "=== Exclaimer Add-in Information ===" -ForegroundColor Cyan
+Write-Host ""
+
+# --- Step: Check if user is Global Admin ---
+$adminChoice = Read-Host "Are you a Microsoft 365 Global Admin, or do you have an Admin available to assist with the next part? (Y/N)"
+
+if ($adminChoice.ToUpper() -eq "N") {
+    Write-Host ""
+    Write-Host "🧭 No problem — let's capture the Add-in version manually." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Please follow these steps:" -ForegroundColor Cyan
+    Write-Host "  1) Open Outlook."
+    Write-Host "  2) Start a new email message."
+    Write-Host "  3) Click the 'Exclaimer' Add-in icon in the toolbar."
+    Write-Host "  4) Look at the bottom of the Add-in pane — you’ll see the version number."
+    Write-Host ""
+    $addInVersion = Read-Host "Enter the version number displayed (e.g. 2.3.45)"
+    Write-Host "`n✅ Thank you — version recorded as: $addInVersion" -ForegroundColor Green
+
+    # --- HTML Logging (safe) ---
+    Add-Content $FullLogFilePath '<h3>Exclaimer Add-in Information (Manual)</h3>'
+    Add-Content $FullLogFilePath ('<p>User-provided Add-in version: <strong>{0}</strong></p>' -f [System.Web.HttpUtility]::HtmlEncode($addInVersion))
+}
+else {
+    Write-Host "`n🔐 Checking for Exchange Online module..." -ForegroundColor Cyan
+
+    # --- Function: Check for Exchange Online Module ---
+    function CheckExchangeOnlineModule {
+        if (Get-Module -ListAvailable -Name ExchangeOnlineManagement) {
+            Write-Host "✅ Exchange Online Management module is already installed." -ForegroundColor Green
+            return $true
+        } else {
+            Write-Host "⚙️  Exchange Online Management module not found." -ForegroundColor Yellow
+            Write-Host ""
+            Write-Host "ℹ️  The installation requires the NuGet provider and PowerShell Gallery access." -ForegroundColor Cyan
+            Write-Host "    You may see prompts asking to install NuGet or trust the PowerShell Gallery — please answer 'Y' when prompted." -ForegroundColor Cyan
+            Write-Host ""
+
+            $installChoice = Read-Host "Would you like to install it now? (Y/N)"
+            if ($installChoice.ToUpper() -eq "Y") {
+                try {
+                    Write-Host "`n📦 Preparing to install prerequisites..." -ForegroundColor Cyan
+
+                    # --- Ensure NuGet provider is installed ---
+                    if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+                        Write-Host "🔧 Installing NuGet provider..." -ForegroundColor Cyan
+                        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false | Out-Null
+                    }
+
+                    # --- Ensure PowerShell Gallery is trusted ---
+                    $galleryTrusted = (Get-PSRepository -Name 'PSGallery' -ErrorAction SilentlyContinue).InstallationPolicy
+                    if ($galleryTrusted -ne 'Trusted') {
+                        Write-Host "🔒 Trusting PowerShell Gallery repository..." -ForegroundColor Cyan
+                        Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+                    }
+
+                    # --- Install the Exchange Online module ---
+                    Write-Host "📦 Installing Exchange Online Management module..." -ForegroundColor Cyan
+                    Install-Module ExchangeOnlineManagement -Force -Scope CurrentUser -AllowClobber
+
+                    Write-Host "✅ Installation completed successfully!" -ForegroundColor Green
+                    return $true
+
+                } catch {
+                    Write-Host "❌ Failed to install the module: $($_.Exception.Message)" -ForegroundColor Red
+                    Add-Content $FullLogFilePath "<p class='warning'>Exchange Online Management module installation failed: $([System.Web.HttpUtility]::HtmlEncode($_.Exception.Message))</p>"
+                    return $false
+                }
+            } else {
+                Write-Host "⚠️ Skipping module installation. Admin access required for automated mailbox queries." -ForegroundColor Yellow
+                Add-Content $FullLogFilePath "<p class='warning'>User skipped Exchange Online module installation. Manual Add-in version collection required.</p>"
+                return $false
+            }
+        }
+    }
+
+    # --- Function: Connect to Exchange Online ---
+    function ConnectExchangeOnlineSession {
+        try {
+            Write-Host "`n🔗 Connecting to Exchange Online..." -ForegroundColor Cyan
+            Connect-ExchangeOnline -ErrorAction Stop
+            Write-Host "✅ Connected successfully!" -ForegroundColor Green
+            return $true
+        } catch {
+            Write-Host "❌ Connection failed: $($_.Exception.Message)" -ForegroundColor Red
+            return $false
+        }
+    }
+
+    # --- Proceed only if module available ---
+    if (CheckExchangeOnlineModule) {
+        if (ConnectExchangeOnlineSession) {
+            Write-Host "`n🎯 Querying Exclaimer Add-in deployment..." -ForegroundColor Cyan
+
+            $user = $userInput.Email
+            $ProdResult = $null
+            $PreviewResult = $null
+
+            try {
+                $ProdResult = Get-App -Identity "$user\$ProdID" -ErrorAction SilentlyContinue |
+                    Select-Object DisplayName, Enabled, AppVersion, Scope, Type
+            } catch {}
+
+            try {
+                $PreviewResult = Get-App -Identity "$user\$PreviewID" -ErrorAction SilentlyContinue |
+                    Select-Object DisplayName, Enabled, AppVersion, Scope, Type
+            } catch {}
+
+            if ($ProdResult -or $PreviewResult) {
+                Write-Host "`n✅ Exclaimer Add-in found:" -ForegroundColor Green
+
+                if ($ProdResult) {
+                    Write-Host "`n--- Production Add-in ---" -ForegroundColor Cyan
+                    $ProdResult | Format-Table -AutoSize
+                }
+                if ($PreviewResult) {
+                    Write-Host "`n--- Preview Add-in ---" -ForegroundColor Cyan
+                    $PreviewResult | Format-Table -AutoSize
+                }
+
+                # --- HTML Logging (safe formatting) ---
+                Add-Content $FullLogFilePath '<h3>Exclaimer Add-in Information (Admin)</h3>'
+                Add-Content $FullLogFilePath '<table><tr><th>Type</th><th>Display Name</th><th>Version</th><th>Enabled</th><th>Scope</th></tr>'
+
+                if ($ProdResult) {
+                    Add-Content $FullLogFilePath ('<tr><td>Production</td><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>' -f `
+                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.DisplayName),
+                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.AppVersion),
+                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.Enabled),
+                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.Scope))
+                }
+                if ($PreviewResult) {
+                    Add-Content $FullLogFilePath ('<tr><td>Preview</td><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>' -f `
+                        [System.Web.HttpUtility]::HtmlEncode($PreviewResult.DisplayName),
+                        [System.Web.HttpUtility]::HtmlEncode($PreviewResult.AppVersion),
+                        [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Enabled),
+                        [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Scope))
+                }
+
+                Add-Content $FullLogFilePath '</table>'
+            }
+            else {
+                Write-Host "`n⚠️ No Exclaimer Add-ins found for this user." -ForegroundColor Yellow
+                Add-Content $FullLogFilePath ('<p class="warning">No Exclaimer Add-ins found for user {0}.</p>' -f [System.Web.HttpUtility]::HtmlEncode($user))
+            }
+
+            # --- Organization-level Settings ---
+            Write-Host "`nCollecting organization configuration related to Outlook Add-ins..." -ForegroundColor Cyan
+
+            try {
+                $orgConfig = Get-OrganizationConfig | Select-Object `
+                    OAuth2ClientProfileEnabled,
+                    OutlookMobileGCCRestrictionsEnabled,
+                    AppsForOfficeEnabled,
+                    EwsApplicationAccessPolicy
+
+                Add-Content $FullLogFilePath '<div class="section">'
+                Add-Content $FullLogFilePath '<h2>Organization Configuration - Add-in Compatibility</h2>'
+                Add-Content $FullLogFilePath '<table><tr><th>Setting</th><th>Value</th><th>Impact</th></tr>'
+
+                foreach ($prop in $orgConfig.PSObject.Properties) {
+                    $name  = [System.Web.HttpUtility]::HtmlEncode($prop.Name)
+                    $rawValue = $prop.Value
+                    $value = if ($null -eq $rawValue) { 'N/A' } else { [System.Web.HttpUtility]::HtmlEncode([string]$rawValue) }
+                    $impact = ''
+
+                    switch ($prop.Name) {
+                        'OAuth2ClientProfileEnabled' {
+                            $impact = if (-not $rawValue) {
+                                '❌ Add-ins cannot authenticate properly (modern auth disabled).'
+                            } else {
+                                '✅ Required for modern add-ins.'
+                            }
+                        }
+                        'OutlookMobileGCCRestrictionsEnabled' {
+                            $impact = if ($rawValue) {
+                                '⚠️ Cloud add-ins not supported on Outlook Mobile.'
+                            } else {
+                                '✅ Mobile add-ins supported.'
+                            }
+                        }
+                        'AppsForOfficeEnabled' {
+                            $impact = if (-not $rawValue) {
+                                '❌ Add-ins disabled organization-wide.'
+                            } else {
+                                '✅ Add-ins allowed.'
+                            }
+                        }
+                        'EwsApplicationAccessPolicy' {
+                            if ([string]::IsNullOrEmpty($rawValue) -or $rawValue -eq 'EnforceNone') {
+                                $impact = '✅ No EWS restrictions detected.'
+                            } elseif ($rawValue -eq 'EnforceAllowList') {
+                                $impact = '⚠️ Only specific apps can use EWS. Verify Exclaimer is in the allow list.'
+                            } elseif ($rawValue -eq 'EnforceBlockList') {
+                                $impact = '⚠️ Some apps are blocked from EWS. Verify Exclaimer is not in the block list.'
+                            } else {
+                                $impact = "⚠️ Unrecognized policy value ($value). Review manually."
+                            }
+                        }
+                        Default {
+                            $impact = 'Review manually.'
+                        }
+                    }
+
+                    Add-Content $FullLogFilePath ("<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>" -f $name, $value, [System.Web.HttpUtility]::HtmlEncode($impact))
+                }
+
+                Add-Content $FullLogFilePath '</table></div>'
+            }
+            catch {
+                Write-Host "⚠️ Could not retrieve OrganizationConfig values." -ForegroundColor Yellow
+                Add-Content $FullLogFilePath '<div class="section">'
+                Add-Content $FullLogFilePath '<h2>Organization Configuration - Add-in Compatibility</h2>'
+                Add-Content $FullLogFilePath '<p class="warning">Unable to retrieve organization configuration. Ensure proper Exchange Online connection and permissions.</p>'
+                Add-Content $FullLogFilePath '</div>'
+            }
+
+            try {
+                # Disconnect if needed
+                #Disconnect-ExchangeOnline -Confirm:$false | Out-Null
+                #Write-Host "`n🔒 Disconnected from Exchange Online." -ForegroundColor DarkGray
+            } catch {}
+        }
+        else {
+            Add-Content $FullLogFilePath '<p class="warning">Exchange Online connection failed or cancelled by user.</p>'
+        }
+    }
+    else {
+        Add-Content $FullLogFilePath '<p class="warning">Exchange Online module not available. Manual Add-in version collection required.</p>'
+    }
+} # <-- closes main "else" for admin branch
 
 
 
@@ -915,6 +1138,17 @@ Add-Content -Path $FullLogFilePath -Value @"
 # Get-OrganizationConfig | fl *EwsApp*
 # Get-OrganizationConfig | fl *Outlook*
 
+Write-Host "`n========================================="
+Write-Host "  Script completed successfully." -ForegroundColor Green
+Write-Host "  Log file location:'$FullLogFilePath'"
+Write-Host "=========================================`n"
+
+Add-Content -Path $FullLogFilePath -Value @"
+<div class='section'>
+  <h2>📄 Output Log Location</h2>
+  <p>This report has been saved to:<br><code>$FullLogFilePath</code></p>
+</div>
+"@
 
 @"
 </div>
