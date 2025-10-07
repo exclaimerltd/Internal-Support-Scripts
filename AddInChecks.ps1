@@ -1,4 +1,4 @@
-﻿# ﻿<#
+﻿# <#
 # .SYNOPSIS
 #     Gathers diagnostics and configuration data relevant to Exclaimer Add-In and signature deployment across Outlook clients.
 #
@@ -285,8 +285,7 @@ function Get-Region {
     if (-not $connectionTest) {
         Write-Host "Unable to connect to $hostToTest on port 443. Please check network connectivity." -ForegroundColor Red
         Add-Content $FullLogFilePath "<p class='fail'>❌ Unable to connect to $hostToTest on port 443.</p>"
-        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ Check your Internet connection or network blocking (` +
-            `<a href='https://support.exclaimer.com/hc/en-gb/articles/7317900965149-Ports-and-URLs-used-by-the-Exclaimer-Outlook-Add-In' target='_blank'>see article</a>).</p>"
+        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ Check your Internet connection or network blocking (<a href='https://support.exclaimer.com/hc/en-gb/articles/7317900965149-Ports-and-URLs-used-by-the-Exclaimer-Outlook-Add-In' target='_blank'>see article</a>).</p>"
 
         $global:OutlookSignaturesEndpoint = $hostToTest
         return
@@ -394,8 +393,7 @@ function CheckEndpoints {
     # Check for any failures and append warning message
     if ($results.Status -contains "Failed") {
         Add-Content $FullLogFilePath "<p class='warning'>❗ One or more endpoints failed to respond. Please check your internet connection or firewall settings and try again.</p>"
-        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ Check your Internet connection, your network could also be blocking the connection `
-         (<a href='https://support.exclaimer.com/hc/en-gb/articles/7317900965149-Ports-and-URLs-used-by-the-Exclaimer-Outlook-Add-In' target='_blank'>see article</a>).</p>"
+        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ Check your Internet connection, your network could also be blocking the connection (<a href='https://support.exclaimer.com/hc/en-gb/articles/7317900965149-Ports-and-URLs-used-by-the-Exclaimer-Outlook-Add-In' target='_blank'>see article</a>).</p>"
     }
 
     Add-Content $FullLogFilePath "</div>"
@@ -878,9 +876,9 @@ if ($webviewApps.Count -gt 0) {
     Add-Content $FullLogFilePath "<table><tr><th>Display Name</th><th>Version</th><th>Install Type</th></tr>"
 
     foreach ($app in $webviewApps) {
-        $displayName = [System.Web.HttpUtility]::HtmlEncode($app.DisplayName)
-        $version = [System.Web.HttpUtility]::HtmlEncode($app.DisplayVersion)
-        $installType = [System.Web.HttpUtility]::HtmlEncode($app.InstallType)
+        $displayName = [System.Net.WebUtility]::HtmlEncode($app.DisplayName)
+        $version = [System.Net.WebUtility]::HtmlEncode($app.DisplayVersion)
+        $installType = [System.Net.WebUtility]::HtmlEncode($app.InstallType)
         $row = "<tr><td>$displayName</td><td>$version</td><td>$installType</td></tr>"
         Add-Content $FullLogFilePath $row
     }
@@ -890,6 +888,7 @@ if ($webviewApps.Count -gt 0) {
     Write-Host "Microsoft Edge WebView2 Runtime is not installed." -ForegroundColor Yellow
     Add-Content $FullLogFilePath "<p class='warning'>Microsoft Edge WebView2 Runtime is not installed.</p>"
 }
+
 
 Write-Host "`n========================================="
 Write-Host "  Script completed successfully." -ForegroundColor Green
