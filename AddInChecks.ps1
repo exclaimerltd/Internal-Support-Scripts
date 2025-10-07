@@ -1,4 +1,4 @@
-#<#
+﻿# ﻿<#
 # .SYNOPSIS
 #     Gathers diagnostics and configuration data relevant to Exclaimer Add-In and signature deployment across Outlook clients.
 #
@@ -33,7 +33,7 @@
 # .INSTRUCTIONS
 #     1. Open PowerShell (Administrator if possible)
 #     2. Set execution policy, e.g. `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
-#     3. Navigate to the script folder, e.g. `cd c:\temp`
+#     3. Navigate to script folder, e.g. `cd c:\temp`
 #     4. Execute: `.\AddInChecks.ps1`
 # >
 #  
@@ -232,8 +232,8 @@ function Get-Region {
     if (-not $connectionTest) {
         Write-Host "Unable to connect to $hostToTest on port 443. Please check network connectivity." -ForegroundColor Red
         Add-Content $FullLogFilePath "<p class='fail'>❌ Unable to connect to $hostToTest on port 443.</p>"
-        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ Check your Internet connection or network blocking (<a href='https://support.exclaimer.com/hc/en-gb/articles/7317900965149-Ports-and-URLs-used-by-the-Exclaimer-Outlook-Add-In' target='_blank'>see article</a>).</p>"
-        
+        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ Check your Internet connection or network blocking (` +
+            `<a href='https://support.exclaimer.com/hc/en-gb/articles/7317900965149-Ports-and-URLs-used-by-the-Exclaimer-Outlook-Add-In' target='_blank'>see article</a>).</p>"
 
         $global:OutlookSignaturesEndpoint = $hostToTest
         return
@@ -280,7 +280,8 @@ function Get-Region {
     catch {
         Write-Host "No data found for domain '$domain'." -ForegroundColor Red
         Add-Content $FullLogFilePath "<p class='fail'>❌ No data found for domain '$domain'.</p>"
-        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ This may happen if your Exclaimer subscription is not synced with your Microsoft 365 tenant (<a href='https://support.exclaimer.com/hc/en-gb/articles/6389214769565-Synchronize-user-data' target='_blank'>see article</a>).</p>"
+        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ This may happen if your Exclaimer subscription is not synced with your Microsoft 365 tenant (` +
+            `<a href='https://support.exclaimer.com/hc/en-gb/articles/6389214769565-Synchronize-user-data' target='_blank'>see article</a>).</p>"
         $global:OutlookSignaturesEndpoint = $hostToTest
     }
 }
@@ -340,7 +341,8 @@ function CheckEndpoints {
     # Check for any failures and append warning message
     if ($results.Status -contains "Failed") {
         Add-Content $FullLogFilePath "<p class='warning'>❗ One or more endpoints failed to respond. Please check your internet connection or firewall settings and try again.</p>"
-        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ Check your Internet connection, your network could also be blocking the connection (<a href='https://support.exclaimer.com/hc/en-gb/articles/7317900965149-Ports-and-URLs-used-by-the-Exclaimer-Outlook-Add-In' target='_blank'>see article</a>).</p>"
+        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ Check your Internet connection, your network could also be blocking the connection `
+         (<a href='https://support.exclaimer.com/hc/en-gb/articles/7317900965149-Ports-and-URLs-used-by-the-Exclaimer-Outlook-Add-In' target='_blank'>see article</a>).</p>"
     }
 
     Add-Content $FullLogFilePath "</div>"
@@ -369,7 +371,7 @@ function Get-WindowsVersion {
 }
 Get-WindowsVersion
 
-function InspectOutlookConfiguration {
+function Inspect-OutlookConfiguration {
     # -------------------------------
     # Local Function Scope Variables
     # -------------------------------
@@ -476,7 +478,7 @@ function InspectOutlookConfiguration {
         return Get-AppxPackage -Name Microsoft.OutlookForWindows -ErrorAction SilentlyContinue
     }
 
-    function IsNewOutlookAppInstalled {
+    function Is-NewOutlookAppInstalled {
         return [bool](Get-NewOutlookPackage)
     }
 
@@ -486,7 +488,7 @@ function InspectOutlookConfiguration {
         return $null
     }
 
-    function IsNewOutlookEnabled {
+    function Is-NewOutlookEnabled {
         $registryPaths = @(
             "HKCU:\Software\Microsoft\Office\Outlook\Settings",
             "HKCU:\Software\Microsoft\Office\Outlook\Profiles",
@@ -513,7 +515,7 @@ function InspectOutlookConfiguration {
         return $false
     }
 
-    function IsClassicOutlookInstalled {
+    function Is-ClassicOutlookInstalled {
         $classicPaths = @(
             "${env:ProgramFiles}\Microsoft Office\root\Office16\Outlook.exe",
             "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16\Outlook.exe"
@@ -537,9 +539,9 @@ function InspectOutlookConfiguration {
     Add-Content $FullLogFilePath "<div class='section'>"
     Add-Content $FullLogFilePath "<h2>✉️ Mail Client Checks</h2>"
 
-    $classicInstalled     = IsClassicOutlookInstalled
-    $newOutlookInstalled  = IsNewOutlookAppInstalled
-    $newOutlookEnabled    = IsNewOutlookEnabled
+    $classicInstalled     = Is-ClassicOutlookInstalled
+    $newOutlookInstalled  = Is-NewOutlookAppInstalled
+    $newOutlookEnabled    = Is-NewOutlookEnabled
 
     $installedSummary = "<ul>"
     if ($classicInstalled -and $newOutlookInstalled) {
@@ -726,7 +728,7 @@ if ($classicInstalled) {
     
 }
 
-InspectOutlookConfiguration
+Inspect-OutlookConfiguration
 
 
 
