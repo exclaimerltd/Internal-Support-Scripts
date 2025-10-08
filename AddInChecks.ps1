@@ -1037,24 +1037,38 @@ else {
 
                 # --- HTML Logging (safe formatting) ---
                 Add-Content $FullLogFilePath '<h3>Exclaimer Add-in Information (Admin)</h3>'
-                Add-Content $FullLogFilePath '<table><tr><th>Type</th><th>Display Name</th><th>Version</th><th>Enabled</th><th>Scope</th></tr>'
+                Add-Content $FullLogFilePath '<table><tr><th>Type</th><th>Display Name</th><th>Version</th><th>Enabled</th><th>Scope</th><th>Deployment</th></tr>'
 
                 if ($ProdResult) {
-                    Add-Content $FullLogFilePath ('<tr><td>Production</td><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>' -f `
+                    Add-Content $FullLogFilePath ('<tr><td>Production</td><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>' -f `
                         [System.Web.HttpUtility]::HtmlEncode($ProdResult.DisplayName),
                         [System.Web.HttpUtility]::HtmlEncode($ProdResult.AppVersion),
                         [System.Web.HttpUtility]::HtmlEncode($ProdResult.Enabled),
-                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.Scope))
+                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.Scope),
+                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.Type))
                 }
                 if ($PreviewResult) {
-                    Add-Content $FullLogFilePath ('<tr><td>Preview</td><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>' -f `
+                    Add-Content $FullLogFilePath ('<tr><td>Preview</td><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>' -f `
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.DisplayName),
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.AppVersion),
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Enabled),
-                        [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Scope))
+                        [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Scope),
+                        [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Type))
                 }
 
                 Add-Content $FullLogFilePath '</table>'
+
+                                # --- Add explanatory table for deployment methods ---
+                Add-Content $FullLogFilePath '<h4>Deployment Method Reference</h4>'
+                Add-Content $FullLogFilePath '<table>'
+                Add-Content $FullLogFilePath '<tr><th>Type</th><th>Deployment</th><th>Description</th></tr>'
+
+                Add-Content $FullLogFilePath '<tr><td>MarketplacePrivateCatalog</td><td>AppSource (Private/Public)</td><td>Deployed centrally by an administrator using Microsoft AppSource or Centralized Deployment. Updates managed automatically by Microsoft.</td></tr>'
+                Add-Content $FullLogFilePath '<tr><td>PrivateCatalog</td><td>Manifest (Custom XML)</td><td>Deployed manually by an admin using an uploaded manifest file. Typically used for preview or testing deployments.</td></tr>'
+                Add-Content $FullLogFilePath '<tr><td>Marketplace</td><td>User Installed</td><td>Installed directly by an individual user through Outlook "Get Add-ins" store. Managed at the user level.</td></tr>'
+
+                Add-Content $FullLogFilePath '</table>'
+
             }
             else {
                 Write-Host "`n⚠️ No Exclaimer Add-ins found for this user." -ForegroundColor Yellow
