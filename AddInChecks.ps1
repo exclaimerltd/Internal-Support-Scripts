@@ -902,7 +902,11 @@ Write-Host ""
 # --- Step: Check if user is Global Admin ---
 $adminChoice = Read-Host "Are you a Microsoft 365 Global Admin, or do you have an Admin available to assist with the next part? (Y/N)"
 
-if ($adminChoice.ToUpper() -eq "N") {
+function Capture-ManualAddInVersion {
+    param (
+        [string]$FullLogFilePath
+    )
+
     Write-Host ""
     Write-Host "🧭 No problem — let's capture the Add-in version manually." -ForegroundColor Yellow
     Write-Host ""
@@ -912,12 +916,25 @@ if ($adminChoice.ToUpper() -eq "N") {
     Write-Host "  3) Click the 'Exclaimer' Add-in icon in the toolbar."
     Write-Host "  4) Look at the bottom of the Add-in pane — you’ll see the version number."
     Write-Host ""
+
     $addInVersion = Read-Host "Enter the version number displayed (e.g. 2.3.45)"
+
+    if ([string]::IsNullOrWhiteSpace($addInVersion)) {
+        Write-Host "⚠️ No version entered. Skipping manual version logging." -ForegroundColor Yellow
+        Add-Content $FullLogFilePath '<p class="warning">No Add-in version provided by user.</p>'
+        return
+    }
+
     Write-Host "`n✅ Thank you — version recorded as: $addInVersion" -ForegroundColor Green
 
-    # --- HTML Logging (safe) ---
+    # --- HTML Logging (safe formatting) ---
     Add-Content $FullLogFilePath '<h3>Exclaimer Add-in Information (Manual)</h3>'
     Add-Content $FullLogFilePath ('<p>User-provided Add-in version: <strong>{0}</strong></p>' -f [System.Web.HttpUtility]::HtmlEncode($addInVersion))
+}
+
+
+if ($adminChoice.ToUpper() -eq "N") {
+Capture-ManualAddInVersion -FullLogFilePath $FullLogFilePath
 }
 else {
     Write-Host "`n🔐 Checking for Exchange Online module..." -ForegroundColor Cyan
@@ -976,6 +993,8 @@ else {
     function ConnectExchangeOnlineSession {
         try {
             Write-Host "`n🔗 Connecting to Exchange Online..." -ForegroundColor Cyan
+            Write-Host "   You will be promted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
+            Start-Sleep -Seconds 2
             Connect-ExchangeOnline -ErrorAction Stop
             Write-Host "✅ Connected successfully!" -ForegroundColor Green
             return $true
@@ -1121,10 +1140,12 @@ else {
         }
         else {
             Add-Content $FullLogFilePath '<p class="warning">Exchange Online connection failed or cancelled by user.</p>'
+            Capture-ManualAddInVersion -FullLogFilePath $FullLogFilePath
         }
     }
     else {
         Add-Content $FullLogFilePath '<p class="warning">Exchange Online module not available. Manual Add-in version collection required.</p>'
+        Capture-ManualAddInVersion -FullLogFilePath $FullLogFilePath
     }
 } # <-- closes main "else" for admin branch
 
