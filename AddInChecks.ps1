@@ -1129,15 +1129,6 @@ else {
 } # <-- closes main "else" for admin branch
 
 
-
-# EXO
-# Is Admin?
-# Has Module? (No = Install module)
-# Get Add-in version and state
-# Get-OrganizationConfig | fl *OAuth*
-# Get-OrganizationConfig | fl *EwsApp*
-# Get-OrganizationConfig | fl *Outlook*
-
 Write-Host "`n========================================="
 Write-Host "  Script completed successfully." -ForegroundColor Green
 Write-Host "  Log file location:'$FullLogFilePath'"
