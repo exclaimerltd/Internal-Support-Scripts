@@ -22,13 +22,14 @@
 #     - Network ability to test endpoints on port 443
 #
 # .VERSION
-#     1.0.0
-#         - Initial version
-#         - HTML-based diagnostics
-#         - Checks for Outlook installation and version
-#         - Checks for Exclaimer Agent and WebView2
-#         - Cloud geolocation and endpoint connectivity
-#         - Local signature inspection
+#     1.1.0
+#         - Collects Outlook installation and version details
+#         - Checks for Exclaimer Cloud Add-in presence and version
+#         - Detects deployment method (AppSource, Manifest, or User-installed)
+#         - Verifies local Exclaimer Agent and WebView2 installation
+#         - Tests network connectivity and service geolocation
+#         - Inspects local signatures for Exclaimer integration
+#         - Retrieves key organization-level Exchange settings affecting add-ins
 #
 # .INSTRUCTIONS
 #     1. Open PowerShell (Administrator if possible)
@@ -407,20 +408,58 @@ CheckEndpoints
     # -------------------------------
     # Getting Windows version
     # -------------------------------
-
-
-
-function Get-WindowsVersion {
+function GetWindowsVersion {
     Write-Host "`n========== Microsoft Windows Version ==========" -ForegroundColor Cyan
-    Add-Content $FullLogFilePath "<div class='section'>"
-    Add-Content $FullLogFilePath "<h2>💻 Microsoft Windows Version</h2>"
+
+    # --- HTML Section Header ---
+    Add-Content $FullLogFilePath '<div class="section">'
+    Add-Content $FullLogFilePath '<h2>💻 Microsoft Windows Version</h2>'
+    Add-Content $FullLogFilePath '<table>'
+    Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
+
+    # --- Supported build thresholds ---
+    $supportedBuilds = @(
+        [PSCustomObject]@{ MinBuild = 26100; Status = '✅ Supported'; Note = 'Windows 11 24H2 or later build.' },
+        [PSCustomObject]@{ MinBuild = 22631; Status = '✅ Supported'; Note = 'Windows 11 23H2 or later build.' },
+        [PSCustomObject]@{ MinBuild = 22621; Status = '✅ Supported'; Note = 'Windows 11 22H2 build.' },
+        [PSCustomObject]@{ MinBuild = 19045; Status = '✅ Supported'; Note = 'Windows 10 22H2 build (supported until October 2025).' }
+    )
+
+    # --- Collect OS Info ---
     $os = Get-CimInstance -ClassName Win32_OperatingSystem
-    $version = $os.Version
     $caption = $os.Caption
-    Write-Host "Windows Version: $caption ($version)"
-    Add-Content $FullLogFilePath "<p>Windows Version: <strong>$caption ($version)</strong></p>"
+    $version = $os.Version
+    $build   = [int]$os.BuildNumber
+
+    # --- Default to unsupported ---
+    $supportStatus = '❌ Unsupported or legacy Windows version.'
+    $supportNote   = 'Consider upgrading to Windows 10 22H2 or Windows 11 for compatibility.'
+
+    # --- Determine if build is supported ---
+    foreach ($entry in $supportedBuilds) {
+        if ($build -ge $entry.MinBuild) {
+            $supportStatus = $entry.Status
+            $supportNote   = $entry.Note
+            break
+        }
+    }
+
+    # --- Console Output ---
+    Write-Host "Windows Version: $caption ($version)" -ForegroundColor White
+    Write-Host "Build Number:    $build" -ForegroundColor White
+    Write-Host "Support Status:  $supportStatus" -ForegroundColor Yellow
+    Write-Host "Note:            $supportNote" -ForegroundColor DarkGray
+
+    # --- HTML Logging (safe, no '+' concat) ---
+    Add-Content $FullLogFilePath ("<tr><td><strong>Windows Version</strong></td><td>{0} ({1})</td></tr>" -f $caption, $version)
+    Add-Content $FullLogFilePath ("<tr><td><strong>Build Number</strong></td><td>{0}</td></tr>" -f $build)
+    Add-Content $FullLogFilePath ("<tr><td><strong>Support Status</strong></td><td>{0}</td></tr>" -f $supportStatus)
+    Add-Content $FullLogFilePath ("<tr><td><strong>Notes</strong></td><td>{0}</td></tr>" -f $supportNote)
+    Add-Content $FullLogFilePath '</table>'
+    Add-Content $FullLogFilePath '</div>'
 }
-Get-WindowsVersion
+
+GetWindowsVersion
 
 function InspectOutlookConfiguration {
     # -------------------------------
@@ -529,7 +568,7 @@ function InspectOutlookConfiguration {
         return Get-AppxPackage -Name Microsoft.OutlookForWindows -ErrorAction SilentlyContinue
     }
 
-    function Is-NewOutlookAppInstalled {
+    function IsNewOutlookAppInstalled {
         return [bool](Get-NewOutlookPackage)
     }
 
@@ -539,7 +578,7 @@ function InspectOutlookConfiguration {
         return $null
     }
 
-    function Is-NewOutlookEnabled {
+    function IsNewOutlookEnabled {
         $registryPaths = @(
             "HKCU:\Software\Microsoft\Office\Outlook\Settings",
             "HKCU:\Software\Microsoft\Office\Outlook\Profiles",
@@ -566,7 +605,7 @@ function InspectOutlookConfiguration {
         return $false
     }
 
-    function Is-ClassicOutlookInstalled {
+    function IsClassicOutlookInstalled {
         $classicPaths = @(
             "${env:ProgramFiles}\Microsoft Office\root\Office16\Outlook.exe",
             "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16\Outlook.exe"
@@ -590,9 +629,9 @@ function InspectOutlookConfiguration {
     Add-Content $FullLogFilePath "<div class='section'>"
     Add-Content $FullLogFilePath "<h2>✉️ Mail Client Checks</h2>"
 
-    $classicInstalled     = Is-ClassicOutlookInstalled
-    $newOutlookInstalled  = Is-NewOutlookAppInstalled
-    $newOutlookEnabled    = Is-NewOutlookEnabled
+    $classicInstalled     = IsClassicOutlookInstalled
+    $newOutlookInstalled  = IsNewOutlookAppInstalled
+    $newOutlookEnabled    = IsNewOutlookEnabled
 
     $installedSummary = "<ul>"
     if ($classicInstalled -and $newOutlookInstalled) {
@@ -902,7 +941,7 @@ Write-Host ""
 # --- Step: Check if user is Global Admin ---
 $adminChoice = Read-Host "Are you a Microsoft 365 Global Admin, or do you have an Admin available to assist with the next part? (Y/N)"
 
-function Capture-ManualAddInVersion {
+function CaptureManualAddInVersion {
     param (
         [string]$FullLogFilePath
     )
@@ -934,7 +973,7 @@ function Capture-ManualAddInVersion {
 
 
 if ($adminChoice.ToUpper() -eq "N") {
-Capture-ManualAddInVersion -FullLogFilePath $FullLogFilePath
+CaptureManualAddInVersion -FullLogFilePath $FullLogFilePath
 }
 else {
     Write-Host "`n🔐 Checking for Exchange Online module..." -ForegroundColor Cyan
@@ -1154,12 +1193,12 @@ else {
         }
         else {
             Add-Content $FullLogFilePath '<p class="warning">Exchange Online connection failed or cancelled by user.</p>'
-            Capture-ManualAddInVersion -FullLogFilePath $FullLogFilePath
+            CaptureManualAddInVersion -FullLogFilePath $FullLogFilePath
         }
     }
     else {
         Add-Content $FullLogFilePath '<p class="warning">Exchange Online module not available. Manual Add-in version collection required.</p>'
-        Capture-ManualAddInVersion -FullLogFilePath $FullLogFilePath
+        CaptureManualAddInVersion -FullLogFilePath $FullLogFilePath
     }
 } # <-- closes main "else" for admin branch
 
