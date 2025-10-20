@@ -23,6 +23,7 @@
 #
 # .VERSION
 #     1.1.0
+#         - Collects Windows version details
 #         - Collects Outlook installation and version details
 #         - Checks for Exclaimer Cloud Add-in presence and version
 #         - Detects deployment method (AppSource, Manifest, or User-installed)
@@ -32,7 +33,7 @@
 #         - Retrieves key organization-level Exchange settings affecting add-ins
 #
 # .INSTRUCTIONS
-#     1. Open PowerShell (Administrator if possible)
+#     1. Open PowerShell (as Administrator recommended)
 #     2. Set execution policy, e.g. `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
 #     3. Navigate to script folder, e.g. `cd c:\temp`
 #     4. Execute: `.\AddInChecks.ps1`
@@ -1045,6 +1046,8 @@ else {
 
     # --- Proceed only if module available ---
     if (CheckExchangeOnlineModule) {
+            # --- HTML Logging (safe formatting) ---
+            Add-Content $FullLogFilePath '<h3>Exclaimer Add-in Information (Failed)</h3>'
         if (ConnectExchangeOnlineSession) {
             Write-Host "`n🎯 Querying Exclaimer Add-in deployment..." -ForegroundColor Cyan
 
