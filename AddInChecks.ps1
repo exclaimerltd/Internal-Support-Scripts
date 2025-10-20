@@ -1047,7 +1047,7 @@ else {
     # --- Proceed only if module available ---
     if (CheckExchangeOnlineModule) {
             # --- HTML Logging (safe formatting) ---
-            Add-Content $FullLogFilePath '<h3>Exclaimer Add-in Information (Failed)</h3>'
+            Add-Content $FullLogFilePath '<h3>Exclaimer Add-in Information (EXO)</h3>'
         if (ConnectExchangeOnlineSession) {
             Write-Host "`n🎯 Querying Exclaimer Add-in deployment..." -ForegroundColor Cyan
 
