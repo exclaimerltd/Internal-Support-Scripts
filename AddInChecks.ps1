@@ -55,7 +55,7 @@ if ($PSVersionTable.PSEdition -ne 'Desktop' -or $PSVersionTable.PSVersion.Major 
 
 # Default path: Downloads folder
 $Path = [System.IO.Path]::Combine([Environment]::GetFolderPath('UserProfile'), 'Downloads')
-$LogFile = "AddInChecks.html"
+$LogFile = "AddInChecks_$(Get-Date -Format 'HHmmss').html"
 
 # Check if the path exists, if not, use C:\Temp
 if (-not (Test-Path -Path $Path)) {
