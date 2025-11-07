@@ -651,8 +651,18 @@ function InspectOutlookConfiguration {
         Write-Host "No Outlook installation detected."
         $installedSummary += "<li><span class='fail'>No Outlook installation detected</span></li>"
     }
+
     $installedSummary += "</ul>"
     Add-Content $FullLogFilePath $installedSummary
+    
+
+    if ($newOutlookEnabled) {
+        Write-Host "New Outlook is installed, and the toggle is ON (New Outlook is Default)." -ForegroundColor Yellow
+        Add-Content $FullLogFilePath "<ul><span class='info-after-error'>New Outlook is installed, and the toggle is ON (New Outlook is Default).</span></ul>"
+    } else {
+        Write-Host "New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)." -ForegroundColor Yellow
+        Add-Content $FullLogFilePath "<ul><span class='info-after-error'>New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)</span></ul>"
+    }
 
     if ($newOutlookInstalled) {
         Add-Content $FullLogFilePath "<h3>New Outlook</h3><ul>"
@@ -664,14 +674,6 @@ function InspectOutlookConfiguration {
         } else {
             Write-Host "New Outlook version could not be determined." -ForegroundColor Yellow
             Add-Content $FullLogFilePath "<li><span class='warning'>Version could not be determined</span></li>"
-        }
-
-        if ($newOutlookEnabled) {
-            Write-Host "New Outlook is installed, and the toggle is ON (New Outlook is Default)." -ForegroundColor Green
-            Add-Content $FullLogFilePath "<li><span class='success'>New Outlook is installed, and the toggle is ON (New Outlook is Default).</span></li>"
-        } else {
-            Write-Host "New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)." -ForegroundColor Yellow
-            Add-Content $FullLogFilePath "<li><span class='warning'>New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)</span></li>"
         }
         Add-Content $FullLogFilePath "</ul>"
     }
