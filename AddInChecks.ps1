@@ -175,18 +175,20 @@ function Get-ExclaimerUserInput {
             do {
                 Clear-Host
                 Write-Host "`nWhich Outlook version(s) are affected?" -ForegroundColor Cyan
-                Write-Host "  1) Outlook Desktop"
-                Write-Host "  2) Outlook Web"
-                Write-Host "  3) Outlook Mobile"
-                Write-Host "  4) Multiple / All"
-                $oChoice = Read-Host "`nEnter choice (1-4)"
-            } while ($oChoice -notmatch '^[1-4]$')
+                Write-Host "  1) Classic Outlook (Windows)"
+                Write-Host "  2) New Outlook (Windows)"
+                Write-Host "  3) Outlook on Web (OWA)"
+                Write-Host "  4) Outlook Mobile"
+                Write-Host "  5) Multiple / All"
+                $oChoice = Read-Host "`nEnter choice (1-5)"
+            } while ($oChoice -notmatch '^[1-5]$')
 
             switch ($oChoice) {
-                1 { $userInput.OutlookAffected = 'Outlook Desktop' }
-                2 { $userInput.OutlookAffected = 'Outlook Web' }
-                3 { $userInput.OutlookAffected = 'Outlook Mobile' }
-                4 { $userInput.OutlookAffected = 'Multiple / All' }
+                1 { $userInput.OutlookAffected = 'Classic Outlook' }
+                2 { $userInput.OutlookAffected = 'New Outlook' }
+                3 { $userInput.OutlookAffected = 'Outlook Web' }
+                4 { $userInput.OutlookAffected = 'Outlook Mobile' }
+                5 { $userInput.OutlookAffected = 'Multiple / All' }
             }
 
             # Network scope
@@ -200,9 +202,9 @@ function Get-ExclaimerUserInput {
             } while ($nChoice -notmatch '^[1-3]$')
 
             switch ($nChoice) {
-                1 { $userInput.Network = 'Internal Only' }
-                2 { $userInput.Network = 'External Only' }
-                3 { $userInput.Network = 'Both Networks' }
+                1 { $userInput.Network = 'Internal network only' }
+                2 { $userInput.Network = 'External network only' }
+                3 { $userInput.Network = 'Both internal and external' }
             }
         }
 
@@ -583,14 +585,15 @@ function InspectOutlookConfiguration {
         $registryPaths = @(
             "HKCU:\Software\Microsoft\Office\Outlook\Settings",
             "HKCU:\Software\Microsoft\Office\Outlook\Profiles",
-            "HKCU:\Software\Microsoft\Office\16.0\Outlook\Options\General"
+            "HKCU:\Software\Microsoft\Office\16.0\Outlook\Options\General",
+            "HKCU:\Software\Microsoft\Office\16.0\Outlook\Preferences"
         )
 
         foreach ($path in $registryPaths) {
             if (Test-Path $path) {
                 try {
                     $props = Get-ItemProperty -Path $path
-                    if ($props.PSObject.Properties.Name -contains "IsUsingNewOutlook" -and $props.IsUsingNewOutlook -eq 1) {
+                    if ($props.PSObject.Properties.Name -contains "UseNewOutlook" -and $props.UseNewOutlook -eq 1) {
                         return $true
                     }
                     foreach ($prop in $props.PSObject.Properties) {
@@ -664,11 +667,11 @@ function InspectOutlookConfiguration {
         }
 
         if ($newOutlookEnabled) {
-            Write-Host "New Outlook experience is ENABLED (user preference)." -ForegroundColor Green
-            Add-Content $FullLogFilePath "<li><span class='success'>New Outlook is enabled</span></li>"
+            Write-Host "New Outlook is installed, and the toggle is ON (New Outlook is Default)." -ForegroundColor Green
+            Add-Content $FullLogFilePath "<li><span class='success'>New Outlook is installed, and the toggle is ON (New Outlook is Default).</span></li>"
         } else {
-            Write-Host "New Outlook is installed, but NOT set as default." -ForegroundColor Yellow
-            Add-Content $FullLogFilePath "<li><span class='warning'>New Outlook is installed but not set as 'Default'</span></li>"
+            Write-Host "New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)." -ForegroundColor Yellow
+            Add-Content $FullLogFilePath "<li><span class='warning'>New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)</span></li>"
         }
         Add-Content $FullLogFilePath "</ul>"
     }
