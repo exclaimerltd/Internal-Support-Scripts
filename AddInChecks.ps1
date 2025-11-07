@@ -143,9 +143,9 @@ function Get-ExclaimerUserInput {
         # --- 2) Purpose ---
         do {
             Clear-Host
-            Write-Host "`nWhat would you like to do?" -ForegroundColor Cyan
+            Write-Host "`nPlease choose an option:" -ForegroundColor Cyan
             Write-Host "  1) Troubleshoot an issue"
-            Write-Host "  2) Review configuration overview"
+            Write-Host "  2) View current configuration"
             $choice = Read-Host "`nEnter choice (1 or 2)"
         } while ($choice -notmatch '^[12]$')
 
