@@ -1109,15 +1109,26 @@ else {
                 Add-Content $FullLogFilePath '</table>'
 
                 # Add attention note if either is not enabled
-                if (($ProdResult -and $ProdResult.Enabled -ne $true) -or ($PreviewResult -and $PreviewResult.Enabled -ne $true)) {
-                    $identity = "$user\$PreviewID"
-                    $enableCommand = "Enable-App -Identity `"$identity`""
-                    $attentionMessage = ('<p class="info-after-error">ℹ️  <b>Attention:</b> Run the following command in PowerShell to enable the Add-in for this user:<br><code>{0}</code></p>' -f $enableCommand)
+                $attentionMessages = @()
 
-                    Add-Content -Path $FullLogFilePath -Value $attentionMessage
+                if ($ProdResult -and $ProdResult.Enabled -ne $true) {
+                    $identity = "$user\$ProdID"
+                    $enableCommand = "Enable-App -Identity `"$identity`""
+                    $attentionMessages += "ℹ️  <b>Production Add-in is Disabled:</b> Run the following command in PowerShell to enable the Add-in for this user:<br><code>$enableCommand</code>"
                 }
 
-                                # --- Add explanatory table for deployment methods ---
+                if ($PreviewResult -and $PreviewResult.Enabled -ne $true) {
+                    $identity = "$user\$PreviewID"
+                    $enableCommand = "Enable-App -Identity `"$identity`""
+                    $attentionMessages += "ℹ️  <b>Preview Add-in is Disabled:</b> Run the following command in PowerShell to enable the Add-in for this user:<br><code>$enableCommand</code>"
+                }
+
+                if ($attentionMessages.Count -gt 0) {
+                    $fullMessage = '<p class="info-after-error">' + ($attentionMessages -join "<br><br>") + '</p>'
+                    Add-Content -Path $FullLogFilePath -Value $fullMessage
+                }
+
+                # --- Add explanatory table for deployment methods ---
                 Add-Content $FullLogFilePath '<h4>Deployment Method Reference</h4>'
                 Add-Content $FullLogFilePath '<table>'
                 Add-Content $FullLogFilePath '<tr><th>Type</th><th>Deployment</th><th>Description</th></tr>'
