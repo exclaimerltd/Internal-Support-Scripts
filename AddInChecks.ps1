@@ -121,7 +121,7 @@ function Get-ExclaimerUserInput {
 
     while ($true) {
         # Initialize object
-        $userInput = [PSCustomObject]@{
+        $Global:userInput = [PSCustomObject]@{
             Purpose         = $null
             Email           = $null
             UsersAffected   = $null
@@ -133,7 +133,7 @@ function Get-ExclaimerUserInput {
         while ($true) {
             $email = Read-Host "`nEnter the user's email address (e.g. user@company.com)"
             if ($email -match '^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,}$') {
-                $userInput.Email = $email.Trim()
+                $Global:userInput.Email = $email.Trim()
                 break
             } else {
                 Write-Host "Invalid email format. Try again." -ForegroundColor Red
@@ -149,10 +149,10 @@ function Get-ExclaimerUserInput {
             $choice = Read-Host "`nEnter choice (1 or 2)"
         } while ($choice -notmatch '^[12]$')
 
-        $userInput.Purpose = if ($choice -eq '1') { 'Troubleshooting' } else { 'Configuration Overview' }
+        $Global:userInput.Purpose = if ($choice -eq '1') { 'Troubleshooting' } else { 'Configuration Overview' }
 
         # --- 3) If troubleshooting, ask follow-ups ---
-        if ($userInput.Purpose -eq 'Troubleshooting') {
+        if ($Global:userInput.Purpose -eq 'Troubleshooting') {
             # Users affected
             do {
                 Clear-Host
@@ -163,12 +163,12 @@ function Get-ExclaimerUserInput {
             } while ($uc -notmatch '^[12]$')
 
             if ($uc -eq '1') {
-                $userInput.UsersAffected = 'All Users'
+                $Global:userInput.UsersAffected = 'All Users'
             } else {
                 do {
                     $num = Read-Host "Enter the approximate number of affected users (digits only)"
                 } while ($num -notmatch '^\d+$')
-                $userInput.UsersAffected = [int]$num
+                $Global:userInput.UsersAffected = [int]$num
             }
 
             # Outlook versions
@@ -184,11 +184,11 @@ function Get-ExclaimerUserInput {
             } while ($oChoice -notmatch '^[1-5]$')
 
             switch ($oChoice) {
-                1 { $userInput.OutlookAffected = 'Classic Outlook' }
-                2 { $userInput.OutlookAffected = 'New Outlook' }
-                3 { $userInput.OutlookAffected = 'Outlook Web' }
-                4 { $userInput.OutlookAffected = 'Outlook Mobile' }
-                5 { $userInput.OutlookAffected = 'Multiple / All' }
+                1 { $Global:userInput.OutlookAffected = 'Classic Outlook' }
+                2 { $Global:userInput.OutlookAffected = 'New Outlook' }
+                3 { $Global:userInput.OutlookAffected = 'Outlook Web' }
+                4 { $Global:userInput.OutlookAffected = 'Outlook Mobile' }
+                5 { $Global:userInput.OutlookAffected = 'Multiple / All' }
             }
 
             # Network scope
@@ -202,9 +202,9 @@ function Get-ExclaimerUserInput {
             } while ($nChoice -notmatch '^[1-3]$')
 
             switch ($nChoice) {
-                1 { $userInput.Network = 'Internal network only' }
-                2 { $userInput.Network = 'External network only' }
-                3 { $userInput.Network = 'Both internal and external' }
+                1 { $Global:userInput.Network = 'Internal network only' }
+                2 { $Global:userInput.Network = 'External network only' }
+                3 { $Global:userInput.Network = 'Both internal and external' }
             }
         }
 
@@ -215,13 +215,13 @@ function Get-ExclaimerUserInput {
         Write-Host "            Summary captured" -ForegroundColor Green
         Write-Host "========================================" -ForegroundColor DarkGray
 
-        Write-Host ("Purpose:          {0}" -f $userInput.Purpose) -ForegroundColor Cyan
-        Write-Host ("Email:            {0}" -f $userInput.Email) -ForegroundColor Yellow
+        Write-Host ("Purpose:          {0}" -f $Global:userInput.Purpose) -ForegroundColor Cyan
+        Write-Host ("Email:            {0}" -f $Global:userInput.Email) -ForegroundColor Yellow
 
-        if ($userInput.Purpose -eq 'Troubleshooting') {
-            Write-Host ("Users Affected:   {0}" -f $userInput.UsersAffected) -ForegroundColor White
-            Write-Host ("Outlook Affected: {0}" -f $userInput.OutlookAffected) -ForegroundColor White
-            Write-Host ("Network Scope:    {0}" -f $userInput.Network) -ForegroundColor White
+        if ($Global:userInput.Purpose -eq 'Troubleshooting') {
+            Write-Host ("Users Affected:   {0}" -f $Global:userInput.UsersAffected) -ForegroundColor White
+            Write-Host ("Outlook Affected: {0}" -f $Global:userInput.OutlookAffected) -ForegroundColor White
+            Write-Host ("Network Scope:    {0}" -f $Global:userInput.Network) -ForegroundColor White
         }
 
         Write-Host ""
@@ -236,17 +236,17 @@ function Get-ExclaimerUserInput {
             Add-Content $FullLogFilePath "<div class='section'>"
             Add-Content $FullLogFilePath "<h2>🧾 User Input Summary</h2>"
             Add-Content $FullLogFilePath "<table>"
-            Add-Content $FullLogFilePath "<tr><td><strong>Purpose:</strong></td><td>$($userInput.Purpose)</td></tr>"
-            Add-Content $FullLogFilePath "<tr><td><strong>Email:</strong></td><td>$($userInput.Email)</td></tr>"
+            Add-Content $FullLogFilePath "<tr><td><strong>Purpose:</strong></td><td>$($Global:userInput.Purpose)</td></tr>"
+            Add-Content $FullLogFilePath "<tr><td><strong>Email:</strong></td><td>$($Global:userInput.Email)</td></tr>"
 
-            if ($userInput.Purpose -eq 'Troubleshooting') {
-                Add-Content $FullLogFilePath "<tr><td><strong>Users Affected:</strong></td><td>$($userInput.UsersAffected)</td></tr>"
-                Add-Content $FullLogFilePath "<tr><td><strong>Outlook Affected:</strong></td><td>$($userInput.OutlookAffected)</td></tr>"
-                Add-Content $FullLogFilePath "<tr><td><strong>Network Scope:</strong></td><td>$($userInput.Network)</td></tr>"
+            if ($Global:userInput.Purpose -eq 'Troubleshooting') {
+                Add-Content $FullLogFilePath "<tr><td><strong>Users Affected:</strong></td><td>$($Global:userInput.UsersAffected)</td></tr>"
+                Add-Content $FullLogFilePath "<tr><td><strong>Outlook Affected:</strong></td><td>$($Global:userInput.OutlookAffected)</td></tr>"
+                Add-Content $FullLogFilePath "<tr><td><strong>Network Scope:</strong></td><td>$($Global:userInput.Network)</td></tr>"
             }
 
             Add-Content $FullLogFilePath "</table></div>"
-            return $userInput
+            return $Global:userInput
         } else {
             Write-Host "`nLet's try again..." -ForegroundColor Yellow
             Start-Sleep -Seconds 1
@@ -256,13 +256,9 @@ function Get-ExclaimerUserInput {
 }
 
 function Get-Region {
-    param (
-        [PSCustomObject]$userInput
-    )
-
     # Define log file path (adjust as needed)
 
-    $email = $userInput.Email.ToLower().Trim()
+    $email = $Global:userInput.Email.ToLower().Trim()
 
     # Validate email format (extra check just in case)
     if ($email -match '^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,4}$') {
@@ -1038,7 +1034,7 @@ else {
     function ConnectExchangeOnlineSession {
         try {
             Write-Host "`n🔗 Connecting to Exchange Online..." -ForegroundColor Cyan
-            Write-Host "   You will be promted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
+            Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
             Start-Sleep -Seconds 2
             Connect-ExchangeOnline -ErrorAction Stop
             Write-Host "✅ Connected successfully!" -ForegroundColor Green
@@ -1056,7 +1052,7 @@ else {
         if (ConnectExchangeOnlineSession) {
             Write-Host "`n🎯 Querying Exclaimer Add-in deployment..." -ForegroundColor Cyan
 
-            $user = $userInput.Email
+            $user = $Global:userInput.Email
             $ProdResult = $null
             $PreviewResult = $null
 
@@ -1087,23 +1083,39 @@ else {
                 Add-Content $FullLogFilePath '<table><tr><th>Type</th><th>Display Name</th><th>Version</th><th>Enabled</th><th>Scope</th><th>Deployment</th></tr>'
 
                 if ($ProdResult) {
-                    Add-Content $FullLogFilePath ('<tr><td>Production</td><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>' -f `
-                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.DisplayName),
+                    $enabledColor = if ($ProdResult.Enabled -ne $true) { ' style="color:red;font-weight:bold;"' } else { '' }
+
+                    Add-Content $FullLogFilePath ('<tr><td>Production</td><td>{0}</td><td>{1}</td><td{5}>{2}</td><td>{3}</td><td>{4}</td></tr>' -f `
+                            [System.Web.HttpUtility]::HtmlEncode($ProdResult.DisplayName),
                         [System.Web.HttpUtility]::HtmlEncode($ProdResult.AppVersion),
                         [System.Web.HttpUtility]::HtmlEncode($ProdResult.Enabled),
                         [System.Web.HttpUtility]::HtmlEncode($ProdResult.Scope),
-                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.Type))
+                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.Type),
+                        $enabledColor)
                 }
+
                 if ($PreviewResult) {
-                    Add-Content $FullLogFilePath ('<tr><td>Preview</td><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>' -f `
-                        [System.Web.HttpUtility]::HtmlEncode($PreviewResult.DisplayName),
+                    $enabledColor = if ($PreviewResult.Enabled -ne $true) { ' style="color:red;font-weight:bold;"' } else { '' }
+
+                    Add-Content $FullLogFilePath ('<tr><td>Preview</td><td>{0}</td><td>{1}</td><td{5}>{2}</td><td>{3}</td><td>{4}</td></tr>' -f `
+                            [System.Web.HttpUtility]::HtmlEncode($PreviewResult.DisplayName),
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.AppVersion),
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Enabled),
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Scope),
-                        [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Type))
+                        [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Type),
+                        $enabledColor)
                 }
 
                 Add-Content $FullLogFilePath '</table>'
+
+                # Add attention note if either is not enabled
+                if (($ProdResult -and $ProdResult.Enabled -ne $true) -or ($PreviewResult -and $PreviewResult.Enabled -ne $true)) {
+                    $identity = "$user\$PreviewID"
+                    $enableCommand = "Enable-App -Identity `"$identity`""
+                    $attentionMessage = ('<p class="info-after-error">ℹ️  <b>Attention:</b> Run the following command in PowerShell to enable the Add-in for this user:<br><code>{0}</code></p>' -f $enableCommand)
+
+                    Add-Content -Path $FullLogFilePath -Value $attentionMessage
+                }
 
                                 # --- Add explanatory table for deployment methods ---
                 Add-Content $FullLogFilePath '<h4>Deployment Method Reference</h4>'
