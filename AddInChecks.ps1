@@ -1131,7 +1131,7 @@ else {
                 if ($attentionMessages.Count -gt 0) {
                     $fullMessage = '<p class="info-after-error">' + ($attentionMessages -join "<br><br>") + '</p>'
                     Add-Content -Path $FullLogFilePath -Value $fullMessage
-                    $sideNote = '<p class="side-note">If you have both Production and Preview version deployed, only one requires being enabled.</p><p class="side-note">If you have re-opened PowerShell, then you may need to run the command <code>Connect-ExchangeOnline</code> before enabling the Add-in.</p><p class="side-note">When an Add-in is disabled for a user, it should not appear or function in Outlook. We have observed cases where it may still load in Outlook on the web, but this is not expected behaviour. If this occurs, it may need to be raised with Microsoft for further review.</p>'
+                    $sideNote = '<p class="side-note">If you have both Production and Preview versions deployed, only one requires being enabled.</p><p class="side-note">If you have re-opened PowerShell, then you may need to run the command <code>Connect-ExchangeOnline</code> before enabling the Add-in.</p><p class="side-note">When an Add-in is disabled for a user, it should not appear or function in Outlook. We have observed cases where it may still load in Outlook on the web, but this is not expected behaviour. If this occurs, it may need to be raised with Microsoft for further review.</p>'
                     Add-Content -Path $FullLogFilePath -Value $sideNote
                 }
 
