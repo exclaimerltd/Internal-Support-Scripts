@@ -92,6 +92,8 @@ $DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:mm 'UTC' K"
         th { background-color: #eee; }
         a { color: #0078D4; text-decoration: none; } a:hover { text-decoration: underline; }
         .info-after-error { color: #0c5460; background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 10px; border-radius: 4px; margin-top: 10px; }
+        .side-note { color: #555; font-size: 12px; margin-top: 5px; font-style: italic; }
+        code { background-color: #f1f1f1; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #c7254e; }
     </style>
 </head>
 <body>
@@ -939,6 +941,9 @@ if ($webviewApps.Count -gt 0) {
 Write-Host ""
 Write-Host "=== Exclaimer Add-in Information ===" -ForegroundColor Cyan
 Write-Host ""
+Write-Host "ℹ️  If a Microsoft 365 Global Admin is available, selecting 'Y' on the next prompt allows the script to collect important Exclaimer Add-in details." -ForegroundColor Yellow
+Write-Host "This includes deployment information and the current State of the Add-in, which can significantly speed up troubleshooting." -ForegroundColor Cyan
+Write-Host ""
 
 # --- Step: Check if user is Global Admin ---
 $adminChoice = Read-Host "Are you a Microsoft 365 Global Admin, or do you have an Admin available to assist with the next part? (Y/N)"
@@ -1126,6 +1131,8 @@ else {
                 if ($attentionMessages.Count -gt 0) {
                     $fullMessage = '<p class="info-after-error">' + ($attentionMessages -join "<br><br>") + '</p>'
                     Add-Content -Path $FullLogFilePath -Value $fullMessage
+                    $sideNote = '<p class="side-note">If you have both Production and Preview version deployed, only one requires being enabled.</p><p class="side-note">If you have re-opened PowerShell, then you may need to run the command <code>Connect-ExchangeOnline</code> before enabling the Add-in.</p><p class="side-note">When an Add-in is disabled for a user, it should not appear or function in Outlook. We have observed cases where it may still load in Outlook on the web, but this is not expected behaviour. If this occurs, it may need to be raised with Microsoft for further review.</p>'
+                    Add-Content -Path $FullLogFilePath -Value $sideNote
                 }
 
                 # --- Add explanatory table for deployment methods ---
