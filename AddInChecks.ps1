@@ -1157,6 +1157,7 @@ else {
 
             try {
                 $orgConfig = Get-OrganizationConfig | Select-Object `
+                    ReleaseTrack,
                     OAuth2ClientProfileEnabled,
                     OutlookMobileGCCRestrictionsEnabled,
                     AppsForOfficeEnabled,
@@ -1173,6 +1174,14 @@ else {
                     $impact = ''
 
                     switch ($prop.Name) {
+                        'ReleaseTrack' {
+                            switch ($rawValue) {
+                                $null               { $impact = '✅ Standard Release' }
+                                'FirstRelease'      { $impact = '⚠️ Targeted release for everyone' }
+                                'StagedRollout'     { $impact = '⚠️ Targeted release for select users' }
+                                default             { $impact = '❌ Review manually.' }
+                            }
+                        }
                         'OAuth2ClientProfileEnabled' {
                             $impact = if (-not $rawValue) {
                                 '❌ Add-ins cannot authenticate properly (modern auth disabled).'
