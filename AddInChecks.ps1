@@ -83,6 +83,7 @@ $DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:mm 'UTC' K"
         .container { max-width: 1000px; margin: 0 auto; }
         h1 { color: #003366; }
         h2 { color: #2a52be; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 30px; }
+        code { display:block; margin-top:5px; }
         .section { margin-bottom: 30px; }
         .success { color: green; font-weight: bold; }
         .fail { color: red; font-weight: bold; }
@@ -91,7 +92,8 @@ $DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:mm 'UTC' K"
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #eee; }
         a { color: #0078D4; text-decoration: none; } a:hover { text-decoration: underline; }
-        .info-after-error { color: #0c5460; background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 10px; border-radius: 4px; margin-top: 10px; }
+        .info-after-note { color:#0c5460; background-color:#d1ecf1; border:1px solid #bee5eb; border-left:4px solid #0c5460; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+        .info-after-error { color:#721c24; background-color:#f8d7da; border:1px solid #f5c6cb; border-left:4px solid #c82333; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
         .side-note { color: #555; font-size: 12px; margin-top: 5px; font-style: italic; }
         code { background-color: #f1f1f1; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #c7254e; }
     </style>
@@ -656,10 +658,10 @@ function InspectOutlookConfiguration {
 
     if ($newOutlookEnabled) {
         Write-Host "New Outlook is installed, and the toggle is ON (New Outlook is Default)." -ForegroundColor Yellow
-        Add-Content $FullLogFilePath "<ul><span class='info-after-error'>New Outlook is installed, and the toggle is ON (New Outlook is Default).</span></ul>"
+        Add-Content $FullLogFilePath "<ul><span class='info-after-note'>New Outlook is installed, and the toggle is ON (New Outlook is Default).</span></ul>"
     } else {
         Write-Host "New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)." -ForegroundColor Yellow
-        Add-Content $FullLogFilePath "<ul><span class='info-after-error'>New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)</span></ul>"
+        Add-Content $FullLogFilePath "<ul><span class='info-after-note'>New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)</span></ul>"
     }
 
     if ($newOutlookInstalled) {
@@ -1119,19 +1121,20 @@ else {
                 if ($ProdResult -and $ProdResult.Enabled -ne $true) {
                     $identity = "$user\$ProdID"
                     $enableCommand = "Enable-App -Identity `"$identity`""
-                    $attentionMessages += "ℹ️  <b>Production Add-in is Disabled:</b> Run the following command in PowerShell to enable the Add-in for this user:<br><code>$enableCommand</code>"
+                    $attentionMessages += "<span><b>ℹ️ Production Add-in is Disabled:</b> Run the following command in PowerShell:</span><br><code>$enableCommand</code>"
                 }
 
                 if ($PreviewResult -and $PreviewResult.Enabled -ne $true) {
                     $identity = "$user\$PreviewID"
                     $enableCommand = "Enable-App -Identity `"$identity`""
-                    $attentionMessages += "ℹ️  <b>Preview Add-in is Disabled:</b> Run the following command in PowerShell to enable the Add-in for this user:<br><code>$enableCommand</code>"
+                    $attentionMessages += "<span><b>ℹ️ Preview Add-in is Disabled:</b> Run the following command in PowerShell:</span><code>$enableCommand</code>"
                 }
 
                 if ($attentionMessages.Count -gt 0) {
-                    $fullMessage = '<p class="info-after-error">' + ($attentionMessages -join "<br><br>") + '</p>'
+                    $fullMessage = '<div class="info-after-error">' + ($attentionMessages -join "<br><br>") + '</div>'
                     Add-Content -Path $FullLogFilePath -Value $fullMessage
-                    $sideNote = '<p class="side-note">If you have both Production and Preview versions deployed, only one requires being enabled.</p><p class="side-note">If you have re-opened PowerShell, then you may need to run the command <code>Connect-ExchangeOnline</code> before enabling the Add-in.</p><p class="side-note">When an Add-in is disabled for a user, it should not appear or function in Outlook. We have observed cases where it may still load in Outlook on the web, but this is not expected behaviour. If this occurs, it may need to be raised with Microsoft for further review.</p>'
+
+                    $sideNote = '<p class="side-note">If you have both Production and Preview versions deployed, only one requires being enabled.</p><p class="side-note">If you have re-opened PowerShell, then you may need to run the command below before enabling the Add-in.</p><code>Connect-ExchangeOnline</code><p class="side-note">When an Add-in is disabled for a user, it should not appear or function in Outlook. We have observed cases where it may still load in Outlook on the web, but this is not expected behaviour. If this occurs, it may need to be raised with Microsoft for further review.</p>'
                     Add-Content -Path $FullLogFilePath -Value $sideNote
                 }
 
