@@ -83,6 +83,7 @@ $DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:mm 'UTC' K"
         .container { max-width: 1000px; margin: 0 auto; }
         h1 { color: #003366; }
         h2 { color: #2a52be; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 30px; }
+        h3 { color: #2a52be; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 30px; }
         code { display:block; margin-top:5px; }
         .section { margin-bottom: 30px; }
         .success { color: green; font-weight: bold; }
@@ -145,13 +146,20 @@ function Get-ExclaimerUserInput {
         }
 
         # --- 2) Purpose ---
-        do {
-            Clear-Host
-            Write-Host "`nPlease choose an option:" -ForegroundColor Cyan
-            Write-Host "  1) Troubleshoot an issue"
-            Write-Host "  2) View current configuration"
-            $choice = Read-Host "`nEnter choice (1 or 2)"
-        } while ($choice -notmatch '^[12]$')
+        # Disabled prompt block without removing it
+        if ($false) {
+            do {
+                Clear-Host
+                Write-Host "`nPlease choose an option:" -ForegroundColor Cyan
+                Write-Host "  1) Troubleshoot an issue"
+                Write-Host "  2) View current configuration"
+                $choice = Read-Host "`nEnter choice (1 or 2)"
+            } while ($choice -notmatch '^[12]$')
+        }
+
+        # Always force purpose 1
+        $choice = '1'
+        $Global:userInput.Purpose = 'Troubleshooting'
 
         $Global:userInput.Purpose = if ($choice -eq '1') { 'Troubleshooting' } else { 'Configuration Overview' }
 
@@ -436,7 +444,7 @@ function GetWindowsVersion {
 
     # --- Default to unsupported ---
     $supportStatus = '❌ Unsupported or legacy Windows version.'
-    $supportNote   = 'Consider upgrading to Windows 10 22H2 or Windows 11 for compatibility.'
+    $supportNote   = 'Consider upgrading to Windows 10 22H2 (bild 19045 or above) or Windows 11 for compatibility.'
 
     # --- Determine if build is supported ---
     foreach ($entry in $supportedBuilds) {
@@ -945,10 +953,11 @@ Write-Host "=== Exclaimer Add-in Information ===" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "ℹ️  If a Microsoft 365 Global Admin is available, selecting 'Y' on the next prompt allows the script to collect important Exclaimer Add-in details." -ForegroundColor Yellow
 Write-Host "This includes deployment information and the current State of the Add-in, which can significantly speed up troubleshooting." -ForegroundColor Cyan
+Write-Host "`nIf you do not run the next step as a Global Admin, we may need to ask you to run some PowerShell commands manually to collect the required information." -ForegroundColor Red
 Write-Host ""
 
 # --- Step: Check if user is Global Admin ---
-$adminChoice = Read-Host "Are you a Microsoft 365 Global Admin, or do you have an Admin available to assist with the next part? (Y/N)"
+$adminChoice = Read-Host "Are you a Microsoft 365 Global Admin, or do you have an Admin available to assist with the next step? (Y/N)"
 
 function CaptureManualAddInVersion {
     param (
@@ -982,6 +991,7 @@ function CaptureManualAddInVersion {
 
 
 if ($adminChoice.ToUpper() -eq "N") {
+Add-Content $FullLogFilePath '<h3 class="fail">User chose not to run the Exchange Online checks as a Global Admin.</h3>'
 CaptureManualAddInVersion -FullLogFilePath $FullLogFilePath
 }
 else {
@@ -1042,7 +1052,7 @@ else {
         try {
             Write-Host "`n🔗 Connecting to Exchange Online..." -ForegroundColor Cyan
             Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
-            Start-Sleep -Seconds 2
+            Start-Sleep -Seconds 3
             Connect-ExchangeOnline -ErrorAction Stop
             Write-Host "✅ Connected successfully!" -ForegroundColor Green
             return $true
