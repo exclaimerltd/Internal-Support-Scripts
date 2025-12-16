@@ -54,20 +54,20 @@ if ($PSVersionTable.PSEdition -ne 'Desktop' -or $PSVersionTable.PSVersion.Major 
 # ------------------------------
 
 # Default path: Downloads folder
-$Path = [System.IO.Path]::Combine([Environment]::GetFolderPath('UserProfile'), 'Downloads')
+$Global:FilePath = [System.IO.Path]::Combine([Environment]::GetFolderPath('UserProfile'), 'Downloads')
 $LogFile = "AddInChecks_$(Get-Date -Format 'HHmmss').html"
 
 # Check if the path exists, if not, use C:\Temp
-if (-not (Test-Path -Path $Path)) {
-    $Path = "C:\Temp"
-    if (-not (Test-Path -Path $Path)) {
-        New-Item -Path $Path -ItemType Directory -Force | Out-Null
+if (-not (Test-Path -Path $Global:FilePath)) {
+    $Global:FilePath = "C:\Temp"
+    if (-not (Test-Path -Path $Global:FilePath)) {
+        New-Item -Path $Global:FilePath -ItemType Directory -Force | Out-Null
     }
 }
 
 # Final full path for the log file
-$FullLogFilePath = Join-Path $Path $LogFile
-$DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:mm 'UTC' K"
+$DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:MM 'UTC' K"
+$FullLogFilePath = Join-Path $Global:FilePath $LogFile
 
 # Example: write output to the log file
 "Log started at $DateTimeRun" | Out-File -FilePath $FullLogFilePath -Encoding UTF8
@@ -114,9 +114,6 @@ Write-Host ""
 Start-Sleep -Seconds 1
 
 #It should set the below:
-$Path = [System.IO.Path]::Combine([Environment]::GetFolderPath('UserProfile'), 'Downloads')
-$LogFile = "AddInChecks.html" 
-$DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:MM 'UTC' K"
 $ProdID = "efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
 $PreviewID = "a8d42ca1-6f1f-43b5-84e1-9ff40e967ccc"
 
@@ -1306,7 +1303,154 @@ else {
     }
     Write-Host "`n✅ Exclaimer Add-in details collection completed." -ForegroundColor Green
 } # <-- closes main "else" for admin branch
+function GetFirewallLogs {
 
+    Write-Host "`n========== Windows Firewall Logging ==========" -ForegroundColor Cyan
+
+     # --- Elevation check ---
+    $isAdmin = ([Security.Principal.WindowsPrincipal] `
+        [Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+    if (-not $isAdmin) {
+
+        Write-Host "Administrator privileges are required to collect firewall logs." -ForegroundColor Red
+        Write-Host "Please re-run PowerShell using 'Run as administrator'." -ForegroundColor Yellow
+
+        # --- HTML Logging ---
+        Add-Content $FullLogFilePath '<div class="section">'
+        Add-Content $FullLogFilePath '<h2>🔥 Windows Firewall Log Capture</h2>'
+        Add-Content $FullLogFilePath '<table>'
+        Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Log capture performed</strong></td><td>No</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Reason</strong></td><td>PowerShell session was not running with Administrator privileges.</td></tr>'
+        Add-Content $FullLogFilePath '</table>'
+        Add-Content $FullLogFilePath '</div>'
+
+        return
+    }
+
+    $firewallLogPath = "C:\Windows\System32\LogFiles\Firewall\pfirewall.log"
+
+    # --- Ask user if they want to proceed ---
+    Write-Host "This will temporarily enable Windows Firewall logging to capture Outlook traffic." -ForegroundColor Yellow
+    $choice = Read-Host "Do you want to continue? (Y/N)"
+
+    if ($choice -notmatch '^[Yy]$') {
+
+        Write-Host "Firewall logging step skipped by user." -ForegroundColor Yellow
+
+        # --- HTML Logging ---
+        Add-Content $FullLogFilePath '<div class="section">'
+        Add-Content $FullLogFilePath '<h2>🔥 Windows Firewall Log Capture</h2>'
+        Add-Content $FullLogFilePath '<table>'
+        Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Log capture performed</strong></td><td>No</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Reason</strong></td><td>User declined to enable firewall logging.</td></tr>'
+        Add-Content $FullLogFilePath '</table>'
+        Add-Content $FullLogFilePath '</div>'
+
+        return
+    }
+
+    Write-Host "`nEnabling Windows Firewall logging..." -ForegroundColor White
+
+    # --- Enable Firewall Logging (all profiles) ---
+    Set-NetFirewallProfile -Profile Domain,Private,Public `
+        -LogAllowed True `
+        -LogBlocked True `
+        -LogFileName $firewallLogPath `
+        -LogMaxSizeKilobytes 32767
+
+    Write-Host ""
+    Write-Host "Firewall logging is now enabled." -ForegroundColor Green
+    Write-Host "`nPlease reproduce the issue now (Classic Outlook, New Outlook, or Outlook on the Web)." -ForegroundColor Yellow
+    Write-Host "Press ENTER once the issue has been reproduced to continue..." -ForegroundColor Yellow
+    Read-Host
+
+    $confirmed = Read-Host "Was the issue successfully reproduced? (Y/N)"
+    if ($confirmed -notmatch '^[Yy]$') {
+        Write-Host "Issue not reproduced. Firewall log capture will be skipped." -ForegroundColor Yellow
+        return
+    }
+    # --- Copy log file ---
+    if (Test-Path $firewallLogPath) {
+        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+        $destination = Join-Path $Global:FilePath "pfirewall_$timestamp.log"
+
+        Copy-Item -Path $firewallLogPath -Destination $destination -Force
+
+        Write-Host "Firewall log copied to:" -ForegroundColor Green
+        Write-Host $destination -ForegroundColor White
+    }
+    else {
+        Write-Host "Firewall log file was not found. No data was collected." -ForegroundColor Red
+    }
+
+    # --- Disable Firewall Logging again ---
+    Write-Host "Disabling Windows Firewall logging..." -ForegroundColor White
+
+    Set-NetFirewallProfile -Profile Domain,Private,Public `
+        -LogAllowed False `
+        -LogBlocked False
+
+        # --- HTML Logging: Firewall log capture result ---
+    Add-Content $FullLogFilePath '<div class="section">'
+    Add-Content $FullLogFilePath '<h2>🔥 Windows Firewall Log Capture</h2>'
+    Add-Content $FullLogFilePath '<table>'
+    Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
+
+    if (Test-Path $destination) {
+        Add-Content $FullLogFilePath "<tr><td><strong>Log capture performed</strong></td><td>Yes</td></tr>"
+        Add-Content $FullLogFilePath ("<tr><td><strong>Log file name</strong></td><td>{0}</td></tr>" -f (Split-Path $destination -Leaf))
+        Add-Content $FullLogFilePath ("<tr><td><strong>Log file location</strong></td><td>{0}</td></tr>" -f (Split-Path $destination -Parent))
+        Add-Content $FullLogFilePath ("<tr><td><strong>Full path</strong></td><td>{0}</td></tr>" -f $destination)
+    }
+    else {
+        Add-Content $FullLogFilePath "<tr><td><strong>Log capture performed</strong></td><td>No</td></tr>"
+        Add-Content $FullLogFilePath "<tr><td><strong>Notes</strong></td><td>Firewall log file was not found or issue was not reproduced.</td></tr>"
+    }
+    
+    $Global:destination = $destination
+    Add-Content $FullLogFilePath '</table>'
+    Add-Content $FullLogFilePath '</div>'
+
+    Write-Host "Firewall logging has been disabled." -ForegroundColor Green
+    Write-Host "Firewall log collection complete." -ForegroundColor Cyan
+}
+GetFirewallLogs
+
+function GetSupportSubmissionInstructions {
+
+    Write-Host "`n========== Support Submission Instructions ==========" -ForegroundColor Cyan
+    Write-Host "Please provide the following files to the support team:" -ForegroundColor White
+    Write-Host ""
+    Write-Host "1. Diagnostic report file:" -ForegroundColor Yellow
+    Write-Host "   $FullLogFilePath" -ForegroundColor White
+    Write-Host ""
+    Write-Host "2. Windows Firewall log file:" -ForegroundColor Yellow
+    Write-Host "   $Global:destination" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Attach both files to your support ticket for review." -ForegroundColor Green
+
+    # --- HTML Logging ---
+    Add-Content $FullLogFilePath '<div class="section">'
+    Add-Content $FullLogFilePath '<h2>📩 Support Submission Instructions</h2>'
+    Add-Content $FullLogFilePath '<table>'
+    Add-Content $FullLogFilePath '<tr><th>File</th><th>Details</th></tr>'
+
+    Add-Content $FullLogFilePath (
+        "<tr><td><strong>Diagnostic report</strong></td><td>{0}</td></tr>" -f $FullLogFilePath
+    )
+    Add-Content $FullLogFilePath (
+        "<tr><td><strong>Firewall log</strong></td><td>{0}</td></tr>" -f $Global:destination
+    )
+
+    Add-Content $FullLogFilePath '</table>'
+    Add-Content $FullLogFilePath '<p>Please attach listed files above when contacting the support team so they can review the collected data.</p>'
+    Add-Content $FullLogFilePath '</div>'
+}
+GetSupportSubmissionInstructions
 
 Write-Host "`n========================================="
 Write-Host "  Script completed successfully." -ForegroundColor Green
