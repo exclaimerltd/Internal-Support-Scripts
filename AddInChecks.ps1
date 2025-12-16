@@ -469,8 +469,52 @@ function GetWindowsVersion {
     Add-Content $FullLogFilePath '</table>'
     Add-Content $FullLogFilePath '</div>'
 }
-
 GetWindowsVersion
+
+function GetWindowsNetworkDetails {
+    Write-Host "`n========== Network Connection Details ==========" -ForegroundColor Cyan
+
+    # --- HTML Section Header ---
+    Add-Content $FullLogFilePath '<div class="section">'
+    Add-Content $FullLogFilePath '<h2>🌐 Network Connection Details</h2>'
+    Add-Content $FullLogFilePath '<table>'
+    Add-Content $FullLogFilePath '<tr><th>Interface</th><th>Network Name</th><th>Category</th><th>IPv4 Connectivity</th><th>IPv6 Connectivity</th></tr>'
+
+    # --- Collect Network Profiles ---
+    $profiles = Get-NetConnectionProfile
+
+    if (-not $profiles) {
+        Write-Host "No active network connections found." -ForegroundColor Yellow
+        Add-Content $FullLogFilePath '<tr><td colspan="5">No active network connections detected.</td></tr>'
+    }
+    else {
+        foreach ($profile in $profiles) {
+            $interfaceAlias = $profile.InterfaceAlias
+            $networkName    = if ($profile.Name) { $profile.Name } else { 'N/A' }
+            $category       = $profile.NetworkCategory
+            $ipv4           = $profile.IPv4Connectivity
+            $ipv6           = $profile.IPv6Connectivity
+
+            # --- Console Output ---
+            Write-Host "Interface:        $interfaceAlias" -ForegroundColor White
+            Write-Host "Network Name:     $networkName" -ForegroundColor White
+            Write-Host "Category:         $category" -ForegroundColor White
+            Write-Host "IPv4 Connectivity $ipv4" -ForegroundColor DarkGray
+            Write-Host "IPv6 Connectivity $ipv6`n" -ForegroundColor DarkGray
+
+            # --- HTML Logging ---
+            Add-Content $FullLogFilePath (
+                "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>" -f `
+                $interfaceAlias, $networkName, $category, $ipv4, $ipv6
+            )
+        }
+    }
+
+    Add-Content $FullLogFilePath '</table>'
+    Add-Content $FullLogFilePath '</div>'
+}
+
+GetWindowsNetworkDetails
 
 function InspectOutlookConfiguration {
     # -------------------------------
@@ -1260,6 +1304,7 @@ else {
         Add-Content $FullLogFilePath '<p class="warning">Exchange Online module not available. Manual Add-in version collection required.</p>'
         CaptureManualAddInVersion -FullLogFilePath $FullLogFilePath
     }
+    Write-Host "`n✅ Exclaimer Add-in details collection completed." -ForegroundColor Green
 } # <-- closes main "else" for admin branch
 
 
