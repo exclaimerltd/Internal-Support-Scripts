@@ -117,6 +117,46 @@ Start-Sleep -Seconds 1
 $ProdID = "efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
 $PreviewID = "a8d42ca1-6f1f-43b5-84e1-9ff40e967ccc"
 
+function ConfirmElevationStatus {
+
+    Write-Host "`n========== Script Permission Check ==========" -ForegroundColor Cyan
+
+    $isAdmin = ([Security.Principal.WindowsPrincipal] `
+        [Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+    if ($isAdmin) {
+        Write-Host "PowerShell is running with Administrator privileges." -ForegroundColor Green
+    }
+    else {
+        Write-Host "PowerShell is NOT running with Administrator privileges." -ForegroundColor Yellow
+        Write-Host "Some diagnostic checks will be limited." -ForegroundColor Yellow
+        Write-Host "You may be asked to re-run this script as Administrator." -ForegroundColor Yellow
+    }
+
+    # --- HTML Logging ---
+    Add-Content $FullLogFilePath '<div class="section">'
+    Add-Content $FullLogFilePath '<h2>🔐 Script Permission Check</h2>'
+    Add-Content $FullLogFilePath '<table>'
+    Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
+
+    if ($isAdmin) {
+        Add-Content $FullLogFilePath '<tr><td><strong>Administrator privileges</strong></td><td>Yes</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>All diagnostics can be collected.</td></tr>'
+    }
+    else {
+        Add-Content $FullLogFilePath '<tr><td><strong>Administrator privileges</strong></td><td>No</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>Some diagnostics (firewall, networking, system-level logs) were skipped or limited.</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Recommendation</strong></td><td>Re-run the script using Run as administrator if requested by support.</td></tr>'
+    }
+
+    Add-Content $FullLogFilePath '</table>'
+    Add-Content $FullLogFilePath '</div>'
+
+    # Optional: expose status to other functions
+    $Global:IsElevatedSession = $isAdmin
+}
+ConfirmElevationStatus
 function Get-ExclaimerUserInput {
     [CmdletBinding()]
     param ()
