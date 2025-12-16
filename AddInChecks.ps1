@@ -1072,8 +1072,21 @@ function CaptureManualAddInVersion {
 
 
 if ($adminChoice.ToUpper() -eq "N") {
-Add-Content $FullLogFilePath '<h3 class="fail">User chose not to run the Exchange Online checks as a Global Admin.</h3>'
-CaptureManualAddInVersion -FullLogFilePath $FullLogFilePath
+
+    Write-Host "User chose not to run Exchange Online checks as Global Admin." -ForegroundColor Yellow
+
+    # --- HTML Logging ---
+    Add-Content $FullLogFilePath '<div class="section">'
+    Add-Content $FullLogFilePath '<h2>🔐 Exchange Online Admin Checks</h2>'
+    Add-Content $FullLogFilePath '<table>'
+    Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
+    Add-Content $FullLogFilePath '<tr><td><strong>Admin checks performed</strong></td><td>No</td></tr>'
+    Add-Content $FullLogFilePath '<tr><td><strong>Reason</strong></td><td>User chose not to run the checks as a Global Administrator.</td></tr>'
+    Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>Some Exchange Online data could not be collected automatically.</td></tr>'
+    Add-Content $FullLogFilePath '</table>'
+    Add-Content $FullLogFilePath '</div>'
+
+    CaptureManualAddInVersion -FullLogFilePath $FullLogFilePath
 }
 else {
     Write-Host "`n🔐 Checking for Exchange Online module..." -ForegroundColor Cyan
@@ -1404,8 +1417,9 @@ function GetFirewallLogs {
 
     Write-Host ""
     Write-Host "Firewall logging is now enabled." -ForegroundColor Green
-    Write-Host "`nPlease reproduce the issue now (Classic Outlook, New Outlook, or Outlook on the Web)." -ForegroundColor Yellow
-    Write-Host "Press ENTER once the issue has been reproduced to continue..." -ForegroundColor Yellow
+    Write-Host "`nPlease reproduce the reported issue now (Classic Outlook, New Outlook, or Outlook on the Web)." -ForegroundColor Yellow
+    Write-Host "This should ensure that any relevant logs are captured for review." -ForegroundColor Yellow
+    Write-Host "`nPress ENTER once the issue has been reproduced to continue..." -ForegroundColor Yellow
     Read-Host
 
     $confirmed = Read-Host "Was the issue successfully reproduced? (Y/N)"
