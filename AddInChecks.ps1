@@ -819,6 +819,35 @@ if ($classicInstalled) {
     Add-Content $FullLogFilePath "<h3>Classic Outlook</h3>"
     $requirementsKB = "(<a href='https://support.exclaimer.com/hc/en-gb/articles/4406058988945-System-Requirements-for-Exclaimer#:~:text=365%20mailboxes%20only-,Windows,-Outlook%20on%20Windows' target='_blank'>Requirements</a>)"
     $buildSupport = ""
+
+    # -------------------------------
+    # ADDITIVE: derive bitness + version from build
+    # -------------------------------
+    $outlookBitness = "Unknown"
+    $outlookVersion = "Unknown"
+
+    $map = @{
+        "19426.20218"="2511"; "19426.20186"="2511"; "19426.20170"="2511";
+        "19328.20266"="2510"; "19328.20244"="2510"; "19328.20232"="2510"; "19328.20190"="2510"; "19328.20178"="2510"; "19328.20158"="2510";
+        "19231.20274"="2509"; "19231.20246"="2509"; "19231.20216"="2509"; "19231.20194"="2509"; "19231.20172"="2509"; "19231.20156"="2509";
+        "19127.20402"="2508"; "19127.20384"="2508"; "19127.20358"="2508"; "19127.20314"="2508"; "19127.20302"="2508"; "19127.20264"="2508"; "19127.20240"="2508"; "19127.20222"="2508";
+        "19029.20300"="2507"; "19029.20274"="2507"; "19029.20208"="2507"; "18925.20268"="2506"; "18925.20242"="2506"; "18827.20244"="2505";
+        "18526.20672"="2502"; "17928.20742"="2408"
+    }
+
+    if ($officeBuild) {
+        $outlookVersion = $map[$officeBuild]
+    }
+
+    $ctrPath = "HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration"
+    if (Test-Path $ctrPath) {
+        $ctrProps = Get-ItemProperty $ctrPath
+        if ($ctrProps.PSObject.Properties.Name -contains "Platform") {
+            $outlookBitness = if ($ctrProps.Platform -eq "x64") { "64-bit" } else { "32-bit" }
+        }
+    }
+    # -------------------------------
+
     if ($officeBuild -and $minimumSupportedBuilds.ContainsKey($licenseType)) {
         $requiredBuild = $minimumSupportedBuilds[$licenseType]
 
@@ -842,10 +871,19 @@ if ($classicInstalled) {
     # Write HTML table with version info
     $classicOutlookTable = @"
 <table>
-    <tr><th>Office Version</th><th>Build</th><th>License Type</th><th>Compatibility</th></tr>
+    <tr>
+        <th>Office Version</th>
+        <th>Build</th>
+        <th>Outlook Version</th>
+        <th>Bitness</th>
+        <th>License Type</th>
+        <th>Compatibility</th>
+    </tr>
     <tr>
         <td>$officeVersion</td>
         <td>$officeBuild</td>
+        <td>$outlookVersion</td>
+        <td>$outlookBitness</td>
         <td>$licenseType</td>
         <td>$buildSupport</td>
     </tr>
@@ -854,10 +892,6 @@ if ($classicInstalled) {
 
     Add-Content $FullLogFilePath $classicOutlookTable
 }
-
-
-
-
         # Checking for existing local signatures
         $baseSignaturePath = [System.IO.Path]::Combine($env:APPDATA, "Microsoft")
         $possibleFolders = @("Signatures", "Handtekeningen")
