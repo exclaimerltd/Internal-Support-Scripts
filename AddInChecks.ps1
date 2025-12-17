@@ -1360,7 +1360,7 @@ function GetFirewallLogs {
 
     Write-Host "`n========== Windows Firewall Logging ==========" -ForegroundColor Cyan
 
-     # --- Elevation check ---
+    # --- Elevation check ---
     $isAdmin = ([Security.Principal.WindowsPrincipal] `
         [Security.Principal.WindowsIdentity]::GetCurrent()
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -1370,13 +1370,12 @@ function GetFirewallLogs {
         Write-Host "Administrator privileges are required to collect firewall logs." -ForegroundColor Red
         Write-Host "Please re-run PowerShell using 'Run as administrator'." -ForegroundColor Yellow
 
-        # --- HTML Logging ---
         Add-Content $FullLogFilePath '<div class="section">'
         Add-Content $FullLogFilePath '<h2>🔥 Windows Firewall Log Capture</h2>'
         Add-Content $FullLogFilePath '<table>'
         Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>Log capture performed</strong></td><td>No</td></tr>'
-        Add-Content $FullLogFilePath '<tr><td><strong>Reason</strong></td><td>PowerShell session was not running with Administrator privileges.</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Reason</strong></td><td>PowerShell was not run as Administrator.</td></tr>'
         Add-Content $FullLogFilePath '</table>'
         Add-Content $FullLogFilePath '</div>'
 
@@ -1384,8 +1383,9 @@ function GetFirewallLogs {
     }
 
     $firewallLogPath = "C:\Windows\System32\LogFiles\Firewall\pfirewall.log"
+    $issueReproduced = $false
+    $destination = $null
 
-    # --- Ask user if they want to proceed ---
     Write-Host "This will temporarily enable Windows Firewall logging to capture Outlook traffic." -ForegroundColor Yellow
     $choice = Read-Host "Do you want to continue? (Y/N)"
 
@@ -1393,7 +1393,6 @@ function GetFirewallLogs {
 
         Write-Host "Firewall logging step skipped by user." -ForegroundColor Yellow
 
-        # --- HTML Logging ---
         Add-Content $FullLogFilePath '<div class="section">'
         Add-Content $FullLogFilePath '<h2>🔥 Windows Firewall Log Capture</h2>'
         Add-Content $FullLogFilePath '<table>'
@@ -1406,71 +1405,71 @@ function GetFirewallLogs {
         return
     }
 
-    Write-Host "`nEnabling Windows Firewall logging..." -ForegroundColor White
+    try {
 
-    # --- Enable Firewall Logging (all profiles) ---
-    Set-NetFirewallProfile -Profile Domain,Private,Public `
-        -LogAllowed True `
-        -LogBlocked True `
-        -LogFileName $firewallLogPath `
-        -LogMaxSizeKilobytes 32767
+        Write-Host "`nEnabling Windows Firewall logging..." -ForegroundColor White
 
-    Write-Host ""
-    Write-Host "Firewall logging is now enabled." -ForegroundColor Green
-    Write-Host "`nPlease reproduce the reported issue now (Classic Outlook, New Outlook, or Outlook on the Web)." -ForegroundColor Yellow
-    Write-Host "This should ensure that any relevant logs are captured for review." -ForegroundColor Yellow
-    Write-Host "`nPress ENTER once the issue has been reproduced to continue..." -ForegroundColor Yellow
-    Read-Host
+        Set-NetFirewallProfile -Profile Domain,Private,Public `
+            -LogAllowed True `
+            -LogBlocked True `
+            -LogFileName $firewallLogPath `
+            -LogMaxSizeKilobytes 32767
 
-    $confirmed = Read-Host "Was the issue successfully reproduced? (Y/N)"
-    if ($confirmed -notmatch '^[Yy]$') {
-        Write-Host "Issue not reproduced. Firewall log capture will be skipped." -ForegroundColor Yellow
-        return
+        Write-Host "Firewall logging is now enabled." -ForegroundColor Green
+        Write-Host "`nPlease reproduce the reported issue now (Classic Outlook, New Outlook, or Outlook on the Web)." -ForegroundColor Yellow
+        Write-Host "This should ensure that any relevant logs are captured for review.`n" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "  1) Close Outlook."
+        Write-Host "  2) Start Outlook again."
+        Write-Host "  3) Reproduce the issue reported."
+        Write-Host "  4) Once you reprocuded the issue reported, close Outlook."
+        Write-Host ""
+        Write-Host "`nPress ENTER once the issue has been reproduced to continue..." -ForegroundColor Yellow
+        Read-Host
+
+        $confirmed = Read-Host "Was the issue successfully reproduced? (Y/N)"
+        if ($confirmed -match '^[Yy]$') {
+            $issueReproduced = $true
+        }
+
+        if ($issueReproduced -and (Test-Path $firewallLogPath)) {
+            $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+            $destination = Join-Path $Global:FilePath "pfirewall_$timestamp.log"
+            Copy-Item -Path $firewallLogPath -Destination $destination -Force
+        }
+
     }
-    # --- Copy log file ---
-    if (Test-Path $firewallLogPath) {
-        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-        $destination = Join-Path $Global:FilePath "pfirewall_$timestamp.log"
+    finally {
 
-        Copy-Item -Path $firewallLogPath -Destination $destination -Force
+        Write-Host "Disabling Windows Firewall logging..." -ForegroundColor White
 
-        Write-Host "Firewall log copied to:" -ForegroundColor Green
-        Write-Host $destination -ForegroundColor White
+        Set-NetFirewallProfile -Profile Domain,Private,Public `
+            -LogAllowed False `
+            -LogBlocked False
+
+        Add-Content $FullLogFilePath '<div class="section">'
+        Add-Content $FullLogFilePath '<h2>🔥 Windows Firewall Log Capture</h2>'
+        Add-Content $FullLogFilePath '<table>'
+        Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
+        Add-Content $FullLogFilePath "<tr><td><strong>Issue reproduced</strong></td><td>$issueReproduced</td></tr>"
+
+        if ($destination) {
+            Add-Content $FullLogFilePath "<tr><td><strong>Log capture performed</strong></td><td>Yes</td></tr>"
+            Add-Content $FullLogFilePath ("<tr><td><strong>Log file name</strong></td><td>{0}</td></tr>" -f (Split-Path $destination -Leaf))
+            Add-Content $FullLogFilePath ("<tr><td><strong>Log file location</strong></td><td>{0}</td></tr>" -f (Split-Path $destination -Parent))
+        }
+        else {
+            Add-Content $FullLogFilePath "<tr><td><strong>Log capture performed</strong></td><td>No</td></tr>"
+            Add-Content $FullLogFilePath "<tr><td><strong>Notes</strong></td><td>Issue was not reproduced during the capture window.</td></tr>"
+        }
+
+        Add-Content $FullLogFilePath '</table>'
+        Add-Content $FullLogFilePath '</div>'
+
+        Write-Host "Firewall logging has been disabled." -ForegroundColor Green
+        Write-Host "Firewall log collection complete." -ForegroundColor Cyan
+        $Global:destination = $destination
     }
-    else {
-        Write-Host "Firewall log file was not found. No data was collected." -ForegroundColor Red
-    }
-
-    # --- Disable Firewall Logging again ---
-    Write-Host "Disabling Windows Firewall logging..." -ForegroundColor White
-
-    Set-NetFirewallProfile -Profile Domain,Private,Public `
-        -LogAllowed False `
-        -LogBlocked False
-
-        # --- HTML Logging: Firewall log capture result ---
-    Add-Content $FullLogFilePath '<div class="section">'
-    Add-Content $FullLogFilePath '<h2>🔥 Windows Firewall Log Capture</h2>'
-    Add-Content $FullLogFilePath '<table>'
-    Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
-
-    if (Test-Path $destination) {
-        Add-Content $FullLogFilePath "<tr><td><strong>Log capture performed</strong></td><td>Yes</td></tr>"
-        Add-Content $FullLogFilePath ("<tr><td><strong>Log file name</strong></td><td>{0}</td></tr>" -f (Split-Path $destination -Leaf))
-        Add-Content $FullLogFilePath ("<tr><td><strong>Log file location</strong></td><td>{0}</td></tr>" -f (Split-Path $destination -Parent))
-        Add-Content $FullLogFilePath ("<tr><td><strong>Full path</strong></td><td>{0}</td></tr>" -f $destination)
-    }
-    else {
-        Add-Content $FullLogFilePath "<tr><td><strong>Log capture performed</strong></td><td>No</td></tr>"
-        Add-Content $FullLogFilePath "<tr><td><strong>Notes</strong></td><td>Firewall log file was not found or issue was not reproduced.</td></tr>"
-    }
-    
-    $Global:destination = $destination
-    Add-Content $FullLogFilePath '</table>'
-    Add-Content $FullLogFilePath '</div>'
-
-    Write-Host "Firewall logging has been disabled." -ForegroundColor Green
-    Write-Host "Firewall log collection complete." -ForegroundColor Cyan
 }
 GetFirewallLogs
 
