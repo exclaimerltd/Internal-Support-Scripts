@@ -1066,7 +1066,7 @@ function CaptureManualAddInVersion {
     Write-Host "`n✅ Thank you — version recorded as: $addInVersion" -ForegroundColor Green
 
     # --- HTML Logging (safe formatting) ---
-    Add-Content $FullLogFilePath '<h2>Exclaimer Add-in Information (Manual)</h2>'
+    Add-Content $FullLogFilePath '<h2>🧩 Exclaimer Add-in Information (Manual)</h2>'
     Add-Content $FullLogFilePath ('<p>User-provided Add-in version: <strong>{0}</strong></p>' -f [System.Web.HttpUtility]::HtmlEncode($addInVersion))
 }
 
@@ -1159,7 +1159,7 @@ else {
     # --- Proceed only if module available ---
     if (CheckExchangeOnlineModule) {
             # --- HTML Logging (safe formatting) ---
-            Add-Content $FullLogFilePath '<h2>Exclaimer Add-in Information (EXO)</h2>'
+            Add-Content $FullLogFilePath '<h2>🧩 Exclaimer Add-in Information (EXO Admin)</h2>'
         if (ConnectExchangeOnlineSession) {
             Write-Host "`n🎯 Querying Exclaimer Add-in deployment..." -ForegroundColor Cyan
 
