@@ -105,7 +105,7 @@ $FullLogFilePath = Join-Path $Global:FilePath $LogFile
 <p><strong>Run Date:</strong> $DateTimeRun</p>
 "@ | Set-Content -Path $FullLogFilePath -Encoding UTF8
 
-
+Clear-Host
 Write-Host "           -----------------------------------------------" -ForegroundColor Cyan
 Write-Host "           |                 EXCLAIMER                   |" -ForegroundColor Yellow
 Write-Host "           |       Diagnostics Script Collection         |" -ForegroundColor Yellow
@@ -119,7 +119,7 @@ $PreviewID = "a8d42ca1-6f1f-43b5-84e1-9ff40e967ccc"
 
 function ConfirmElevationStatus {
 
-    Write-Host "`n========== Script Permission Check ==========" -ForegroundColor Cyan
+    Write-Host "========== Script Permission Check ==========`n" -ForegroundColor Cyan
 
     $isAdmin = ([Security.Principal.WindowsPrincipal] `
         [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -130,11 +130,27 @@ function ConfirmElevationStatus {
     }
     else {
         Write-Host "PowerShell is NOT running with Administrator privileges." -ForegroundColor Yellow
-        Write-Host "Some diagnostic checks will be limited." -ForegroundColor Yellow
-        Write-Host "You may be asked to re-run this script as Administrator." -ForegroundColor Yellow
+        Write-Host "Some diagnostic checks will be skipped or provide incomplete results." -ForegroundColor Yellow
+        Write-Host "`nRecommended action: Close this window and re-run the script as Administrator.`n" -ForegroundColor Cyan
+
+        $choice = Read-Host "Do you want to continue anyway? (Y/N)"
+
+        if ($choice.ToUpper() -ne "Y") {
+            Write-Host "Script execution cancelled by user." -ForegroundColor Red
+
+            # --- HTML Logging (cancelled run) ---
+            Add-Content $FullLogFilePath '<div class="section">'
+            Add-Content $FullLogFilePath '<h2>🔐 Script Permission Check</h2>'
+            Add-Content $FullLogFilePath '<p><strong>Status:</strong> Script stopped. User chose not to continue without Administrator privileges.</p>'
+            Add-Content $FullLogFilePath '</div>'
+
+            exit
+        }
+
+        Write-Host "Continuing without Administrator privileges..." -ForegroundColor Yellow
     }
 
-    # --- HTML Logging ---
+    # --- HTML Logging (continued run) ---
     Add-Content $FullLogFilePath '<div class="section">'
     Add-Content $FullLogFilePath '<h2>🔐 Script Permission Check</h2>'
     Add-Content $FullLogFilePath '<table>'
@@ -145,8 +161,9 @@ function ConfirmElevationStatus {
         Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>All diagnostics can be collected.</td></tr>'
     }
     else {
-        Add-Content $FullLogFilePath '<tr><td><strong>Administrator privileges</strong></td><td>No</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Administrator privileges</strong></td><td style="color:#F5A627;font-weight:bold;">No</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>Some diagnostics (firewall, networking, system-level logs) were skipped or limited.</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>User decision</strong></td><td>User chose to continue without elevation.</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>Recommendation</strong></td><td>Re-run the script using Run as administrator if requested by support.</td></tr>'
     }
 
@@ -1094,9 +1111,9 @@ Write-Host ""
 Write-Host "=== Exclaimer Add-in Information ===" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "ℹ️  If a Microsoft 365 Global Admin is available, selecting 'Y' on the next prompt allows the script to collect important Exclaimer Add-in details." -ForegroundColor Yellow
-Write-Host "This includes deployment information and the current State of the Add-in, which can significantly speed up troubleshooting." -ForegroundColor Cyan
+Write-Host "This includes deployment information and the current State of the Add-in for the user reporting issues." -ForegroundColor Cyan
 Write-Host "`nIf you do not run the next step as a Global Admin, we may need to ask you to run some PowerShell commands manually to collect the required information." -ForegroundColor Red
-Write-Host ""
+Write-Host "`nRecommended action: 'Y' continue as a Microsoft 365 Global Administrator to collect full details.`n" -ForegroundColor Cyan
 
 # --- Step: Check if user is Global Admin ---
 $adminChoice = Read-Host "Are you a Microsoft 365 Global Admin, or do you have an Admin available to assist with the next step? (Y/N)"
@@ -1141,7 +1158,7 @@ if ($adminChoice.ToUpper() -eq "N") {
     Add-Content $FullLogFilePath '<h2>🔐 Exchange Online Admin Checks</h2>'
     Add-Content $FullLogFilePath '<table>'
     Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
-    Add-Content $FullLogFilePath '<tr><td><strong>Admin checks performed</strong></td><td>No</td></tr>'
+    Add-Content $FullLogFilePath '<tr><td><strong>Admin checks performed</strong></td><td style="color:#F5A627;font-weight:bold;">No</td></tr>'
     Add-Content $FullLogFilePath '<tr><td><strong>Reason</strong></td><td>User chose not to run the checks as a Global Administrator.</td></tr>'
     Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>Some Exchange Online data could not be collected automatically.</td></tr>'
     Add-Content $FullLogFilePath '</table>'
@@ -1435,7 +1452,7 @@ function GetFirewallLogs {
         Add-Content $FullLogFilePath '<h2>🔥 Windows Firewall Log Capture</h2>'
         Add-Content $FullLogFilePath '<table>'
         Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
-        Add-Content $FullLogFilePath '<tr><td><strong>Log capture performed</strong></td><td>No</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Log capture performed</strong></td><td style="color:#F5A627;font-weight:bold;">No</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>Reason</strong></td><td>PowerShell was not run as Administrator.</td></tr>'
         Add-Content $FullLogFilePath '</table>'
         Add-Content $FullLogFilePath '</div>'
@@ -1458,7 +1475,7 @@ function GetFirewallLogs {
         Add-Content $FullLogFilePath '<h2>🔥 Windows Firewall Log Capture</h2>'
         Add-Content $FullLogFilePath '<table>'
         Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
-        Add-Content $FullLogFilePath '<tr><td><strong>Log capture performed</strong></td><td>No</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Log capture performed</strong></td><td style="color:#F5A627;font-weight:bold;">No</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>Reason</strong></td><td>User declined to enable firewall logging.</td></tr>'
         Add-Content $FullLogFilePath '</table>'
         Add-Content $FullLogFilePath '</div>'
@@ -1520,8 +1537,8 @@ function GetFirewallLogs {
             Add-Content $FullLogFilePath ("<tr><td><strong>Log file location</strong></td><td>{0}</td></tr>" -f (Split-Path $destination -Parent))
         }
         else {
-            Add-Content $FullLogFilePath "<tr><td><strong>Log capture performed</strong></td><td>No</td></tr>"
-            Add-Content $FullLogFilePath "<tr><td><strong>Notes</strong></td><td>Issue was not reproduced during the capture window.</td></tr>"
+            Add-Content $FullLogFilePath '<tr><td><strong>Log capture performed</strong></td><td style="color:#F5A627;font-weight:bold;">No</td></tr>'
+            Add-Content $FullLogFilePath '<tr><td><strong>Notes</strong></td><td>Issue was not reproduced during the capture window.</td></tr>'
         }
 
         Add-Content $FullLogFilePath '</table>'
