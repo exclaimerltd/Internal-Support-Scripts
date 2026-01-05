@@ -1100,7 +1100,7 @@ This prevents Exclaimer signatures from being added to the Outlook message body.
 </p>
 <p>
 <strong>Where to find this setting:</strong><br>
-Word &gt; File &gt; Options &gt; Trust Center &gt; Trust Center Settings &gt; File Block Settings &gt; Web Pages
+Microsoft Word &gt; File &gt; Options &gt; Trust Center &gt; Trust Center Settings &gt; File Block Settings &gt; Web Pages
 </p>
 <p>
 <strong>Note on the setting:</strong><br>
