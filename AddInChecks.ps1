@@ -1079,7 +1079,7 @@ InspectOutlookConfiguration
                 $key = Get-ItemProperty -Path $check.Path -ErrorAction SilentlyContinue
                 if ($key.HtmlFiles -eq 1 -or $key.HtmlFiles -eq 2) {
                     Write-Host "Web Pages BLOCKED via $($check.Scope)" -ForegroundColor Red
-                    Add-Content $FullLogFilePath "<p>❌ Web Pages are <strong>blocked</strong> via $($check.Scope).</p>"
+                    Add-Content $FullLogFilePath "<p>❌ Web Pages are <strong>blocked</strong>.</p>"
                     $webPagesBlocked = $true
                 }
                 elseif ($key.HtmlFiles -eq 0) {
