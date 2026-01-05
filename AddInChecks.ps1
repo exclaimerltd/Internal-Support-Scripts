@@ -1098,12 +1098,32 @@ Add-Content $FullLogFilePath @"
 <strong>Impact:</strong> Word is blocking Web Page file types (.htm/.html).  
 This prevents Exclaimer signatures from being added to the Outlook message body.
 </p>
+
 <p>
-<strong>Where to check this setting:</strong><br>
+<strong>Where to find this setting:</strong><br>
 Word &gt; File &gt; Options &gt; Trust Center &gt; Trust Center Settings &gt; File Block Settings &gt; Web Pages
 </p>
+
 <p>
-<strong>Note:</strong> If this option is selected but greyed out, the setting is being enforced by Group Policy (GPO) and cannot be changed locally by the user.  
+<strong>Note on the setting:</strong><br>
+If the box for Web Pages is <strong>checked</strong>, the file type is blocked.  
+The desired state for signatures to work is <strong>unchecked</strong>.
+</p>
+
+<p>
+<strong>Recommended action:</strong><br>
+If settings are changed, Close and reopen Outlook.
+</p>
+
+<p>
+<strong>Why this is required:</strong><br>
+Outlook uses Word as the email editor, and File Block / Trust Center settings are read at application startup.  
+If this setting was recently changed or applied by policy, Outlook must be restarted for the change to take effect.
+</p>
+
+<p>
+<strong>Note:</strong><br>
+If this option is selected but greyed out, the setting is being enforced by Group Policy (GPO) and cannot be changed locally by the user.  
 In managed environments, an administrator would need to review the policy controlling Word File Block settings.
 </p>
 "@
