@@ -832,88 +832,88 @@ function InspectOutlookConfiguration {
         # Compatibility Check Output
         # -----------------------------
 
-if ($classicInstalled) {
-    Add-Content $FullLogFilePath "<h3>Classic Outlook</h3>"
-    $requirementsKB = "(<a href='https://support.exclaimer.com/hc/en-gb/articles/4406058988945-System-Requirements-for-Exclaimer#:~:text=365%20mailboxes%20only-,Windows,-Outlook%20on%20Windows' target='_blank'>Requirements</a>)"
-    $buildSupport = ""
+        if ($classicInstalled) {
+            Add-Content $FullLogFilePath "<h3>Classic Outlook</h3>"
+            $requirementsKB = "(<a href='https://support.exclaimer.com/hc/en-gb/articles/4406058988945-System-Requirements-for-Exclaimer#:~:text=365%20mailboxes%20only-,Windows,-Outlook%20on%20Windows' target='_blank'>Requirements</a>)"
+            $buildSupport = ""
 
-    # -------------------------------
-    # ADDITIVE: derive bitness + version from build
-    # -------------------------------
-    $outlookBitness = "Unknown"
-    $outlookVersion = "Unknown"
+            # -------------------------------
+            # ADDITIVE: derive bitness + version from build
+            # -------------------------------
+            $outlookBitness = "Unknown"
+            $outlookVersion = "Unknown"
 
-    $map = @{
-    # Current Channel
-    "19426.20186"="2511"; "19426.20170"="2511";
-    "19328.20266"="2510"; "19328.20244"="2510"; "19328.20232"="2510"; "19328.20190"="2510"; "19328.20178"="2510"; "19328.20158"="2510";
-    "19231.20274"="2509"; "19231.20246"="2509"; "19231.20216"="2509"; "19231.20194"="2509"; "19231.20172"="2509"; "19231.20156"="2509";
-    "19127.20402"="2508"; "19127.20384"="2508"; "19127.20358"="2508"; "19127.20314"="2508"; "19127.20302"="2508"; "19127.20264"="2508"; "19127.20240"="2508"; "19127.20222"="2508";
-    "19029.20300"="2507"; "19029.20274"="2507"; "19029.20208"="2507"; "18925.20268"="2506"; "18925.20242"="2506"; "18827.20244"="2505";
+            $map = @{
+            # Current Channel
+            "19426.20186"="2511"; "19426.20170"="2511";
+            "19328.20266"="2510"; "19328.20244"="2510"; "19328.20232"="2510"; "19328.20190"="2510"; "19328.20178"="2510"; "19328.20158"="2510";
+            "19231.20274"="2509"; "19231.20246"="2509"; "19231.20216"="2509"; "19231.20194"="2509"; "19231.20172"="2509"; "19231.20156"="2509";
+            "19127.20402"="2508"; "19127.20384"="2508"; "19127.20358"="2508"; "19127.20314"="2508"; "19127.20302"="2508"; "19127.20264"="2508"; "19127.20240"="2508"; "19127.20222"="2508";
+            "19029.20300"="2507"; "19029.20274"="2507"; "19029.20208"="2507"; "18925.20268"="2506"; "18925.20242"="2506"; "18827.20244"="2505";
 
-    # Monthly Enterprise Channel overlap
-    "18730.20260"="2504"; "18730.20240"="2504"; "18623.20316"="2503"; "18623.20208"="2503"; "18623.20178"="2503"; "18623.20156"="2503";
-    "18526.20672"="2502"; "18526.20660"="2502"; "18526.20634"="2502"; "18526.20546"="2502"; "18526.20472"="2502"; "18526.20438"="2502"; "18526.20416"="2502"; "18526.20336"="2502"; "18526.20264"="2502"; "18526.20168"="2502"; "18526.20144"="2502";
+            # Monthly Enterprise Channel overlap
+            "18730.20260"="2504"; "18730.20240"="2504"; "18623.20316"="2503"; "18623.20208"="2503"; "18623.20178"="2503"; "18623.20156"="2503";
+            "18526.20672"="2502"; "18526.20660"="2502"; "18526.20634"="2502"; "18526.20546"="2502"; "18526.20472"="2502"; "18526.20438"="2502"; "18526.20416"="2502"; "18526.20336"="2502"; "18526.20264"="2502"; "18526.20168"="2502"; "18526.20144"="2502";
 
-    # Early Semi‑Annual Enterprise / Channels
-    "18429.20240"="2501"; "18429.20158"="2501"; "18429.20132"="2501";
-    "18324.20272"="2412"; "18324.20194"="2412"; "18324.20190"="2412"; "18324.20168"="2412";
-    "18227.20240"="2411"; "18227.20162"="2411"; "18227.20152"="2411";
-    "18129.20242"="2410"; "18129.20200"="2410"; "18129.20158"="2410";
-    "18025.20242"="2409"; "18025.20214"="2409"; "18025.20160"="2409"; "18025.20140"="2409"; "18025.20104"="2409"; "18025.20096"="2409";
-    "17928.20742"="2408"; "17928.20730"="2408"; "17928.20708"="2408"; "17928.20588"="2408"; "17928.20572"="2408"; "17928.20538"="2408"; "17928.20512"="2408"; "17928.20392"="2408"; "17928.20336"="2408"; "17928.20286"="2408"; "17928.20156"="2408"; "17928.20114"="2408";
+            # Early Semi‑Annual Enterprise / Channels
+            "18429.20240"="2501"; "18429.20158"="2501"; "18429.20132"="2501";
+            "18324.20272"="2412"; "18324.20194"="2412"; "18324.20190"="2412"; "18324.20168"="2412";
+            "18227.20240"="2411"; "18227.20162"="2411"; "18227.20152"="2411";
+            "18129.20242"="2410"; "18129.20200"="2410"; "18129.20158"="2410";
+            "18025.20242"="2409"; "18025.20214"="2409"; "18025.20160"="2409"; "18025.20140"="2409"; "18025.20104"="2409"; "18025.20096"="2409";
+            "17928.20742"="2408"; "17928.20730"="2408"; "17928.20708"="2408"; "17928.20588"="2408"; "17928.20572"="2408"; "17928.20538"="2408"; "17928.20512"="2408"; "17928.20392"="2408"; "17928.20336"="2408"; "17928.20286"="2408"; "17928.20156"="2408"; "17928.20114"="2408";
 
-    # Older versions through 2202
-    "17726.20222"="2406"; "17726.20160"="2406"; "17726.20126"="2406";
-    "17628.20206"="2405"; "17628.20188"="2405"; "17628.20164"="2405"; "17628.20152"="2405"; "17628.20144"="2405"; "17628.20110"="2405";
-    "17531.20210"="2404"; "17531.20190"="2404"; "17531.20152"="2404"; "17531.20140"="2404"; "17531.20128"="2404"; "17531.20120"="2404";
-    "17425.20258"="2403"; "17425.20176"="2403"; "17425.20146"="2403"; "17425.20138"="2403";
-    "17328.20414"="2402"; "17328.20346"="2402"; "17328.20336"="2402"; "17328.20282"="2402"; "17328.20184"="2402"; "17328.20162"="2402"; "17328.20142"="2402";
+            # Older versions through 2202
+            "17726.20222"="2406"; "17726.20160"="2406"; "17726.20126"="2406";
+            "17628.20206"="2405"; "17628.20188"="2405"; "17628.20164"="2405"; "17628.20152"="2405"; "17628.20144"="2405"; "17628.20110"="2405";
+            "17531.20210"="2404"; "17531.20190"="2404"; "17531.20152"="2404"; "17531.20140"="2404"; "17531.20128"="2404"; "17531.20120"="2404";
+            "17425.20258"="2403"; "17425.20176"="2403"; "17425.20146"="2403"; "17425.20138"="2403";
+            "17328.20414"="2402"; "17328.20346"="2402"; "17328.20336"="2402"; "17328.20282"="2402"; "17328.20184"="2402"; "17328.20162"="2402"; "17328.20142"="2402";
 
-    # Versions around 2202 (older)
-    "16130.20990"="2302"; "16130.20964"="2302"; "16130.20928"="2302"; "16130.20888"="2302"; "16130.20858"="2302"; "16130.20848"="2302"; "16130.20772"="2302"; "16130.20766"="2302"; "16130.20738"="2302"; "16130.20724"="2302"; "16130.20580"="2302"; "16130.20500"="2302"; "16130.20394"="2302"; "16130.20346"="2302"; "16130.20282"="2302"; "16130.20184"="2302";
-    "15601.20870"="2208"; "15601.20848"="2208"; "15601.20832"="2208"; "15601.20796"="2208"; "15601.20772"="2208"; "15601.20680"="2208"; "15601.20660"="2208"; "15601.20578"="2208"; "15601.20456"="2208"; "15601.20378"="2208"; "15601.20286"="2208"; "15601.20088"="2208";
-    "15225.20422"="2205"; "15225.20394"="2205"; "15225.20288"="2205"; "15225.20204"="2205";
-    "15128.20312"="2204"; "15128.20280"="2204"; "15128.20248"="2204"; "15128.20178"="2204";
-    "15028.20204"="2203"; "15028.20160"="2203";
-    "14931.20724"="2202"; "14931.20660"="2202"; "14931.20494"="2202"; "14931.20392"="2202"; "14931.20274"="2202"; "14931.20132"="2202"; "14931.20120"="2202";
-    }
+            # Versions around 2202 (older)
+            "16130.20990"="2302"; "16130.20964"="2302"; "16130.20928"="2302"; "16130.20888"="2302"; "16130.20858"="2302"; "16130.20848"="2302"; "16130.20772"="2302"; "16130.20766"="2302"; "16130.20738"="2302"; "16130.20724"="2302"; "16130.20580"="2302"; "16130.20500"="2302"; "16130.20394"="2302"; "16130.20346"="2302"; "16130.20282"="2302"; "16130.20184"="2302";
+            "15601.20870"="2208"; "15601.20848"="2208"; "15601.20832"="2208"; "15601.20796"="2208"; "15601.20772"="2208"; "15601.20680"="2208"; "15601.20660"="2208"; "15601.20578"="2208"; "15601.20456"="2208"; "15601.20378"="2208"; "15601.20286"="2208"; "15601.20088"="2208";
+            "15225.20422"="2205"; "15225.20394"="2205"; "15225.20288"="2205"; "15225.20204"="2205";
+            "15128.20312"="2204"; "15128.20280"="2204"; "15128.20248"="2204"; "15128.20178"="2204";
+            "15028.20204"="2203"; "15028.20160"="2203";
+            "14931.20724"="2202"; "14931.20660"="2202"; "14931.20494"="2202"; "14931.20392"="2202"; "14931.20274"="2202"; "14931.20132"="2202"; "14931.20120"="2202";
+            }
 
-    if ($officeBuild) {
-        $outlookVersion = $map[$officeBuild]
-    }
+            if ($officeBuild) {
+                $outlookVersion = $map[$officeBuild]
+            }
 
-    $ctrPath = "HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration"
-    if (Test-Path $ctrPath) {
-        $ctrProps = Get-ItemProperty $ctrPath
-        if ($ctrProps.PSObject.Properties.Name -contains "Platform") {
-            $outlookBitness = if ($ctrProps.Platform -eq "x64") { "64-bit" } else { "32-bit" }
-        }
-    }
-    # -------------------------------
+            $ctrPath = "HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration"
+            if (Test-Path $ctrPath) {
+                $ctrProps = Get-ItemProperty $ctrPath
+                if ($ctrProps.PSObject.Properties.Name -contains "Platform") {
+                    $outlookBitness = if ($ctrProps.Platform -eq "x64") { "64-bit" } else { "32-bit" }
+                }
+            }
+            # -------------------------------
 
-    if ($officeBuild -and $minimumSupportedBuilds.ContainsKey($licenseType)) {
-        $requiredBuild = $minimumSupportedBuilds[$licenseType]
+            if ($officeBuild -and $minimumSupportedBuilds.ContainsKey($licenseType)) {
+                $requiredBuild = $minimumSupportedBuilds[$licenseType]
 
-        if (Compare-Build -current $officeBuild -minimum $requiredBuild) {
-            Write-Host "`nOutlook $officeVersion (Build $officeBuild) license type '$licenseType' is SUPPORTED." -ForegroundColor Green
-            $buildSupport = "<span class='success'>Supported $requirementsKB</span>"
-        } else {
-            Write-Host "`n! Outlook $officeVersion (Build $officeBuild) license type '$licenseType' is NOT SUPPORTED." -ForegroundColor Red
-            Write-Host "  -> Minimum required build for this license: $requiredBuild" -ForegroundColor Gray
-            $buildSupport = "<span class='fail'>Not Supported (Required: $requiredBuild) $requirementsKB</span>"
-        }
+                if (Compare-Build -current $officeBuild -minimum $requiredBuild) {
+                    Write-Host "`nOutlook $officeVersion (Build $officeBuild) license type '$licenseType' is SUPPORTED." -ForegroundColor Green
+                    $buildSupport = "<span class='success'>Supported $requirementsKB</span>"
+                } else {
+                    Write-Host "`n! Outlook $officeVersion (Build $officeBuild) license type '$licenseType' is NOT SUPPORTED." -ForegroundColor Red
+                    Write-Host "  -> Minimum required build for this license: $requiredBuild" -ForegroundColor Gray
+                    $buildSupport = "<span class='fail'>Not Supported (Required: $requiredBuild) $requirementsKB</span>"
+                }
 
-    } elseif (-not $minimumSupportedBuilds.ContainsKey($licenseType)) {
-        Write-Host "`n! License type '$licenseType' is unknown or not mapped. Cannot validate support." -ForegroundColor Yellow
-        $buildSupport = "<span class='warning'>Unknown license type $requirementsKB</span>"
-    } else {
-        Write-Host "`n! Office build number not detected. Cannot validate version compatibility." -ForegroundColor Yellow
-        $buildSupport = "<span class='warning'>Build not detected $requirementsKB</span>"
-    }
+            } elseif (-not $minimumSupportedBuilds.ContainsKey($licenseType)) {
+                Write-Host "`n! License type '$licenseType' is unknown or not mapped. Cannot validate support." -ForegroundColor Yellow
+                $buildSupport = "<span class='warning'>Unknown license type $requirementsKB</span>"
+            } else {
+                Write-Host "`n! Office build number not detected. Cannot validate version compatibility." -ForegroundColor Yellow
+                $buildSupport = "<span class='warning'>Build not detected $requirementsKB</span>"
+            }
 
-    # Write HTML table with version info
-    $classicOutlookTable = @"
+            # Write HTML table with version info
+            $classicOutlookTable = @"
 <table>
     <tr>
         <th>Office Version</th>
@@ -933,9 +933,8 @@ if ($classicInstalled) {
     </tr>
 </table>
 "@
-
-    Add-Content $FullLogFilePath $classicOutlookTable
-}
+        Add-Content $FullLogFilePath $classicOutlookTable
+        }
         # Checking for existing local signatures
         $baseSignaturePath = [System.IO.Path]::Combine($env:APPDATA, "Microsoft")
         $possibleFolders = @("Signatures", "Handtekeningen")
@@ -993,115 +992,171 @@ if ($classicInstalled) {
 
 InspectOutlookConfiguration
 
-# Define registry paths to search
-$registryPaths = @(
-    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\",
-    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\",
-    "HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"
-)
+    # Define registry paths to search
+    $registryPaths = @(
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\",
+        "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\",
+        "HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"
+    )
 
-Write-Host "`n========== Exclaimer Cloud Signature Update Agent for Windows ==========" -ForegroundColor Cyan
-$foundApps = @()
+    Write-Host "`n========== Exclaimer Cloud Signature Update Agent for Windows ==========" -ForegroundColor Cyan
+    $foundApps = @()
 
-foreach ($path in $registryPaths) {
-    try {
-        $apps = Get-ChildItem -Path $path -ErrorAction SilentlyContinue | ForEach-Object {
-            Get-ItemProperty -Path $_.PSPath -ErrorAction SilentlyContinue
-        } | Where-Object {
-            $_.DisplayName -like "*Cloud Signature Update Agent*"
-        } | Select-Object DisplayName, DisplayVersion, Publisher, InstallDate, HelpLink, URLUpdateInfo,
+    foreach ($path in $registryPaths) {
+        try {
+            $apps = Get-ChildItem -Path $path -ErrorAction SilentlyContinue | ForEach-Object {
+                Get-ItemProperty -Path $_.PSPath -ErrorAction SilentlyContinue
+            } | Where-Object {
+                $_.DisplayName -like "*Cloud Signature Update Agent*"
+            } | Select-Object DisplayName, DisplayVersion, Publisher, InstallDate, HelpLink, URLUpdateInfo,
             @{ Name = 'InstallType'; Expression = {
-                if ($_.URLUpdateInfo -like "*Exclaimer.CloudSignatureAgent.application*") {
-                    'Click-Once'
-                } else {
-                    'MSI'
+                    if ($_.URLUpdateInfo -like "*Exclaimer.CloudSignatureAgent.application*") {
+                        'Click-Once'
+                    }
+                    else {
+                        'MSI'
+                    }
                 }
-            }}
+            }
 
-        if ($apps) {
-            $foundApps += $apps
+            if ($apps) {
+                $foundApps += $apps
+            }
         }
-    } catch {
-        # Ignore errors
-    }
-}
-
-if ($foundApps.Count -gt 0) {
-    # Console output
-    $foundApps | Select-Object DisplayName, DisplayVersion, InstallType | Format-Table -AutoSize
-
-    # HTML output
-    Add-Content $FullLogFilePath "<h3>Exclaimer Cloud Signature Update Agent for Windows</h3>"
-    Add-Content $FullLogFilePath "<table><tr><th>Display Name</th><th>Version</th><th>Install Type</th></tr>"
-
-    foreach ($app in $foundApps) {
-        $displayName = [System.Web.HttpUtility]::HtmlEncode($app.DisplayName)
-        $version = [System.Web.HttpUtility]::HtmlEncode($app.DisplayVersion)
-        $installType = [System.Web.HttpUtility]::HtmlEncode($app.InstallType)
-        $row = "<tr><td>$displayName</td><td>$version</td><td>$installType</td></tr>"
-        Add-Content $FullLogFilePath $row
+        catch {
+            # Ignore errors
+        }
     }
 
-    Add-Content $FullLogFilePath "</table>"
-} else {
-    Write-Host "The Exclaimer Cloud Signature Update Agent is not installed." -ForegroundColor Yellow
-    Add-Content $FullLogFilePath "<p>✅ The Exclaimer Cloud Signature Update Agent is not installed.</p>"
-}
+    if ($foundApps.Count -gt 0) {
+        # Console output
+        $foundApps | Select-Object DisplayName, DisplayVersion, InstallType | Format-Table -AutoSize
 
-Add-Content $FullLogFilePath "</div>"
+        # HTML output
+        Add-Content $FullLogFilePath "<h3>Exclaimer Cloud Signature Update Agent for Windows</h3>"
+        Add-Content $FullLogFilePath "<table><tr><th>Display Name</th><th>Version</th><th>Install Type</th></tr>"
 
-# Define registry paths for 64-bit and 32-bit uninstall keys
-$registryPaths = @(
-    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\",
-    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"
-)
+        foreach ($app in $foundApps) {
+            $displayName = [System.Web.HttpUtility]::HtmlEncode($app.DisplayName)
+            $version = [System.Web.HttpUtility]::HtmlEncode($app.DisplayVersion)
+            $installType = [System.Web.HttpUtility]::HtmlEncode($app.InstallType)
+            $row = "<tr><td>$displayName</td><td>$version</td><td>$installType</td></tr>"
+            Add-Content $FullLogFilePath $row
+        }
 
-Write-Host "`n========== Microsoft Edge WebView2 Runtime ==========" -ForegroundColor Cyan
+        Add-Content $FullLogFilePath "</table>"
+    }
+    else {
+        Write-Host "The Exclaimer Cloud Signature Update Agent is not installed." -ForegroundColor Yellow
+        Add-Content $FullLogFilePath "<p>✅ The Exclaimer Cloud Signature Update Agent is not installed.</p>"
+    }
 
-$webviewApps = @()
+    Add-Content $FullLogFilePath "</div>"
 
-foreach ($path in $registryPaths) {
-    try {
-        $apps = Get-ChildItem -Path $path -ErrorAction SilentlyContinue | ForEach-Object {
-            Get-ItemProperty -Path $_.PSPath -ErrorAction SilentlyContinue
-        } | Where-Object {
-            $_.DisplayName -like "*WebView2*"
-        } | Select-Object DisplayName, DisplayVersion, Publisher, InstallDate,
+    # Define registry paths for 64-bit and 32-bit uninstall keys
+    $registryPaths = @(
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"
+    )
+    Write-Host "`n--- Word File Block Settings Check (Web Pages) ---" -ForegroundColor Yellow
+    Add-Content $FullLogFilePath "<h3>Word File Block Settings (Web Pages)</h3>"
+
+    $registryChecks = @(
+        @{
+            Path = "HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\FileBlock"
+            Scope = "Policy (GPO)"
+        },
+        @{
+            Path = "HKCU:\Software\Microsoft\Office\16.0\Word\Security\FileBlock"
+            Scope = "User"
+        }
+    )
+
+    $webPagesBlocked = $false
+
+        foreach ($check in $registryChecks) {
+            if (Test-Path $check.Path) {
+                $key = Get-ItemProperty -Path $check.Path -ErrorAction SilentlyContinue
+                if ($key.HtmlFiles -eq 1 -or $key.HtmlFiles -eq 2) {
+                    Write-Host "Web Pages BLOCKED via $($check.Scope)" -ForegroundColor Red
+                    Add-Content $FullLogFilePath "<p>❌ Web Pages are <strong>blocked</strong> via $($check.Scope).</p>"
+                    $webPagesBlocked = $true
+                }
+                elseif ($key.HtmlFiles -eq 0) {
+                    Write-Host "Web Pages allowed via $($check.Scope)" -ForegroundColor Green
+                    Add-Content $FullLogFilePath "<p>✅ Web Pages allowed via $($check.Scope).</p>"
+                }
+            }
+        }
+
+    if ($webPagesBlocked) {
+        Write-Host "`nWARNING: Word is blocking Web Pages. HTML based signatures cannot be inserted into the Outlook email body." -ForegroundColor Red
+        Write-Host "This setting must be disabled to allow signature injection." -ForegroundColor Red
+
+Add-Content $FullLogFilePath @"
+<p style='color:red;'>
+<strong>Impact:</strong> Word is blocking Web Page file types (.htm/.html).  
+This prevents Exclaimer signatures from being added to the Outlook message body.
+</p>
+<p>
+<strong>Where to check this setting:</strong><br>
+Word &gt; File &gt; Options &gt; Trust Center &gt; Trust Center Settings &gt; File Block Settings &gt; Web Pages
+</p>
+<p>
+<strong>Note:</strong> If this option is selected but greyed out, the setting is being enforced by Group Policy (GPO) and cannot be changed locally by the user.  
+In managed environments, an administrator would need to review the policy controlling Word File Block settings.
+</p>
+"@
+    }
+    else {
+        Write-Host "No blocking detected for Web Pages." -ForegroundColor Green
+        Add-Content $FullLogFilePath "<p>✅ No Word File Block restrictions detected for Web Pages.</p>"
+    }
+
+    Write-Host "`n========== Microsoft Edge WebView2 Runtime ==========" -ForegroundColor Cyan
+
+    $webviewApps = @()
+
+    foreach ($path in $registryPaths) {
+        try {
+            $apps = Get-ChildItem -Path $path -ErrorAction SilentlyContinue | ForEach-Object {
+                Get-ItemProperty -Path $_.PSPath -ErrorAction SilentlyContinue
+            } | Where-Object {
+                $_.DisplayName -like "*WebView2*"
+            } | Select-Object DisplayName, DisplayVersion, Publisher, InstallDate,
             @{ Name = 'InstallType'; Expression = { 'MSI' } }
 
-        if ($apps) {
-            $webviewApps += $apps
+            if ($apps) {
+                $webviewApps += $apps
+            }
         }
-    } catch {
-        # Silently ignore errors
-    }
-}
-
-if ($webviewApps.Count -gt 0) {
-    # Console output
-    $webviewApps | Select-Object DisplayName, DisplayVersion, InstallType | Format-Table -AutoSize
-
-    # HTML output
-    Add-Content $FullLogFilePath "<h3>Microsoft Edge WebView2 Runtime</h3>"
-    Add-Content $FullLogFilePath "<table><tr><th>Display Name</th><th>Version</th><th>Install Type</th></tr>"
-
-    foreach ($app in $webviewApps) {
-        $displayName = [System.Net.WebUtility]::HtmlEncode($app.DisplayName)
-        $version = [System.Net.WebUtility]::HtmlEncode($app.DisplayVersion)
-        $installType = [System.Net.WebUtility]::HtmlEncode($app.InstallType)
-        $row = "<tr><td>$displayName</td><td>$version</td><td>$installType</td></tr>"
-        Add-Content $FullLogFilePath $row
+        catch {
+            # Silently ignore errors
+        }
     }
 
-    Add-Content $FullLogFilePath "</table>"
-} else {
-    Write-Host "Microsoft Edge WebView2 Runtime is not installed." -ForegroundColor Yellow
-    Add-Content $FullLogFilePath "<p class='warning'>Microsoft Edge WebView2 Runtime is not installed.</p>"
-}
+    if ($webviewApps.Count -gt 0) {
+        # Console output
+        $webviewApps | Select-Object DisplayName, DisplayVersion, InstallType | Format-Table -AutoSize
 
+        # HTML output
+        Add-Content $FullLogFilePath "<h3>Microsoft Edge WebView2 Runtime</h3>"
+        Add-Content $FullLogFilePath "<table><tr><th>Display Name</th><th>Version</th><th>Install Type</th></tr>"
 
-# Client-Side
-# Try get "Connected Experience" on/off (not possible for user on/off, only if managed policy which is very uncommonly used)
+        foreach ($app in $webviewApps) {
+            $displayName = [System.Net.WebUtility]::HtmlEncode($app.DisplayName)
+            $version = [System.Net.WebUtility]::HtmlEncode($app.DisplayVersion)
+            $installType = [System.Net.WebUtility]::HtmlEncode($app.InstallType)
+            $row = "<tr><td>$displayName</td><td>$version</td><td>$installType</td></tr>"
+            Add-Content $FullLogFilePath $row
+        }
+
+        Add-Content $FullLogFilePath "</table>"
+    }
+    else {
+        Write-Host "Microsoft Edge WebView2 Runtime is not installed." -ForegroundColor Yellow
+        Add-Content $FullLogFilePath "<p class='warning'>Microsoft Edge WebView2 Runtime is not installed.</p>"
+    }
 
 # -------------------------------------------------------------------
 # 📨 EXCLAIMER ADD-IN DETAILS COLLECTION (User or Admin)
