@@ -89,7 +89,7 @@ Write-Host ""
 Write-Host "Step 3: Create a Client Secret" -ForegroundColor Yellow
 Write-Host "1. Go to 'Certificates & secrets' -> 'New client secret'." -ForegroundColor White
 Write-Host "2. Provide a description and expiry period (1 or 2 years recommended)." -ForegroundColor White
-Write-Host "3. Copy the secret value now. You will not be able to retrieve it again!" -ForegroundColor White
+Write-Host "3. Copy the secret 'VALUE', no the'ID'. You will not be able to retrieve it again!" -ForegroundColor White
 Write-Host ""
 
 Write-Host "Step 4: Save these values for the script:" -ForegroundColor Green
@@ -360,14 +360,7 @@ function PromptRetryOrSignOut {
             "2" {
                 Write-Host "Signing out and disconnecting..." -ForegroundColor Cyan
                 # Disconnect from Microsoft Graph if connected
-                if (Get-Module Microsoft.Graph.Users -ListAvailable) {
-                    try {
-                        Disconnect-MgGraph -Confirm:$false
-                        Write-Host "Disconnected from Microsoft Graph." -ForegroundColor Green
-                    } catch {
-                        Write-Host "No active Microsoft Graph session found or error disconnecting." -ForegroundColor Yellow
-                    }
-                }
+                DisconnectGraph
                 return "SignOut"
             }
             default {
