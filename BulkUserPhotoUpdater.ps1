@@ -80,8 +80,8 @@ Write-Host "- Directory (tenant) ID" -ForegroundColor Cyan
 Write-Host ""
 
 Write-Host "Step 2: Assign Permissions" -ForegroundColor Yellow
-Write-Host "1. In the App Registration, go to 'API Permissions' -> 'Add a permission' -> 'Microsoft Graph' -> 'Application permissions'." -ForegroundColor White
-Write-Host "2. Select 'User.ReadWrite.All'." -ForegroundColor White
+Write-Host "1. In the App Registration, go to 'Manage' -> 'API Permissions' -> 'Add a permission' -> 'Microsoft Graph' -> 'Application permissions'." -ForegroundColor White
+Write-Host "2. Find and expand'User' then select 'User.ReadWrite.All'." -ForegroundColor White
 Write-Host "3. Click 'Add permissions'." -ForegroundColor White
 Write-Host "4. Click 'Grant admin consent for <YourTenant>' (Global Administrator required)." -ForegroundColor White
 Write-Host ""
@@ -255,6 +255,8 @@ function UpdateUserPhotosByUpn {
         }
     }
 
+
+
     Write-Host ""
     Write-Host "========== Summary ==========" -ForegroundColor Cyan
 
@@ -272,7 +274,6 @@ function UpdateUserPhotosByUpn {
         Write-Host "All user photos updated successfully." -ForegroundColor Green
     }
 }
-
 
 function DisconnectGraph {
     Clear-Host
@@ -306,9 +307,44 @@ function CheckGraphSession {
     Write-Host "TenantId : $($context.TenantId)" -ForegroundColor White
 }
 
+function PromptRetryOrSignOut {
+    param (
+        [string]$Message = "An error occurred during the operation."
+    )
+
+    while ($true) {
+        Write-Host ""
+        Write-Host $Message -ForegroundColor Yellow
+        Write-Host "Options:"
+        Write-Host "  1) Try Again"
+        Write-Host "  2) Sign Out and Disconnect"
+        $choice = Read-Host "Enter 1 or 2"
+
+        switch ($choice) {
+            "1" {
+                UpdateUserPhotosByUpn
+            }
+            "2" {
+                Write-Host "Signing out and disconnecting..." -ForegroundColor Cyan
+                # Disconnect from Microsoft Graph if connected
+                if (Get-Module Microsoft.Graph.Users -ListAvailable) {
+                    try {
+                        Disconnect-MgGraph -Confirm:$false
+                        Write-Host "Disconnected from Microsoft Graph." -ForegroundColor Green
+                    } catch {
+                        Write-Host "No active Microsoft Graph session found or error disconnecting." -ForegroundColor Yellow
+                    }
+                }
+                return "SignOut"
+            }
+            default {
+                Write-Host "Invalid choice. Please enter 1 or 2." -ForegroundColor Red
+            }
+        }
+    }
+}
 
 EnsureMgUsersModule
 ConnectGraphAppOnly
 UpdateUserPhotosByUpn
-DisconnectGraph
-CheckGraphSession
+PromptRetryOrSignOut
