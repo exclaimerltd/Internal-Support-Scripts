@@ -593,7 +593,7 @@ function GetWindowsNetworkDetails {
     }
     else {
         $proxyState = 'Direct access (no WinHTTP proxy configured)'
-        $note = 'Direct access is normal when no proxy is configured or when using a transparent VPN such as Cloudflare WARP. This is expected and not an issue.'
+        $note = 'Direct access is normal when no proxy is configured or when using a transparent VPN such as Cloudflare WARP.'
         $icon = 'ℹ️'
     }
 
