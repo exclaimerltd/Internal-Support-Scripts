@@ -308,7 +308,7 @@ function CheckGraphSession {
 
 
 EnsureMgUsersModule
-#ConnectGraphAppOnly
+ConnectGraphAppOnly
 UpdateUserPhotosByUpn
-#DisconnectGraph
+DisconnectGraph
 CheckGraphSession
