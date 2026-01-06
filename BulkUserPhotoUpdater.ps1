@@ -188,6 +188,8 @@ function ConnectGraphAppOnly {
         }
 
         Write-Host "Successfully authenticated to Microsoft Graph (App-only)." -ForegroundColor Green
+        Write-Host "Please wait....." -ForegroundColor Yellow
+        Start-Sleep -Seconds 10
     }
     catch {
         Write-Host "Failed to authenticate to Microsoft Graph." -ForegroundColor Red
@@ -197,6 +199,7 @@ function ConnectGraphAppOnly {
 }
 
 function UpdateUserPhotosByUpn {
+    Clear-Host
     Write-Host ""
     Write-Host "========== Bulk User Photo Update ==========" -ForegroundColor Cyan
 
@@ -221,40 +224,70 @@ function UpdateUserPhotosByUpn {
     $failedUploads = @()
     $missingFiles = @()
 
-    foreach ($file in $photoFiles) {
-        $userPrefix = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
-        Write-Host ""
-        Write-Host "Processing file '$($file.Name)' for user prefix '$userPrefix'..." -ForegroundColor White
+foreach ($file in $photoFiles) {
+    $userPrefix = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+    Write-Host ""
+    Write-Host "Processing file '$($file.Name)' for user prefix '$userPrefix'..." -ForegroundColor White
 
-        try {
-            # Attempt to find the matching user by prefix
-            $user = Get-MgUser -Filter "startsWith(userPrincipalName,'$userPrefix')" -Property Id,UserPrincipalName -Top 1 -ErrorAction Stop
+    try {
+        # Attempt to find the matching user by prefix
+        $user = Get-MgUser -Filter "startsWith(userPrincipalName,'$userPrefix')" -Property Id,UserPrincipalName -Top 1 -ErrorAction Stop
 
-            if ($null -eq $user) {
-                Write-Host "No user found matching '$userPrefix'" -ForegroundColor Yellow
-                $missingFiles += $userPrefix
-                continue
-            }
-
-            $userUpn = $user.UserPrincipalName
-
-            # Set the photo
-            Set-MgUserPhotoContent -UserId $userUpn -InFile $file.FullName -ErrorAction Stop
-            Write-Host "Photo updated successfully for $userUpn" -ForegroundColor Green
+        if ($null -eq $user) {
+            Write-Host "No user found matching '$userPrefix'" -ForegroundColor Yellow
+            $missingFiles += $userPrefix
+            continue
         }
-        catch {
-            if ($_.Exception.Message -match "ResourceNotFound") {
-                Write-Host "No user found for '$userPrefix'" -ForegroundColor Yellow
-                $missingFiles += $userPrefix
+
+        $userUpn = $user.UserPrincipalName
+
+        # Retry logic for transient failures
+        $maxRetries = 3
+        $attempt = 0
+        $success = $false
+
+        do {
+            $attempt++
+            try {
+                Set-MgUserPhotoContent -UserId $userUpn -InFile $file.FullName -ErrorAction Stop
+                Write-Host ("Photo updated successfully for " + $userUpn) -ForegroundColor Green
+                $success = $true
             }
-            else {
-                Write-Host "Failed to update photo for '$userPrefix'" -ForegroundColor Red
-                Write-Host $_.Exception.Message -ForegroundColor DarkRed
-                $failedUploads += $userPrefix
+            catch {
+                Write-Host ("Attempt " + $attempt + " failed for " + $userUpn + ": " + $_.Exception.Message) -ForegroundColor Red
+
+                if ($attempt -lt $maxRetries) {
+                    Write-Host "Waiting 5 seconds before retry..." -ForegroundColor Cyan
+                    Start-Sleep -Seconds 5
+                } else {
+                    Write-Host ("Maximum retries reached for " + $userUpn) -ForegroundColor DarkRed
+                    $failedUploads += $userPrefix
+
+                    # Prompt user to retry manually or sign out
+                    $userChoice = PromptRetryOrSignOut -Message ("Failed to update photo for " + $userUpn + ".")
+                    if ($userChoice -eq "Retry") {
+                        $attempt = 0        # Reset retry counter
+                        Write-Host ("Retrying " + $userUpn + " in 10 seconds...") -ForegroundColor Cyan
+                        Start-Sleep -Seconds 10
+                    } elseif ($userChoice -eq "SignOut") {
+                        return
+                    }
+                }
             }
+        } while (-not $success -and $attempt -lt $maxRetries)
+
+    }
+    catch {
+        if ($_.Exception.Message -match "ResourceNotFound") {
+            Write-Host ("No user found for " + $userPrefix) -ForegroundColor Yellow
+            $missingFiles += $userPrefix
+        }
+        else {
+            Write-Host ("Unexpected error for " + $userPrefix + ": " + $_.Exception.Message) -ForegroundColor DarkRed
+            $failedUploads += $userPrefix
         }
     }
-
+}
 
 
     Write-Host ""
