@@ -608,7 +608,7 @@ function GetWindowsNetworkDetails {
     )
     Add-Content $FullLogFilePath '</table>'
     Add-Content $FullLogFilePath '</div>'
-    }
+}
 
 GetWindowsNetworkDetails
 
