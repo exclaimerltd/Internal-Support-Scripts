@@ -566,7 +566,49 @@ function GetWindowsNetworkDetails {
 
     Add-Content $FullLogFilePath '</table>'
     Add-Content $FullLogFilePath '</div>'
-}
+
+    # ==========================================================
+    # WinHTTP Proxy Configuration Check
+    # ==========================================================
+
+    Write-Host "`n========== WinHTTP Proxy Configuration (Info) ==========" -ForegroundColor Cyan
+
+    $winHttpOutput = netsh winhttp show proxy
+
+    $proxyConfigured = $true
+    if ($winHttpOutput -match 'Direct access') {
+        $proxyConfigured = $false
+    }
+
+    # --- Console Output ---
+    $winHttpOutput | ForEach-Object {
+        Write-Host $_ -ForegroundColor White
+    }
+
+    # --- Interpret State (Informational) ---
+    if ($proxyConfigured) {
+        $proxyState = ($winHttpOutput | Where-Object { $_ -match 'Proxy Server' }).Trim()
+        $note = 'A WinHTTP proxy is configured. If Classic Outlook cloud apps encounter issues, verify that the proxy supports non-interactive authentication, ensure Microsoft 365 endpoints are reachable, compare browser PAC/auto-detect settings with WinHTTP, and check the proxy logs for any blocked or rewritten traffic.'
+        $icon = 'ℹ️'
+    }
+    else {
+        $proxyState = 'Direct access (no WinHTTP proxy configured)'
+        $note = 'Direct access is normal when no proxy is configured or when using a transparent VPN such as Cloudflare WARP. This is expected and not an issue.'
+        $icon = 'ℹ️'
+    }
+
+    # --- HTML Logging ---
+    Add-Content $FullLogFilePath '<div class="section">'
+    Add-Content $FullLogFilePath '<h2>🖥️ WinHTTP Proxy Configuration (Informational)</h2>'
+    Add-Content $FullLogFilePath '<table>'
+    Add-Content $FullLogFilePath '<tr><th>Status</th><th>Configuration</th><th>Notes</th></tr>'
+    Add-Content $FullLogFilePath (
+        "<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>" -f `
+        $icon, $proxyState, $note
+    )
+    Add-Content $FullLogFilePath '</table>'
+    Add-Content $FullLogFilePath '</div>'
+    }
 
 GetWindowsNetworkDetails
 
@@ -1078,13 +1120,13 @@ InspectOutlookConfiguration
             if (Test-Path $check.Path) {
                 $key = Get-ItemProperty -Path $check.Path -ErrorAction SilentlyContinue
                 if ($key.HtmlFiles -eq 1 -or $key.HtmlFiles -eq 2) {
-                    Write-Host "Web Pages BLOCKED via $($check.Scope)" -ForegroundColor Red
+                    Write-Host "Web Pages BLOCKED" -ForegroundColor Red
                     Add-Content $FullLogFilePath "<p>❌ Web Pages are <strong>blocked</strong>.</p>"
                     $webPagesBlocked = $true
                 }
                 elseif ($key.HtmlFiles -eq 0) {
-                    Write-Host "Web Pages allowed via $($check.Scope)" -ForegroundColor Green
-                    Add-Content $FullLogFilePath "<p>✅ Web Pages allowed via $($check.Scope).</p>"
+                    Write-Host "Web Pages allowed" -ForegroundColor Green
+                    Add-Content $FullLogFilePath "<p>✅ Web Pages allowed.</p>"
                 }
             }
         }
