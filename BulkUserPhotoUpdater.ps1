@@ -342,7 +342,7 @@ function CheckGraphSession {
 
 function PromptRetryOrSignOut {
     param (
-        [string]$Message = "An error occurred during the operation."
+        [string]$Message = "Would you like to try again?"
     )
 
     while ($true) {
