@@ -190,7 +190,7 @@ function Get-ExclaimerUserInput {
 
         # --- 1) Email (validated) ---
         while ($true) {
-            $email = Read-Host "`nEnter the user's email address (e.g. user@company.com)"
+            $email = Read-Host "`nEnter the affect mailboxes email address (e.g. user@company.com)"
             if ($email -match '^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,}$') {
                 $Global:userInput.Email = $email.Trim()
                 break
