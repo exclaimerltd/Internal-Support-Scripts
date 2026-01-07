@@ -53,55 +53,82 @@
 #>
 
 # Clear the console for readability
-Clear-Host
+function ConfirmPowerShellVersion {
+    Write-Host "`n========== PowerShell Version Check ==========" -ForegroundColor Cyan
 
-Write-Host "========================== Bulk User Photo Updater ==========================" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "Step 1: Azure AD App Registration" -ForegroundColor Yellow
-Write-Host "This script will guide you through registering an Azure AD application needed for" `
-           "app-only authentication to update user photos in Microsoft 365." -ForegroundColor White
-Write-Host ""
+    $requiredMajorVersion = 7
+    $currentVersion = $PSVersionTable.PSVersion
 
-Write-Host "Open your web browser and navigate to the following page:" -ForegroundColor Green
-Write-Host "https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" -ForegroundColor Cyan
-Write-Host ""
+    if ($currentVersion.Major -lt $requiredMajorVersion) {
+        Write-Host ""
+        Write-Host "Unsupported PowerShell version detected." -ForegroundColor Red
+        Write-Host "Current version : $currentVersion" -ForegroundColor Yellow
+        Write-Host "Required version: PowerShell 7 or later" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "Please install PowerShell 7 from:" -ForegroundColor White
+        Write-Host "https://learn.microsoft.com/powershell/scripting/install/installing-powershell" -ForegroundColor Cyan
+        Write-Host ""
 
-Write-Host "Instructions:" -ForegroundColor Yellow
-Write-Host "1. Click 'New registration'." -ForegroundColor White
-Write-Host "2. Give the app a name, e.g., 'BulkUserPhotoUpdater'." -ForegroundColor White
-Write-Host "3. Supported account types: 'Accounts in this organizational directory only'." -ForegroundColor White
-Write-Host "4. Redirect URI: Leave blank (not required for app-only authentication)." -ForegroundColor White
-Write-Host "5. Click 'Register'." -ForegroundColor White
-Write-Host ""
+        Write-Host "Press Enter to exit the script." -ForegroundColor Yellow
+        Read-Host
 
-Write-Host "After registration, note down the following values (you will need them later):" -ForegroundColor Green
-Write-Host "- Application (client) ID" -ForegroundColor Cyan
-Write-Host "- Directory (tenant) ID" -ForegroundColor Cyan
-Write-Host ""
+        exit 0
+    }
 
-Write-Host "Step 2: Assign Permissions" -ForegroundColor Yellow
-Write-Host "1. In the App Registration, go to 'Manage' -> 'API Permissions' -> 'Add a permission' -> 'Microsoft Graph' -> 'Application permissions'." -ForegroundColor White
-Write-Host "2. Find and expand'User' then select 'User.ReadWrite.All'." -ForegroundColor White
-Write-Host "3. Click 'Add permissions'." -ForegroundColor White
-Write-Host "4. Click 'Grant admin consent for <YourTenant>' (Global Administrator required)." -ForegroundColor White
-Write-Host ""
+    Write-Host "PowerShell version $currentVersion is supported." -ForegroundColor Green
+}
 
-Write-Host "Step 3: Create a Client Secret" -ForegroundColor Yellow
-Write-Host "1. Go to 'Certificates & secrets' -> 'New client secret'." -ForegroundColor White
-Write-Host "2. Provide a description and expiry period (1 or 2 years recommended)." -ForegroundColor White
-Write-Host "3. Copy the secret 'VALUE', no the'ID'. You will not be able to retrieve it again!" -ForegroundColor White
-Write-Host ""
+function ShowBulkUserPhotoUpdaterAppRegistrationGuide {
+    Clear-Host
 
-Write-Host "Step 4: Save these values for the script:" -ForegroundColor Green
-Write-Host "- Application (client) ID" -ForegroundColor Cyan
-Write-Host "- Directory (tenant) ID" -ForegroundColor Cyan
-Write-Host "- Client Secret Value (of the secret you created)" -ForegroundColor Cyan
-Write-Host ""
+    Write-Host "========================== Bulk User Photo Updater ==========================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Step 1: Azure AD App Registration" -ForegroundColor Yellow
+    Write-Host "This script will guide you through registering an Azure AD application needed for" `
+               "app-only authentication to update user photos in Microsoft 365." -ForegroundColor White
+    Write-Host ""
 
-Write-Host "Once you have these, you can proceed to install the Microsoft.Graph.Users module and connect using app-only authentication." -ForegroundColor Magenta
-Write-Host ""
-Write-Host "Press Enter when ready to continue to module installation and connection..." -ForegroundColor Yellow
-Read-Host
+    Write-Host "Open your web browser and navigate to the following page:" -ForegroundColor Green
+    Write-Host "https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" -ForegroundColor Cyan
+    Write-Host ""
+
+    Write-Host "Instructions:" -ForegroundColor Yellow
+    Write-Host "1. Click 'New registration'." -ForegroundColor White
+    Write-Host "2. Give the app a name, e.g., 'BulkUserPhotoUpdater'." -ForegroundColor White
+    Write-Host "3. Supported account types: 'Accounts in this organizational directory only'." -ForegroundColor White
+    Write-Host "4. Redirect URI: Leave blank (not required for app-only authentication)." -ForegroundColor White
+    Write-Host "5. Click 'Register'." -ForegroundColor White
+    Write-Host ""
+
+    Write-Host "After registration, note down the following values (you will need them later):" -ForegroundColor Green
+    Write-Host "- Application (client) ID" -ForegroundColor Cyan
+    Write-Host "- Directory (tenant) ID" -ForegroundColor Cyan
+    Write-Host ""
+
+    Write-Host "Step 2: Assign Permissions" -ForegroundColor Yellow
+    Write-Host "1. In the App Registration, go to 'Manage' -> 'API Permissions' -> 'Add a permission' -> 'Microsoft Graph' -> 'Application permissions'." -ForegroundColor White
+    Write-Host "2. Find and expand 'User' then select 'User.ReadWrite.All'." -ForegroundColor White
+    Write-Host "3. Click 'Add permissions'." -ForegroundColor White
+    Write-Host "4. Click 'Grant admin consent for <YourTenant>' (Global Administrator required)." -ForegroundColor White
+    Write-Host ""
+
+    Write-Host "Step 3: Create a Client Secret" -ForegroundColor Yellow
+    Write-Host "1. Go to 'Certificates & secrets' -> 'New client secret'." -ForegroundColor White
+    Write-Host "2. Provide a description and expiry period (1 or 2 years recommended)." -ForegroundColor White
+    Write-Host "3. Copy the secret VALUE, not the ID. You will not be able to retrieve it again." -ForegroundColor White
+    Write-Host ""
+
+    Write-Host "Step 4: Save these values for the script:" -ForegroundColor Green
+    Write-Host "- Application (client) ID" -ForegroundColor Cyan
+    Write-Host "- Directory (tenant) ID" -ForegroundColor Cyan
+    Write-Host "- Client Secret Value (of the secret you created)" -ForegroundColor Cyan
+    Write-Host ""
+
+    Write-Host "Once you have these, you can proceed to install the Microsoft.Graph.Users module and connect using app-only authentication." -ForegroundColor Magenta
+    Write-Host ""
+    Write-Host "Press Enter when ready to continue to module installation and connection..." -ForegroundColor Yellow
+    Read-Host
+}
 
 function EnsureMgUsersModule {
     Clear-Host
@@ -210,11 +237,16 @@ function UpdateUserPhotosByUpn {
         return
     }
 
+    # Report file in the SAME folder as photos
+    $timestamp  = Get-Date -Format "yyyy-MM-dd_HHmm"
+    $reportPath = Join-Path $path "BulkUserPhotoUpdateReport_$timestamp.csv"
+    $report     = @()
+
     # Supported image formats
     $validExtensions = @("jpg", "jpeg", "png")
 
-    # Get all image files in the folder with valid extensions
-    $photoFiles = Get-ChildItem -Path $path -File | Where-Object { $validExtensions -contains $_.Extension.TrimStart('.').ToLower() }
+    $photoFiles = Get-ChildItem -Path $path -File |
+        Where-Object { $validExtensions -contains $_.Extension.TrimStart('.').ToLower() }
 
     if (-not $photoFiles) {
         Write-Host "No image files found in the specified directory." -ForegroundColor Yellow
@@ -222,86 +254,98 @@ function UpdateUserPhotosByUpn {
     }
 
     $failedUploads = @()
-    $missingFiles = @()
+    $missingFiles  = @()
 
-foreach ($file in $photoFiles) {
-    $userPrefix = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
-    Write-Host ""
-    Write-Host "Processing file '$($file.Name)' for user prefix '$userPrefix'..." -ForegroundColor White
+    foreach ($file in $photoFiles) {
+        $userPrefix = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
 
-    try {
-        # Attempt to find the matching user by prefix
-        $user = Get-MgUser -Filter "startsWith(userPrincipalName,'$userPrefix')" -Property Id,UserPrincipalName -Top 1 -ErrorAction Stop
+        Write-Host ""
+        Write-Host "Processing file '$($file.Name)' for user prefix '$($userPrefix)'..." -ForegroundColor White
 
-        if ($null -eq $user) {
-            Write-Host "No user found matching '$userPrefix'" -ForegroundColor Yellow
-            $missingFiles += $userPrefix
-            continue
-        }
+        try {
+            $user = Get-MgUser -Filter "startsWith(userPrincipalName,'$userPrefix')" `
+                -Property Id,UserPrincipalName -Top 1 -ErrorAction Stop
 
-        $userUpn = $user.UserPrincipalName
+            if (-not $user) {
+                Write-Host "No user found matching '$($userPrefix)'" -ForegroundColor Yellow
+                $missingFiles += $userPrefix
 
-        # Retry logic for transient failures
-        $maxRetries = 3
-        $attempt = 0
-        $success = $false
-
-        do {
-            $attempt++
-            try {
-                Set-MgUserPhotoContent -UserId $userUpn -InFile $file.FullName -ErrorAction Stop
-                Write-Host ("Photo updated successfully for " + $userUpn) -ForegroundColor Green
-                $success = $true
+                $report += [pscustomobject]@{
+                    FileName = $file.Name
+                    User     = $userPrefix
+                    Status   = "User not found"
+                }
+                continue
             }
-            catch {
-                Write-Host ("Attempt " + $attempt + " failed for " + $userUpn + ": " + $_.Exception.Message) -ForegroundColor Red
 
-                if ($attempt -lt $maxRetries) {
-                    Write-Host "Waiting 5 seconds before retry..." -ForegroundColor Cyan
-                    Start-Sleep -Seconds 5
-                } else {
-                    Write-Host ("Maximum retries reached for " + $userUpn) -ForegroundColor DarkRed
-                    $failedUploads += $userPrefix
+            $userUpn    = $user.UserPrincipalName
+            $maxRetries = 3
+            $attempt    = 0
+            $success    = $false
 
-                    # Prompt user to retry manually or sign out
-                    $userChoice = PromptRetryOrSignOut -Message ("Failed to update photo for " + $userUpn + ".")
-                    if ($userChoice -eq "Retry") {
-                        $attempt = 0        # Reset retry counter
-                        Write-Host ("Retrying " + $userUpn + " in 10 seconds...") -ForegroundColor Cyan
-                        Start-Sleep -Seconds 10
-                    } elseif ($userChoice -eq "SignOut") {
-                        return
+            do {
+                $attempt++
+                try {
+                    Set-MgUserPhotoContent -UserId $userUpn -InFile $file.FullName -ErrorAction Stop
+                    Write-Host "Photo updated successfully for $($userUpn)" -ForegroundColor Green
+
+                    $report += [pscustomobject]@{
+                        FileName = $file.Name
+                        User     = $userUpn
+                        Status   = "Success"
+                    }
+
+                    $success = $true
+                }
+                catch {
+                    Write-Host "Attempt $($attempt) failed for $($userUpn): $($_.Exception.Message)" -ForegroundColor Red
+
+                    if ($attempt -lt $maxRetries) {
+                        Write-Host "Waiting 5 seconds before retry..." -ForegroundColor Cyan
+                        Start-Sleep -Seconds 5
+                    }
+                    else {
+                        Write-Host "Maximum retries reached for $($userUpn)" -ForegroundColor DarkRed
+                        $failedUploads += $userPrefix
+
+                        $report += [pscustomobject]@{
+                            FileName = $file.Name
+                            User     = $userUpn
+                            Status   = "Failed after retries"
+                        }
+
+                        $userChoice = PromptRetryOrSignOut -Message ("Failed to update photo for $($userUpn).")
+                        if ($userChoice -eq "Retry") {
+                            $attempt = 0
+                            Write-Host "Retrying $($userUpn) in 10 seconds..." -ForegroundColor Cyan
+                            Start-Sleep -Seconds 10
+                        }
+                        elseif ($userChoice -eq "SignOut") {
+                            return
+                        }
                     }
                 }
-            }
-        } while (-not $success -and $attempt -lt $maxRetries)
-
-    }
-    catch {
-        if ($_.Exception.Message -match "ResourceNotFound") {
-            Write-Host ("No user found for " + $userPrefix) -ForegroundColor Yellow
-            $missingFiles += $userPrefix
+            } while (-not $success -and $attempt -lt $maxRetries)
         }
-        else {
-            Write-Host ("Unexpected error for " + $userPrefix + ": " + $_.Exception.Message) -ForegroundColor DarkRed
+        catch {
+            Write-Host "Unexpected error for $($userPrefix): $($_.Exception.Message)" -ForegroundColor DarkRed
             $failedUploads += $userPrefix
+
+            $report += [pscustomobject]@{
+                FileName = $file.Name
+                User     = $userPrefix
+                Status   = "Unexpected error"
+            }
         }
     }
-}
 
+    # Write report to the SAME folder as photos
+    $report | Export-Csv -Path $reportPath -NoTypeInformation -Encoding UTF8
 
     Write-Host ""
     Write-Host "========== Summary ==========" -ForegroundColor Cyan
-
-    if ($missingFiles.Count -gt 0) {
-        Write-Host "Users not found in Microsoft 365:" -ForegroundColor Yellow
-        $missingFiles | ForEach-Object { Write-Host " - $_" -ForegroundColor Yellow }
-    }
-
-    if ($failedUploads.Count -gt 0) {
-        Write-Host "Photo uploads failed for the following users:" -ForegroundColor Red
-        $failedUploads | ForEach-Object { Write-Host " - $_" -ForegroundColor Red }
-    }
+    Write-Host "Report saved to:" -ForegroundColor Green
+    Write-Host $reportPath -ForegroundColor Cyan
 
     if ($missingFiles.Count -eq 0 -and $failedUploads.Count -eq 0) {
         Write-Host "All user photos updated successfully." -ForegroundColor Green
@@ -369,7 +413,8 @@ function PromptRetryOrSignOut {
         }
     }
 }
-
+ConfirmPowerShellVersion
+ShowBulkUserPhotoUpdaterAppRegistrationGuide
 EnsureMgUsersModule
 ConnectGraphAppOnly
 UpdateUserPhotosByUpn
