@@ -1442,8 +1442,79 @@ else {
             }
             else {
                 Write-Host "`n⚠️ No Exclaimer Add-ins found for this user." -ForegroundColor Yellow
-                Add-Content $FullLogFilePath ('<p class="warning">No Exclaimer Add-ins found for user {0}.</p>' -f [System.Web.HttpUtility]::HtmlEncode($user))
+
+                Add-Content $FullLogFilePath '<h3>Exclaimer Add-in Information (Admin)</h3>'
+                Add-Content $FullLogFilePath '<table>'
+                Add-Content $FullLogFilePath '<tr><th>Status</th><th>Details</th></tr>'
+
+                Add-Content $FullLogFilePath (
+                    '<tr><td class="warning">None</td><td>No Exclaimer Add-ins were found for {0}. This is expected for Shared Mailboxes, but not for User Mailboxes.</td></tr>' -f
+                    [System.Web.HttpUtility]::HtmlEncode($user)
+                )
+
+                Add-Content $FullLogFilePath '</table>'
             }
+
+            # --- Getting Mailbox Details ---
+            Write-Host "`nCollecting organization configuration related to Outlook Add-ins..." -ForegroundColor Cyan
+            try {
+            $mailbox = Get-Mailbox -Identity $user -ErrorAction Stop |
+                Select-Object Name, AccountDisabled, IsShared, HiddenFromAddressListsEnabled
+
+            # Separator row
+            Add-Content $FullLogFilePath '<table>'
+            Add-Content $FullLogFilePath '<tr><th colspan="6">📬 Mailbox Details</th></tr>'
+            Add-Content $FullLogFilePath '<tr><th>Property</th><th colspan="2">Value</th><th colspan="3">Notes</th></tr>'
+
+            foreach ($prop in $mailbox.PSObject.Properties) {
+                $name  = [System.Web.HttpUtility]::HtmlEncode($prop.Name)
+                $raw   = $prop.Value
+                $value = if ($null -eq $raw) { 'N/A' } else { [System.Web.HttpUtility]::HtmlEncode([string]$raw) }
+                $notes = ''
+
+                switch ($prop.Name) {
+                    'IsShared' {
+                        $notes = if ($raw) {
+                            'Shared mailbox.'
+                        } else {
+                            'User mailbox.'
+                        }
+                    }
+                    'AccountDisabled' {
+                        $notes = if ($raw) {
+                            'Associated user account is disabled. Expected for shared mailboxes.'
+                        } else {
+                            'Associated user account is enabled.'
+                        }
+                    }
+                    'HiddenFromAddressListsEnabled' {
+                        $notes = if ($raw) {
+                            'Mailbox is hidden. Can cause Classic Outlook Add-in to apply the user signature by default.'
+                        } else {
+                            'Mailbox is visible.'
+                        }
+                    }
+                    Default {
+                        $notes = 'Informational.'
+                    }
+                }
+
+                Add-Content $FullLogFilePath (
+                    "<tr><td>{0}</td><td colspan='2'>{1}</td><td colspan='3'>{2}</td></tr>" -f
+                    $name,
+                    $value,
+                    [System.Web.HttpUtility]::HtmlEncode($notes)
+                )
+            }
+
+            Add-Content $FullLogFilePath '</table>'
+        }
+        catch {
+            Add-Content $FullLogFilePath '<table>'
+            Add-Content $FullLogFilePath '<tr><th colspan="6">📬 Mailbox Details</th></tr>'
+            Add-Content $FullLogFilePath '<tr><td colspan="6" class="warning">Unable to retrieve mailbox details for this user. Check permissions or mailbox existence.</td></tr>'
+            Add-Content $FullLogFilePath '</table>'
+        }
 
             # --- Organization-level Settings ---
             Write-Host "`nCollecting organization configuration related to Outlook Add-ins..." -ForegroundColor Cyan
