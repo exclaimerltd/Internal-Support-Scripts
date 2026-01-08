@@ -499,10 +499,10 @@ function GetWindowsVersion {
     )
 
     $serverBuilds = @(
-        [PSCustomObject]@{ MinBuild = 26100; CaptionMatch = 'Server 2025'; Note = 'Microsoft Windows Server 2025 Standard.' },
-        [PSCustomObject]@{ MinBuild = 20348; CaptionMatch = 'Server 2022'; Note = 'Microsoft Windows Server 2022 Standard.' },
-        [PSCustomObject]@{ MinBuild = 17763; CaptionMatch = 'Server 2019'; Note = 'Microsoft Windows Server 2019 Standard.' },
-        [PSCustomObject]@{ MinBuild = 14393; CaptionMatch = 'Server 2016'; Note = 'Microsoft Windows Server 2016 Standard.' }
+        [PSCustomObject]@{ MinBuild = 26100; CaptionMatch = 'Server 2025'; Note = 'Microsoft Windows Server 2025 Standard. Supported when Outlook is used in an RDS user session.' },
+        [PSCustomObject]@{ MinBuild = 20348; CaptionMatch = 'Server 2022'; Note = 'Microsoft Windows Server 2022 Standard. Supported when Outlook is used in an RDS user session.' },
+        [PSCustomObject]@{ MinBuild = 17763; CaptionMatch = 'Server 2019'; Note = 'Microsoft Windows Server 2019 Standard. Supported when Outlook is used in an RDS user session.' },
+        [PSCustomObject]@{ MinBuild = 14393; CaptionMatch = 'Server 2016'; Note = 'Microsoft Windows Server 2016 Standard. Supported when Outlook is used in an RDS user session.' }
     )
 
     # --- Default state ---
