@@ -474,6 +474,7 @@ CheckEndpoints
     # Getting Windows version
     # -------------------------------
 function GetWindowsVersion {
+
     Write-Host "`n========== Microsoft Windows Version ==========" -ForegroundColor Cyan
 
     # --- HTML Section Header ---
@@ -482,49 +483,74 @@ function GetWindowsVersion {
     Add-Content $FullLogFilePath '<table>'
     Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
 
-    # --- Supported build thresholds ---
-    $supportedBuilds = @(
-        [PSCustomObject]@{ MinBuild = 26100; Status = '✅ Supported'; Note = 'Windows 11 24H2 or later build.' },
-        [PSCustomObject]@{ MinBuild = 22631; Status = '✅ Supported'; Note = 'Windows 11 23H2 or later build.' },
-        [PSCustomObject]@{ MinBuild = 22621; Status = '✅ Supported'; Note = 'Windows 11 22H2 build.' },
-        [PSCustomObject]@{ MinBuild = 19045; Status = '✅ Supported'; Note = 'Windows 10 22H2 build (supported until October 2025).' },
-        [PSCustomObject]@{ MinBuild = 17763; Status = '✅ Supported'; Note = 'Microsoft Windows Server 2019 Standard.' },
-        [PSCustomObject]@{ MinBuild = 14393; Status = '✅ Supported'; Note = 'Microsoft Windows Server 2016 Standard' }
-    )
-
     # --- Collect OS Info ---
-    $os = Get-CimInstance -ClassName Win32_OperatingSystem
+    $os      = Get-CimInstance -ClassName Win32_OperatingSystem
     $caption = $os.Caption
     $version = $os.Version
     $build   = [int]$os.BuildNumber
+    $isServer = $os.ProductType -ne 1
 
-    # --- Default to unsupported ---
+    # --- Support matrices ---
+    $clientBuilds = @(
+        [PSCustomObject]@{ MinBuild = 26100; Note = 'Windows 11 24H2 or later build.' },
+        [PSCustomObject]@{ MinBuild = 22631; Note = 'Windows 11 23H2 build.' },
+        [PSCustomObject]@{ MinBuild = 22621; Note = 'Windows 11 22H2 build.' },
+        [PSCustomObject]@{ MinBuild = 19045; Note = 'Windows 10 22H2 build (supported until October 2025).' }
+    )
+
+    $serverBuilds = @(
+        [PSCustomObject]@{ MinBuild = 26100; CaptionMatch = 'Server 2025'; Note = 'Microsoft Windows Server 2025 Standard.' },
+        [PSCustomObject]@{ MinBuild = 20348; CaptionMatch = 'Server 2022'; Note = 'Microsoft Windows Server 2022 Standard.' },
+        [PSCustomObject]@{ MinBuild = 17763; CaptionMatch = 'Server 2019'; Note = 'Microsoft Windows Server 2019 Standard.' },
+        [PSCustomObject]@{ MinBuild = 14393; CaptionMatch = 'Server 2016'; Note = 'Microsoft Windows Server 2016 Standard.' }
+    )
+
+    # --- Default state ---
     $supportStatus = '❌ Unsupported or legacy Windows version.'
-    $supportNote   = 'Consider upgrading to Windows 10 22H2 (bild 19045 or above) or Windows 11 for compatibility.'
+    $supportNote   = 'Consider upgrading to a supported Windows client or server release.'
 
-    # --- Determine if build is supported ---
-    foreach ($entry in $supportedBuilds) {
-        if ($build -ge $entry.MinBuild) {
-            $supportStatus = $entry.Status
-            $supportNote   = $entry.Note
-            break
+    # --- Determine support ---
+    if ($isServer) {
+
+        foreach ($entry in $serverBuilds) {
+            if ($build -ge $entry.MinBuild -and $caption -like "*$($entry.CaptionMatch)*") {
+                $supportStatus = '✅ Supported'
+                $supportNote   = $entry.Note
+                break
+            }
         }
+
+    }
+    else {
+
+        foreach ($entry in $clientBuilds) {
+            if ($build -ge $entry.MinBuild) {
+                $supportStatus = '✅ Supported'
+                $supportNote   = $entry.Note
+                break
+            }
+        }
+
     }
 
     # --- Console Output ---
     Write-Host "Windows Version: $caption ($version)" -ForegroundColor White
     Write-Host "Build Number:    $build" -ForegroundColor White
+    Write-Host "OS Type:         $(if ($isServer) { 'Server' } else { 'Client' })" -ForegroundColor White
     Write-Host "Support Status:  $supportStatus" -ForegroundColor Yellow
     Write-Host "Note:            $supportNote" -ForegroundColor DarkGray
 
-    # --- HTML Logging (safe, no '+' concat) ---
+    # --- HTML Logging ---
     Add-Content $FullLogFilePath ("<tr><td><strong>Windows Version</strong></td><td>{0} ({1})</td></tr>" -f $caption, $version)
     Add-Content $FullLogFilePath ("<tr><td><strong>Build Number</strong></td><td>{0}</td></tr>" -f $build)
+    Add-Content $FullLogFilePath ("<tr><td><strong>OS Type</strong></td><td>{0}</td></tr>" -f $(if ($isServer) { 'Server' } else { 'Client' }))
     Add-Content $FullLogFilePath ("<tr><td><strong>Support Status</strong></td><td>{0}</td></tr>" -f $supportStatus)
     Add-Content $FullLogFilePath ("<tr><td><strong>Notes</strong></td><td>{0}</td></tr>" -f $supportNote)
+
     Add-Content $FullLogFilePath '</table>'
     Add-Content $FullLogFilePath '</div>'
 }
+
 GetWindowsVersion
 
 function GetWindowsNetworkDetails {
