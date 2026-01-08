@@ -487,7 +487,9 @@ function GetWindowsVersion {
         [PSCustomObject]@{ MinBuild = 26100; Status = '✅ Supported'; Note = 'Windows 11 24H2 or later build.' },
         [PSCustomObject]@{ MinBuild = 22631; Status = '✅ Supported'; Note = 'Windows 11 23H2 or later build.' },
         [PSCustomObject]@{ MinBuild = 22621; Status = '✅ Supported'; Note = 'Windows 11 22H2 build.' },
-        [PSCustomObject]@{ MinBuild = 19045; Status = '✅ Supported'; Note = 'Windows 10 22H2 build (supported until October 2025).' }
+        [PSCustomObject]@{ MinBuild = 19045; Status = '✅ Supported'; Note = 'Windows 10 22H2 build (supported until October 2025).' },
+        [PSCustomObject]@{ MinBuild = 17763; Status = '✅ Supported'; Note = 'Microsoft Windows Server 2019 Standard.' },
+        [PSCustomObject]@{ MinBuild = 14393; Status = '✅ Supported'; Note = 'Microsoft Windows Server 2016 Standard' }
     )
 
     # --- Collect OS Info ---
