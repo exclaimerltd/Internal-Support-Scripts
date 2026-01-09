@@ -38,12 +38,7 @@
     1. Open PowerShell 7+ as Administrator
     2. Execute the script:
         `.\BulkUserPhotoUpdate.ps1`
-    3. Register an Azure AD application in the Azure Portal:
-        - Name the app (e.g., BulkUserPhotoUpdater)
-        - Select account type: Accounts in this organizational directory only
-        - Add Application permission: Microsoft Graph -> User.ReadWrite.All (Application)
-        - Grant admin consent
-        - Create a client secret and note the value
+    3. Register an Azure AD application in the Azure Portal, instrcutions by the Script
     4. Store all user photos in a folder, with each file named as the user's alias (e.g., jsmith.jpg)
     5. (Automated by the Script) Install the required module if not already present
     6. Script requests the Client ID, Tenant ID, and Client Secret
