@@ -146,7 +146,7 @@ function ConfirmElevationStatus {
             # --- HTML Logging (cancelled run) ---
             Add-Content $FullLogFilePath '<div class="section">'
             Add-Content $FullLogFilePath '<h2>🔐 Script Permission Check</h2>'
-            Add-Content $FullLogFilePath "<p><strong>User:</strong> $currentUser</p>"
+            Add-Content $FullLogFilePath "<p title=`"The user that running the script in PowerShell.`"><strong>User:</strong> $currentUser</p>"
             Add-Content $FullLogFilePath '<p><strong>Status:</strong> Script stopped. User chose not to continue without Administrator privileges.</p>'
             Add-Content $FullLogFilePath '</div>'
 
@@ -163,12 +163,12 @@ function ConfirmElevationStatus {
     Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
 
     if ($isAdmin) {
-        Add-Content $FullLogFilePath "<tr><td><strong>Windows User</strong></td><td>$currentUser</td></tr>"
+        Add-Content $FullLogFilePath "<tr><td><strong>Windows User</strong></td><td title=`"The user that running the script in PowerShell.`">$currentUser</td></tr>"
         Add-Content $FullLogFilePath '<tr><td><strong>Administrator privileges</strong></td><td>Yes</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>All diagnostics can be collected.</td></tr>'
     }
     else {
-        Add-Content $FullLogFilePath "<tr><td><strong>Windows User</strong></td><td>$currentUser</td></tr>"
+        Add-Content $FullLogFilePath "<tr><td><strong>Windows User</strong></td><td title=`"The user that running the script in PowerShell.`">$currentUser</td></tr>"
         Add-Content $FullLogFilePath '<tr><td><strong>Administrator privileges</strong></td><td style="color:#F5A627;font-weight:bold;">No</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>Some diagnostics (firewall, networking, system-level logs) were skipped or limited.</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>User decision</strong></td><td>User chose to continue without elevation.</td></tr>'
@@ -545,14 +545,14 @@ function GetWindowsVersion {
     # --- Console Output ---
     Write-Host "Windows Version: $caption ($version)" -ForegroundColor White
     Write-Host "Build Number:    $build" -ForegroundColor White
-    Write-Host "OS Type:         $(if ($isServer) { 'Server' } else { 'Client' })" -ForegroundColor White
+    Write-Host "OS Type:         $(if ($isServer) { 'Server' } else { 'Desktop' })" -ForegroundColor White
     Write-Host "Support Status:  $supportStatus" -ForegroundColor Yellow
     Write-Host "Note:            $supportNote" -ForegroundColor DarkGray
 
     # --- HTML Logging ---
     Add-Content $FullLogFilePath ("<tr><td><strong>Windows Version</strong></td><td>{0} ({1})</td></tr>" -f $caption, $version)
     Add-Content $FullLogFilePath ("<tr><td><strong>Build Number</strong></td><td>{0}</td></tr>" -f $build)
-    Add-Content $FullLogFilePath ("<tr><td><strong>OS Type</strong></td><td>{0}</td></tr>" -f $(if ($isServer) { 'Server' } else { 'Client' }))
+    Add-Content $FullLogFilePath ("<tr><td><strong>OS Type</strong></td><td>{0}</td></tr>" -f $(if ($isServer) { 'Server' } else { 'Desktop' }))
     Add-Content $FullLogFilePath ("<tr><td><strong>Support Status</strong></td><td>{0}</td></tr>" -f $supportStatus)
     Add-Content $FullLogFilePath ("<tr><td><strong>Notes</strong></td><td>{0}</td></tr>" -f $supportNote)
 
@@ -1013,6 +1013,14 @@ function InspectOutlookConfiguration {
 </table>
 "@
         Add-Content $FullLogFilePath $classicOutlookTable
+            $officeBitnessDocUrl = 'https://support.microsoft.com/en-gb/office/choose-between-the-64-bit-or-32-bit-version-of-office-2dee7807-8f95-4d0c-b5fe-6c6f49b8d261?blocks+of+information+or+graphics.=&utm_source=chatgpt.com#:~:text=You%27re%20using%20add%2Dins%20with%20Outlook%2C%20Excel%2C%20or%20other%20Office%20or%20Microsoft%20365%20apps'
+            if ($outlookBitness -eq '32-bit') {
+                Add-Content $FullLogFilePath @"
+<div class="side-note">
+While 32-bit applications can work with add-ins, they can use up a system's available virtual address space. With 64-bit apps, you have up to 128&nbsp;TB of virtual address space which the app and any add-ins running the same process can share. With 32-bit apps, you might get as little as 2&nbsp;GB of virtual address space which in many cases is not enough and can cause the app to stop responding or crash. <a href="$officeBitnessDocUrl">Microsoft Support</a>
+</div>
+"@
+            }
         }
         # Checking for existing local signatures
         $baseSignaturePath = [System.IO.Path]::Combine($env:APPDATA, "Microsoft")

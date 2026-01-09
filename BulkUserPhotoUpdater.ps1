@@ -42,14 +42,13 @@
         - Grant admin consent
         - Create a client secret and note the value
     2. Store all user photos in a folder, naming each file with the user's alias (e.g., jsmith.jpg)
-    3. Set the `$Path` variable to the folder path
-    4. Open PowerShell 7+ as Administrator
-    5. Install the required module if not already present:
+    3. Open PowerShell 7+ as Administrator
+    4. (Automated by the Script) Install the required module if not already present:
         `Install-Module Microsoft.Graph.Users -Scope CurrentUser -Force`
-    6. Update the script variables for Client ID, Tenant ID, and Client Secret
-    7. Execute the script:
+    5. Script requests the Client ID, Tenant ID, and Client Secret
+    6. Execute the script:
         `.\BulkUserPhotoUpdate.ps1`
-    8. Review the log output for missing or failed photo updates
+    7. Review the log output for missing or failed photo updates
 #>
 
 # Clear the console for readability
