@@ -35,19 +35,18 @@
         - Logs successes and failures
 
 .INSTRUCTIONS
-    1. Register an Azure AD application in the Azure Portal:
+    1. Open PowerShell 7+ as Administrator
+    2. Execute the script:
+        `.\BulkUserPhotoUpdate.ps1`
+    3. Register an Azure AD application in the Azure Portal:
         - Name the app (e.g., BulkUserPhotoUpdater)
         - Select account type: Accounts in this organizational directory only
         - Add Application permission: Microsoft Graph -> User.ReadWrite.All (Application)
         - Grant admin consent
         - Create a client secret and note the value
-    2. Store all user photos in a folder, naming each file with the user's alias (e.g., jsmith.jpg)
-    3. Open PowerShell 7+ as Administrator
-    4. (Automated by the Script) Install the required module if not already present:
-        `Install-Module Microsoft.Graph.Users -Scope CurrentUser -Force`
-    5. Script requests the Client ID, Tenant ID, and Client Secret
-    6. Execute the script:
-        `.\BulkUserPhotoUpdate.ps1`
+    4. Store all user photos in a folder, with each file named as the user's alias (e.g., jsmith.jpg)
+    5. (Automated by the Script) Install the required module if not already present
+    6. Script requests the Client ID, Tenant ID, and Client Secret
     7. Review the log output for missing or failed photo updates
 #>
 
