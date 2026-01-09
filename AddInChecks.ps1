@@ -121,6 +121,11 @@ function ConfirmElevationStatus {
 
     Write-Host "========== Script Permission Check ==========`n" -ForegroundColor Cyan
 
+    # Get current user without domain
+    $fullUser = whoami
+    $currentUser = ($fullUser -split '\\')[-1]
+    Write-Host "Current script runner: $currentUser`n" -ForegroundColor Cyan
+
     $isAdmin = ([Security.Principal.WindowsPrincipal] `
         [Security.Principal.WindowsIdentity]::GetCurrent()
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -141,6 +146,7 @@ function ConfirmElevationStatus {
             # --- HTML Logging (cancelled run) ---
             Add-Content $FullLogFilePath '<div class="section">'
             Add-Content $FullLogFilePath '<h2>🔐 Script Permission Check</h2>'
+            Add-Content $FullLogFilePath "<p><strong>User:</strong> $currentUser</p>"
             Add-Content $FullLogFilePath '<p><strong>Status:</strong> Script stopped. User chose not to continue without Administrator privileges.</p>'
             Add-Content $FullLogFilePath '</div>'
 
@@ -157,10 +163,12 @@ function ConfirmElevationStatus {
     Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
 
     if ($isAdmin) {
+        Add-Content $FullLogFilePath "<tr><td><strong>Windows User</strong></td><td>$currentUser</td></tr>"
         Add-Content $FullLogFilePath '<tr><td><strong>Administrator privileges</strong></td><td>Yes</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>All diagnostics can be collected.</td></tr>'
     }
     else {
+        Add-Content $FullLogFilePath "<tr><td><strong>Windows User</strong></td><td>$currentUser</td></tr>"
         Add-Content $FullLogFilePath '<tr><td><strong>Administrator privileges</strong></td><td style="color:#F5A627;font-weight:bold;">No</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>Some diagnostics (firewall, networking, system-level logs) were skipped or limited.</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>User decision</strong></td><td>User chose to continue without elevation.</td></tr>'
@@ -173,6 +181,7 @@ function ConfirmElevationStatus {
     # Optional: expose status to other functions
     $Global:IsElevatedSession = $isAdmin
 }
+
 ConfirmElevationStatus
 function Get-ExclaimerUserInput {
     [CmdletBinding()]
