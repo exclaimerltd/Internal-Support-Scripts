@@ -146,7 +146,7 @@ function ConfirmElevationStatus {
             # --- HTML Logging (cancelled run) ---
             Add-Content $FullLogFilePath '<div class="section">'
             Add-Content $FullLogFilePath '<h2>🔐 Script Permission Check</h2>'
-            Add-Content $FullLogFilePath "<p title=`"The user that running the script in PowerShell.`"><strong>User:</strong> $currentUser</p>"
+            Add-Content $FullLogFilePath "<p title=`"The user running the script in PowerShell.`"><strong>User:</strong> $currentUser</p>"
             Add-Content $FullLogFilePath '<p><strong>Status:</strong> Script stopped. User chose not to continue without Administrator privileges.</p>'
             Add-Content $FullLogFilePath '</div>'
 
