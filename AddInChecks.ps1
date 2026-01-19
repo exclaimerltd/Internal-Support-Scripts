@@ -1392,8 +1392,101 @@ else {
     # --- Proceed only if module available ---
     if (CheckExchangeOnlineModule) {
             # --- HTML Logging (safe formatting) ---
-            Add-Content $FullLogFilePath '<h2>🧩 Exclaimer Add-in Information (EXO Admin)</h2>'
+            Add-Content $FullLogFilePath '<h2>🔐 Exclaimer Exchange Online Information (EXO Admin)</h2>'
         if (ConnectExchangeOnlineSession) {
+
+            
+            # --- Organization-level Settings ---
+            Write-Host "`nCollecting organization configuration related to Outlook Add-ins..." -ForegroundColor Cyan
+
+            try {
+                $orgConfig = Get-OrganizationConfig | Select-Object `
+                    ReleaseTrack,
+                    OAuth2ClientProfileEnabled,
+                    OutlookMobileGCCRestrictionsEnabled,
+                    AppsForOfficeEnabled,
+                    EwsApplicationAccessPolicy
+
+                Add-Content $FullLogFilePath '<div class="section">'
+                Add-Content $FullLogFilePath '<h3>Organization Configuration - Add-in Compatibility</h3>'
+                Add-Content $FullLogFilePath '<table><tr><th>Setting</th><th>Value</th><th>Impact</th></tr>'
+
+                foreach ($prop in $orgConfig.PSObject.Properties) {
+                    $name  = [System.Web.HttpUtility]::HtmlEncode($prop.Name)
+                    $rawValue = $prop.Value
+                    $value = if ($null -eq $rawValue) { 'N/A' } else { [System.Web.HttpUtility]::HtmlEncode([string]$rawValue) }
+                    $impact = ''
+
+                    switch ($prop.Name) {
+                        'ReleaseTrack' {
+                            switch ($rawValue) {
+                                $null               { $impact = '✅ Standard Release' }
+                                'FirstRelease'      { $impact = '⚠️ Targeted release for everyone' }
+                                'StagedRollout'     { $impact = '⚠️ Targeted release for select users' }
+                                default             { $impact = '❌ Review manually.' }
+                            }
+                        }
+                        'OAuth2ClientProfileEnabled' {
+                            $impact = if (-not $rawValue) {
+                                '❌ Add-ins cannot authenticate properly (modern auth disabled).'
+                            } else {
+                                '✅ Required for modern add-ins.'
+                            }
+                        }
+                        'OutlookMobileGCCRestrictionsEnabled' {
+                            $impact = if ($rawValue) {
+                                '⚠️ Cloud add-ins not supported on Outlook Mobile.'
+                            } else {
+                                '✅ Mobile add-ins supported.'
+                            }
+                        }
+                        'AppsForOfficeEnabled' {
+                            $impact = if (-not $rawValue) {
+                                '❌ Add-ins disabled organization-wide.'
+                            $addAppsSideNote = $true
+                            } else {
+                                '✅ Add-ins allowed.'
+                            }
+                        }
+                        'EwsApplicationAccessPolicy' {
+                            if ([string]::IsNullOrEmpty($rawValue) -or $rawValue -eq 'EnforceNone') {
+                                $impact = '✅ No EWS restrictions detected.'
+                            } elseif ($rawValue -eq 'EnforceAllowList') {
+                                $impact = '⚠️ Only specific apps can use EWS. Verify Exclaimer is in the allow list.'
+                            } elseif ($rawValue -eq 'EnforceBlockList') {
+                                $impact = '⚠️ Some apps are blocked from EWS. Verify Exclaimer is not in the block list.'
+                            } else {
+                                $impact = "⚠️ Unrecognized policy value ($value). Review manually."
+                            }
+                        }
+                        Default {
+                            $impact = 'Review manually.'
+                        }
+                    }
+
+                    Add-Content $FullLogFilePath ("<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>" -f $name, $value, [System.Web.HttpUtility]::HtmlEncode($impact))
+                    }
+
+                Add-Content $FullLogFilePath '</table></div>'
+                # Add side-note immediately after the table row for AppsForOfficeEnabled
+                if ($addAppsSideNote) {
+                    $sideNote = @'
+<div class="info-after-error"><span><b>ℹ️ While 'AppsForOfficeEnabled' is disabled:</b> users will not be able to use Add-ins in Outlook.<br><code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>
+<p class="side-note">If you have re-opened PowerShell, you may need to run:</p>
+<code>Connect-ExchangeOnline</code>
+<p class="side-note">Once this is completed, please re-run the full script again to verify changes.</p>
+'@
+                    Add-Content -Path $FullLogFilePath -Value $sideNote
+                }
+            }
+            catch {
+                Write-Host "⚠️ Could not retrieve OrganizationConfig values." -ForegroundColor Yellow
+                Add-Content $FullLogFilePath '<div class="section">'
+                Add-Content $FullLogFilePath '<h2>🧩 Organization Configuration - Add-in Compatibility</h2>'
+                Add-Content $FullLogFilePath '<p class="warning">Unable to retrieve organization configuration. Ensure proper Exchange Online connection and permissions.</p>'
+                Add-Content $FullLogFilePath '</div>'
+            }
+
             Write-Host "`n🎯 Querying Exclaimer Add-in deployment..." -ForegroundColor Cyan
 
             $user = $Global:userInput.Email
@@ -1423,7 +1516,7 @@ else {
                 }
 
                 # --- HTML Logging (safe formatting) ---
-                Add-Content $FullLogFilePath '<h3>Exclaimer Add-in Information (Admin)</h3>'
+                Add-Content $FullLogFilePath '<h3>🧩 Exclaimer Add-in Information (Admin)</h3>'
                 Add-Content $FullLogFilePath '<table><tr><th>Type</th><th>Display Name</th><th>Version</th><th>Enabled</th><th>Scope</th><th>Deployment</th></tr>'
 
                 if ($ProdResult) {
@@ -1576,86 +1669,6 @@ else {
             Add-Content $FullLogFilePath '<tr><td colspan="6" class="warning">Unable to retrieve mailbox details for this user. Check permissions or mailbox existence.</td></tr>'
             Add-Content $FullLogFilePath '</table>'
         }
-
-            # --- Organization-level Settings ---
-            Write-Host "`nCollecting organization configuration related to Outlook Add-ins..." -ForegroundColor Cyan
-
-            try {
-                $orgConfig = Get-OrganizationConfig | Select-Object `
-                    ReleaseTrack,
-                    OAuth2ClientProfileEnabled,
-                    OutlookMobileGCCRestrictionsEnabled,
-                    AppsForOfficeEnabled,
-                    EwsApplicationAccessPolicy
-
-                Add-Content $FullLogFilePath '<div class="section">'
-                Add-Content $FullLogFilePath '<h2>Organization Configuration - Add-in Compatibility</h2>'
-                Add-Content $FullLogFilePath '<table><tr><th>Setting</th><th>Value</th><th>Impact</th></tr>'
-
-                foreach ($prop in $orgConfig.PSObject.Properties) {
-                    $name  = [System.Web.HttpUtility]::HtmlEncode($prop.Name)
-                    $rawValue = $prop.Value
-                    $value = if ($null -eq $rawValue) { 'N/A' } else { [System.Web.HttpUtility]::HtmlEncode([string]$rawValue) }
-                    $impact = ''
-
-                    switch ($prop.Name) {
-                        'ReleaseTrack' {
-                            switch ($rawValue) {
-                                $null               { $impact = '✅ Standard Release' }
-                                'FirstRelease'      { $impact = '⚠️ Targeted release for everyone' }
-                                'StagedRollout'     { $impact = '⚠️ Targeted release for select users' }
-                                default             { $impact = '❌ Review manually.' }
-                            }
-                        }
-                        'OAuth2ClientProfileEnabled' {
-                            $impact = if (-not $rawValue) {
-                                '❌ Add-ins cannot authenticate properly (modern auth disabled).'
-                            } else {
-                                '✅ Required for modern add-ins.'
-                            }
-                        }
-                        'OutlookMobileGCCRestrictionsEnabled' {
-                            $impact = if ($rawValue) {
-                                '⚠️ Cloud add-ins not supported on Outlook Mobile.'
-                            } else {
-                                '✅ Mobile add-ins supported.'
-                            }
-                        }
-                        'AppsForOfficeEnabled' {
-                            $impact = if (-not $rawValue) {
-                                '❌ Add-ins disabled organization-wide.'
-                            } else {
-                                '✅ Add-ins allowed.'
-                            }
-                        }
-                        'EwsApplicationAccessPolicy' {
-                            if ([string]::IsNullOrEmpty($rawValue) -or $rawValue -eq 'EnforceNone') {
-                                $impact = '✅ No EWS restrictions detected.'
-                            } elseif ($rawValue -eq 'EnforceAllowList') {
-                                $impact = '⚠️ Only specific apps can use EWS. Verify Exclaimer is in the allow list.'
-                            } elseif ($rawValue -eq 'EnforceBlockList') {
-                                $impact = '⚠️ Some apps are blocked from EWS. Verify Exclaimer is not in the block list.'
-                            } else {
-                                $impact = "⚠️ Unrecognized policy value ($value). Review manually."
-                            }
-                        }
-                        Default {
-                            $impact = 'Review manually.'
-                        }
-                    }
-
-                    Add-Content $FullLogFilePath ("<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>" -f $name, $value, [System.Web.HttpUtility]::HtmlEncode($impact))
-                }
-
-                Add-Content $FullLogFilePath '</table></div>'
-            }
-            catch {
-                Write-Host "⚠️ Could not retrieve OrganizationConfig values." -ForegroundColor Yellow
-                Add-Content $FullLogFilePath '<div class="section">'
-                Add-Content $FullLogFilePath '<h2>Organization Configuration - Add-in Compatibility</h2>'
-                Add-Content $FullLogFilePath '<p class="warning">Unable to retrieve organization configuration. Ensure proper Exchange Online connection and permissions.</p>'
-                Add-Content $FullLogFilePath '</div>'
-            }
 
             try {
                 # Disconnect if needed
