@@ -924,11 +924,13 @@ function InspectOutlookConfiguration {
 
             $map = @{
             # Current Channel
-            "19426.20186"="2511"; "19426.20170"="2511";
-            "19328.20266"="2510"; "19328.20244"="2510"; "19328.20232"="2510"; "19328.20190"="2510"; "19328.20178"="2510"; "19328.20158"="2510";
-            "19231.20274"="2509"; "19231.20246"="2509"; "19231.20216"="2509"; "19231.20194"="2509"; "19231.20172"="2509"; "19231.20156"="2509";
-            "19127.20402"="2508"; "19127.20384"="2508"; "19127.20358"="2508"; "19127.20314"="2508"; "19127.20302"="2508"; "19127.20264"="2508"; "19127.20240"="2508"; "19127.20222"="2508";
-            "19029.20300"="2507"; "19029.20274"="2507"; "19029.20208"="2507"; "18925.20268"="2506"; "18925.20242"="2506"; "18827.20244"="2505";
+            "19530.20144"="2512"; "19426.20260"="2511"; "19426.20218"="2511"; "19426.20186"="2511"; "19426.20170"="2511";
+            "19328.20292"="2510"; "19328.20266"="2510"; "19328.20244"="2510"; "19328.20232"="2510"; "19328.20190"="2510"; "19328.20178"="2510"; "19328.20158"="2510";
+            "19231.20300"="2509"; "19231.20274"="2509"; "19231.20246"="2509"; "19231.20216"="2509"; "19231.20194"="2509"; "19231.20172"="2509"; "19231.20156"="2509";
+            "19127.20484"="2508"; "19127.20402"="2508"; "19127.20384"="2508"; "19127.20358"="2508"; "19127.20314"="2508"; "19127.20302"="2508"; "19127.20264"="2508"; "19127.20240"="2508"; "19127.20222"="2508";
+            "19029.20300"="2507"; "19029.20274"="2507"; "19029.20208"="2507"; "19029.20184"="2507";
+            "18925.20268"="2506"; "18925.20242"="2506"; "18925.20184"="2506";
+            "18827.20244"="2505"; "18827.20176"="2505";
 
             # Monthly Enterprise Channel overlap
             "18730.20260"="2504"; "18730.20240"="2504"; "18623.20316"="2503"; "18623.20208"="2503"; "18623.20178"="2503"; "18623.20156"="2503";
@@ -1427,25 +1429,39 @@ else {
                 if ($ProdResult) {
                     $enabledColor = if ($ProdResult.Enabled -ne $true) { ' style="color:red;font-weight:bold;"' } else { '' }
 
-                    Add-Content $FullLogFilePath ('<tr><td>Production</td><td>{0}</td><td>{1}</td><td{5}>{2}</td><td>{3}</td><td>{4}</td></tr>' -f `
+                    $typeColor = switch ($ProdResult.Type) {
+                        'PrivateCatalog' { ' style="color:orange;font-weight:bold;"' }
+                        'Marketplace'   { ' style="color:red;font-weight:bold;"' }
+                        default         { '' }
+                    }
+
+                    Add-Content $FullLogFilePath ('<tr><td>Production</td><td>{0}</td><td>{1}</td><td{5}>{2}</td><td>{3}</td><td{6}>{4}</td></tr>' -f `
                             [System.Web.HttpUtility]::HtmlEncode($ProdResult.DisplayName),
-                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.AppVersion),
-                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.Enabled),
-                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.Scope),
-                        [System.Web.HttpUtility]::HtmlEncode($ProdResult.Type),
-                        $enabledColor)
+                            [System.Web.HttpUtility]::HtmlEncode($ProdResult.AppVersion),
+                            [System.Web.HttpUtility]::HtmlEncode($ProdResult.Enabled),
+                            [System.Web.HttpUtility]::HtmlEncode($ProdResult.Scope),
+                            [System.Web.HttpUtility]::HtmlEncode($ProdResult.Type),
+                            $enabledColor,
+                            $typeColor)
                 }
 
                 if ($PreviewResult) {
                     $enabledColor = if ($PreviewResult.Enabled -ne $true) { ' style="color:red;font-weight:bold;"' } else { '' }
 
-                    Add-Content $FullLogFilePath ('<tr><td>Preview</td><td>{0}</td><td>{1}</td><td{5}>{2}</td><td>{3}</td><td>{4}</td></tr>' -f `
-                            [System.Web.HttpUtility]::HtmlEncode($PreviewResult.DisplayName),
+                    $typeColor = switch ($PreviewResult.Type) {
+                        'PrivateCatalog' { ' style="color:orange;font-weight:bold;"' }
+                        'Marketplace'   { ' style="color:red;font-weight:bold;"' }
+                        default         { '' }
+                    }
+
+                Add-Content $FullLogFilePath ('<tr><td>Preview</td><td>{0}</td><td>{1}</td><td{5}>{2}</td><td>{3}</td><td{6}>{4}</td></tr>' -f `
+                        [System.Web.HttpUtility]::HtmlEncode($PreviewResult.DisplayName),
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.AppVersion),
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Enabled),
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Scope),
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Type),
-                        $enabledColor)
+                        $enabledColor,
+                        $typeColor)
                 }
 
                 Add-Content $FullLogFilePath '</table>'
