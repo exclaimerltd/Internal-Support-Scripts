@@ -1471,7 +1471,7 @@ else {
                 # Add side-note immediately after the table row for AppsForOfficeEnabled
                 if ($addAppsSideNote) {
                     $sideNote = @'
-<div class="info-after-error"><span><b>ℹ️ 'AppsForOfficeEnabled' is disabled:</b> users will not be able to use Add-ins in Outlook.<br><code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>
+<div class="info-after-error"><span><b>ℹ️ 'AppsForOfficeEnabled' is disabled:</b> run the below command in PowerShell to enable AppsForOffice:<br><code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>
 <p class="side-note">If you have re-opened PowerShell, you may need to run:</p>
 <code>Connect-ExchangeOnline</code>
 <p class="side-note">Once this is completed, please re-run the full script again to verify changes.</p>
