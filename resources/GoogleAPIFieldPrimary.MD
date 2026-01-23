@@ -10,15 +10,15 @@ Before running this script, complete the following steps:
 
 2. Create a new project by clicking ***“Create Project”***.
 
-<img src="img/GoogleAPIFieldPrimary/image002.png" alt="image002" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image002.png" alt="image002" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 If you already have a project and it has automatically been opened, click on ***“Select a Project”*** at the top of the page next to the Google Cloud logo
 
-<img src="img/GoogleAPIFieldPrimary/image003.png" alt="image003" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image003.png" alt="image003" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 In the new window, click on ***“New Project”***
 
-<img src="img/GoogleAPIFieldPrimary/image004.jpg" alt="image004" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image004.jpg" alt="image004" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 3. Add a descriptive name and select your organization.
 
@@ -26,7 +26,7 @@ In the new window, click on ***“New Project”***
 
 5. Click on ***“Create service account”***.
 
-<img src="img/GoogleAPIFieldPrimary/image005.png" alt="image005" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image005.png" alt="image005" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 6. Enter a name for the service account.
 
@@ -36,15 +36,15 @@ In the new window, click on ***“New Project”***
 
 9. Click on the 3-dots in the Actions column and select ***“Manage Keys”***
 
-<img src="img/GoogleAPIFieldPrimary/image006.png" alt="image006" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image006.png" alt="image006" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 10. Click on ***“Add Key”*** followed by ***“Create new key”***
 
-<img src="img/GoogleAPIFieldPrimary/image007.png" alt="image007" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image007.png" alt="image007" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 11. Select JSON and click ***“Create”***
 
-<img src="img/GoogleAPIFieldPrimary/image008.png" alt="image008" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image008.png" alt="image008" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 12. A JSON file will be downloaded. This will be required for the script.
 
@@ -52,21 +52,21 @@ In the new window, click on ***“New Project”***
 
 13. Click on the ***Navigation Menu***
 
-<img src="img/GoogleAPIFieldPrimary/image009.png" alt="image009" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image009.png" alt="image009" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 14. Go to ***“APIs & Services > Enabled APIs & Services”***
 
 Click on ***“Enable APIs and services”***
 
-<img src="img/GoogleAPIFieldPrimary/image010.png" alt="image010" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image010.png" alt="image010" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 Search for ***“Admin SDK API”***
 
-<img src="img/GoogleAPIFieldPrimary/image011.png" alt="image011" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image011.png" alt="image011" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 Select ***“Admin SDK API”*** and then click on ***“Enable”***
 
-<img src="img/GoogleAPIFieldPrimary/image012.png" alt="image012" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image012.png" alt="image012" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 15. Or, you can use the link ***“https://console.developers.google.com/apis/api/admin.googleapis.com/overview”***
 
@@ -76,7 +76,7 @@ Select ***“Admin SDK API”*** and then click on ***“Enable”***
 
 17. Navigate to ***Security > Access and data control > API controls***
 
-<img src="img/GoogleAPIFieldPrimary/image013.png" alt="image013" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image013.png" alt="image013" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 18. Click on ***“Manage Domain Wide Delegation”***
 
@@ -88,7 +88,7 @@ Select ***“Admin SDK API”*** and then click on ***“Enable”***
 
 22. Click on ***“Authorize”***
 
-<img src="img/GoogleAPIFieldPrimary/image014.png" alt="image014" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image014.png" alt="image014" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 ---
 
@@ -109,7 +109,7 @@ Please execute the PowerShell script provided and complete the following steps:
 
 The command window should show PowerShell 7.x.x
 
-<img src="img/GoogleAPIFieldPrimary/image015.jpg" alt="image015" style="border:1px solid #d0d7de; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image015.jpg" alt="image015" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
 
 2. Run the command:
 
