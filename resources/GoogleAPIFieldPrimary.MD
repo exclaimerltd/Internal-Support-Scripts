@@ -8,41 +8,41 @@ Before running this script, complete the following steps:
 
 1. Go to https://console.cloud.google.com/ and sign in with your Super Admin account.
 
-2. Create a new project by clicking “Create Project”.
+2. Create a new project by clicking ***“Create Project”***.
 
 ![image002](img/GoogleAPIFieldPrimary/image002.png)
 
-If you already have a project and it has automatically been opened, click on “Select a Project” at the top of the page next to the Google Cloud logo
+If you already have a project and it has automatically been opened, click on ***“Select a Project”*** at the top of the page next to the Google Cloud logo
 
 ![image003](img/GoogleAPIFieldPrimary/image003.png)
 
-In the new window, click on “New Project”
+In the new window, click on ***“New Project”***
 
 ![image004](img/GoogleAPIFieldPrimary/image004.jpg)
 
 3. Add a descriptive name and select your organization.
 
-4. With the Project selected, navigate to “IAM & Admin > Service Accounts”.
+4. With the Project selected, navigate to ***“IAM & Admin > Service Accounts”***.
 
-5. Click on “Create service account”.
+5. Click on ***“Create service account”***.
 
 ![image005](img/GoogleAPIFieldPrimary/image005.png)
 
 6. Enter a name for the service account.
 
-7. Click on “Done”.
+7. Click on ***“Done”***.
 
-8. Note down the “OAuth 2 Client ID” for this account
+8. Note down the ***“OAuth 2 Client ID”*** for this account
 
-9. Click on the 3-dots in the Actions column and select “Manage Keys”
+9. Click on the 3-dots in the Actions column and select ***“Manage Keys”***
 
 ![image006](img/GoogleAPIFieldPrimary/image006.png)
 
-10. Click on “Add Key” followed by “Create new key”
+10. Click on ***“Add Key”*** followed by ***“Create new key”***
 
 ![image007](img/GoogleAPIFieldPrimary/image007.png)
 
-11. Select JSON and click “Create”
+11. Select JSON and click ***“Create”***
 
 ![image008](img/GoogleAPIFieldPrimary/image008.png)
 
@@ -50,43 +50,43 @@ In the new window, click on “New Project”
 
 ---
 
-13. Click on the Navigation Menu
+13. Click on the ***Navigation Menu***
 
 ![image009](img/GoogleAPIFieldPrimary/image009.png)
 
-14. Go to “APIs & Services > Enabled APIs & Services”
+14. Go to ***“APIs & Services > Enabled APIs & Services”***
 
-Click on “Enable APIs and services”
+Click on ***“Enable APIs and services”***
 
 ![image010](img/GoogleAPIFieldPrimary/image010.png)
 
-Search for “Admin SDK API”
+Search for ***“Admin SDK API”***
 
 ![image011](img/GoogleAPIFieldPrimary/image011.png)
 
-Select “Admin SDK API and then click on “Enable”
+Select ***“Admin SDK API”*** and then click on ***“Enable”***
 
 ![image012](img/GoogleAPIFieldPrimary/image012.png)
 
-15. Or, you can use the link “https://console.developers.google.com/apis/api/admin.googleapis.com/overview”
+15. Or, you can use the link ***“https://console.developers.google.com/apis/api/admin.googleapis.com/overview”***
 
 ---
 
 16. Sign into the Google Admin Console in a new tab (https://admin.google.com)
 
-17. Navigate to Security > Access and data control > API controls
+17. Navigate to ***Security > Access and data control > API controls***
 
 ![image013](img/GoogleAPIFieldPrimary/image013.png)
 
-18. Click on  “Manage Domain Wide Delegation”
+18. Click on ***“Manage Domain Wide Delegation”***
 
-19. Click on “Add New”
+19. Click on ***“Add New”***
 
-20. For Client ID, paste in the “OAuth 2 Client ID” for the service account
+20. For Client ID, paste in the ***“OAuth 2 Client ID”*** for the service account
 
-21. For OAuth scopes, enter in https://www.googleapis.com/auth/admin.directory.user
+21. For OAuth scopes, enter in `https://www.googleapis.com/auth/admin.directory.user`
 
-22. Click on “Authorize”
+22. Click on ***“Authorize”***
 
 ![image014](img/GoogleAPIFieldPrimary/image014.png)
 
@@ -105,7 +105,7 @@ https://learn.microsoft.com/en-gb/powershell/scripting/install/install-powershel
 
 Please execute the PowerShell script provided and complete the following steps:
 
-1. Open PowerShell 7 (Press Win+R and type in “pwsh” and run)
+1. Open PowerShell 7 (Press Win+R and type in ***“pwsh”*** and run)
 
 The command window should show PowerShell 7.x.x
 
