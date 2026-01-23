@@ -88,13 +88,16 @@ Select “Admin SDK API and then click on “Enable”
 
 22. Click on “Authorize”
 
+![image014](img/GoogleAPIFieldPrimary/image014.png)
+
 ---
 
 ### PowerShell Requirement
 
 PowerShell 7 is required to run this script. To install this, please go to the following site:
 
-Install PowerShell on Windows - PowerShell | Microsoft Learn
+Install PowerShell on Windows - PowerShell | Microsoft Learn  
+https://learn.microsoft.com/en-gb/powershell/scripting/install/install-powershell-on-windows?view=powershell-7.5
 
 ---
 
@@ -105,6 +108,8 @@ Please execute the PowerShell script provided and complete the following steps:
 1. Open PowerShell 7 (Press Win+R and type in “pwsh” and run)
 
 The command window should show PowerShell 7.x.x
+
+![image015](img/GoogleAPIFieldPrimary/image015.png)
 
 2. Run the command:
 
