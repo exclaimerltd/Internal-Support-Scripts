@@ -2,25 +2,16 @@
 # Google Workspace User Attribute Repair
 # (Exclaimer fix for missing primary fields)
 # =========================================
+# SYNOPSIS:
+# This script will set the 'primary' flag on a user's 'organizations' entry in Google Directory 
+# so it is correctly synced with Exclaimer. It uses a service account with domain-wide delegation
+# to perform updates via the Admin SDK API.
+#
 # INSTRUCTIONS:
-# Before running this script, complete the following steps:
-# 1. Go to https://console.cloud.google.com/ and create a new project.
-# 2. Navigate to IAM & Admin > Service Accounts and create a service account.
-#    - Note the service account name.
-# 3. Create an OAuth 2.0 Client ID for the service account.
-#    - Select "Service Account" as the application type.
-#    - Choose the service account created in step 2.
-# 4. Download the JSON key for the OAuth client and store it securely
-#    (for example: C:\Temp\service-account.json).
-# 5. Enable the Admin SDK API for the project:
-#    https://console.developers.google.com/apis/api/admin.googleapis.com/overview
-# 6. In the Google Admin Console (https://admin.google.com):
-#    Security > Access and Data Control > API Controls > Manage Domain-wide Delegation
-#    - Authorize the service account client ID.
-#    - Add the scope:
-#      https://www.googleapis.com/auth/admin.directory.user
-# 7. Ensure you have the Google Admin email address used for
-#    domain-wide delegation (for example: admin@yourdomain.com).
+# Please review the pre requisites in page below:
+# https://github.com/exclaimerltd/Internal-Support-Scripts/blob/master/resources/GoogleAPIFieldPrimary.MD
+# Push Enter to open it on your default browser, then follow the steps.
+# Once completed, enter "C" to continue.
 # =========================================
 
 # Check if script is running in PowerShell 7+
@@ -32,38 +23,19 @@ if ($PSVersionTable.PSEdition -ne 'Core' -or $PSVersionTable.PSVersion.Major -lt
     return  # Stop script execution without closing the session
 }
 
+# Prompt user to review pre-requisites page
+Write-Host "`nPlease review the pre requisites in the page below:" -ForegroundColor Cyan
+Write-Host "https://github.com/exclaimerltd/Internal-Support-Scripts/blob/master/resources/GoogleAPIFieldPrimary.MD"
+Read-Host "Push Enter to open it on your default browser"
+Start-Process "https://github.com/exclaimerltd/Internal-Support-Scripts/blob/master/resources/GoogleAPIFieldPrimary.MD"
+
+# Wait for user confirmation
+do {
+    $confirm = Read-Host "Once you completed the steps in the article, please enter 'C' followed by Enter to continue"
+} until ($confirm -eq 'C')
+
 function EnsureModule {
     param([string]$Name)
-
-    # Display instructions before running the script
-    $instructions = @(
-        "Google Workspace User Attribute Repair (Exclaimer fix)",
-        "",
-        "This script will set the 'primary' flag on a user's 'organizations' entry in Google Directory so it is synced with Exclaimer.",
-        "",
-        "Before running this script, complete the following steps:",
-        "1. Go to https://console.cloud.google.com/ and create a new project.",
-        "2. Navigate to IAM & Admin > Service Accounts, create a service account.",
-        "   - Note the service account name.",
-        "3. Create an OAuth 2 Client ID for the service account:",
-        "   - Choose 'Service Account' as the application type.",
-        "   - Select the service account you created in Step 2 from the dropdown.",
-        "4. Download the JSON key for the OAuth client and save it to a secure location (e.g., C:\\Temp\\service-account.json).",
-        "5. Enable the Admin SDK API for the project here:",
-        "   https://console.developers.google.com/apis/api/admin.googleapis.com/overview",
-        "6. In Google Admin Console (https://admin.google.com):",
-        "   Security > Access and Data Control > API Controls > Manage Domain-wide Delegation",
-        "   - Authorize the service account client ID",
-        "   - Scope: https://www.googleapis.com/auth/admin.directory.user",
-        "7. Ensure you know the Google admin email for domain-wide delegation (e.g., admin@yourdomain.com)"
-    )
-
-    foreach ($line in $instructions) {
-        Write-Host $line
-    }
-
-    Read-Host "`nPress Enter to continue after completing all the steps above..."
-    Clear-Host
 
     # Ensure the required module is installed
     if (-not (Get-Module -ListAvailable -Name $Name)) {
@@ -71,6 +43,9 @@ function EnsureModule {
         Install-Module $Name -Scope CurrentUser -Force
     }
 }
+
+# (rest of your script continues unchanged...)
+
 
 function Get-GoogleAccessToken {
     param(
@@ -192,8 +167,13 @@ function Update-GoogleUser {
 # ================== SCRIPT START ==================
 
 EnsureModule -Name "PowerShellGet"
-
-Write-Host "Google Workspace user attribute repair (Exclaimer fix)`n"
+Clear-Host
+Write-Host "           -----------------------------------------------" -ForegroundColor Cyan
+Write-Host "           |                   EXCLAIMER                 |" -ForegroundColor Yellow
+Write-Host "           |     Google Workspace User Attribute Fix     |" -ForegroundColor Yellow
+Write-Host "           -----------------------------------------------" -ForegroundColor Cyan
+Write-Host ""
+Start-Sleep -Seconds 1
 
 # Prompt for JSON key file path
 do {
