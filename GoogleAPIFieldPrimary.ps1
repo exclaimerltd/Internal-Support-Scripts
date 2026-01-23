@@ -127,7 +127,7 @@ function Update-GoogleUser {
             -Body ($Payload | ConvertTo-Json -Depth 5) `
             -ContentType "application/json"
 
-        Write-Host "Successfully updated: $UserEmail" -ForegroundColor Green
+        Write-Host "Successfully processed: $UserEmail" -ForegroundColor Green
     }
     catch {
         Write-Warning "Failed to update $UserEmail - $($_.Exception.Message)"
