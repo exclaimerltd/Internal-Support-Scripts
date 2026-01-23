@@ -109,7 +109,7 @@ Please execute the PowerShell script provided and complete the following steps:
 
 The command window should show PowerShell 7.x.x
 
-![image015](img/GoogleAPIFieldPrimary/image015.png)
+![image015](img/GoogleAPIFieldPrimary/image015.jpg)
 
 2. Run the command:
 
