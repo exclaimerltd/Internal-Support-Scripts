@@ -10,7 +10,7 @@ Before running this script, complete the following steps:
 
 2. Create a new project by clicking ***“Create Project”***.
 
-<img src="img/GoogleAPIFieldPrimary/image002.png" alt="image002" style="border:1px solid #5e5e5e; padding:4px; border-radius:4px;" />
+<img src="img/GoogleAPIFieldPrimary/image002.png" alt="image002" style="border:1px; border-style: solid;border-color: gray;border-radius: 4px;" />
 
 If you already have a project and it has automatically been opened, click on ***“Select a Project”*** at the top of the page next to the Google Cloud logo
 
