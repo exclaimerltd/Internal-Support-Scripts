@@ -18,7 +18,7 @@ If you already have a project and it has automatically been opened, click on “
 
 In the new window, click on “New Project”
 
-![image004](img/GoogleAPIFieldPrimary/image004.png)
+![image004](img/GoogleAPIFieldPrimary/image004.jpg)
 
 3. Add a descriptive name and select your organization.
 
