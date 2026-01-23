@@ -44,27 +44,29 @@ In the new window, click on “New Project”
 
 11. Select JSON and click “Create”
 
+![image008](img/GoogleAPIFieldPrimary/image008.png)
+
 12. A JSON file will be downloaded. This will be required for the script.
 
 ---
 
 13. Click on the Navigation Menu
 
-![image008](img/GoogleAPIFieldPrimary/image008.png)
+![image009](img/GoogleAPIFieldPrimary/image008.png)
 
 14. Go to “APIs & Services > Enabled APIs & Services”
 
 Click on “Enable APIs and services”
 
-![image009](img/GoogleAPIFieldPrimary/image009.png)
+![image010](img/GoogleAPIFieldPrimary/image009.png)
 
 Search for “Admin SDK API”
 
-![image010](img/GoogleAPIFieldPrimary/image010.png)
+![image011](img/GoogleAPIFieldPrimary/image010.png)
 
 Select “Admin SDK API and then click on “Enable”
 
-![image011](img/GoogleAPIFieldPrimary/image011.png)
+![image012](img/GoogleAPIFieldPrimary/image011.png)
 
 15. Or, you can use the link “https://console.developers.google.com/apis/api/admin.googleapis.com/overview”
 
@@ -74,7 +76,7 @@ Select “Admin SDK API and then click on “Enable”
 
 17. Navigate to Security > Access and data control > API controls
 
-![image012](img/GoogleAPIFieldPrimary/image012.png)
+![image013](img/GoogleAPIFieldPrimary/image012.png)
 
 18. Click on  “Manage Domain Wide Delegation”
 
