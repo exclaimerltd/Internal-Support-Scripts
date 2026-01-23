@@ -18,7 +18,7 @@ Before running this script, complete the following steps:
 
 4. In the new window, click **New Project**.
 
-![image004](img/GoogleAPIFieldPrimary/image004.png)
+![image004](img/GoogleAPIFieldPrimary/image004.jpg)
 
 5. Add a descriptive name and select your organization.  
 
