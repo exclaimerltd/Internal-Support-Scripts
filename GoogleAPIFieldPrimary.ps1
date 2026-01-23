@@ -23,6 +23,15 @@
 #    domain-wide delegation (for example: admin@yourdomain.com).
 # =========================================
 
+# Check if script is running in PowerShell 7+
+if ($PSVersionTable.PSEdition -ne 'Core' -or $PSVersionTable.PSVersion.Major -lt 7) {
+    Write-Host "This script must be run in PowerShell 7 or later." -ForegroundColor Red
+    Write-Host "Please run this script using pwsh (PowerShell 7+)." -ForegroundColor Yellow
+    Write-Host ""
+    Read-Host "Press Enter to close"
+    return  # Stop script execution without closing the session
+}
+
 function EnsureModule {
     param([string]$Name)
 
@@ -54,6 +63,7 @@ function EnsureModule {
     }
 
     Read-Host "`nPress Enter to continue after completing all the steps above..."
+    Clear-Host
 
     # Ensure the required module is installed
     if (-not (Get-Module -ListAvailable -Name $Name)) {
@@ -64,49 +74,94 @@ function EnsureModule {
 
 function Get-GoogleAccessToken {
     param(
+        [Parameter(Mandatory)]
         [string]$JsonKeyPath,
+
+        [Parameter(Mandatory)]
         [string]$AdminUser
     )
 
-    $json = Get-Content $JsonKeyPath -Raw | ConvertFrom-Json
-    $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-
-    $jwtHeader = @{ alg = "RS256"; typ = "JWT" } | ConvertTo-Json -Compress
-    $jwtClaim = @{
-        iss   = $json.client_email
-        scope = "https://www.googleapis.com/auth/admin.directory.user"
-        aud   = "https://oauth2.googleapis.com/token"
-        exp   = $now + 3600
-        iat   = $now
-        sub   = $AdminUser
-    } | ConvertTo-Json -Compress
-
-    $headerEncoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($jwtHeader)).TrimEnd("=")
-    $claimEncoded  = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($jwtClaim)).TrimEnd("=")
-
-    $rsa = [System.Security.Cryptography.RSA]::Create()
-    $rsa.ImportFromPem($json.private_key)
-
-    $signature = $rsa.SignData(
-        [Text.Encoding]::UTF8.GetBytes("$headerEncoded.$claimEncoded"),
-        [System.Security.Cryptography.HashAlgorithmName]::SHA256,
-        [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
-    )
-
-    $sigEncoded = [Convert]::ToBase64String($signature).TrimEnd("=")
-    $jwt = "$headerEncoded.$claimEncoded.$sigEncoded"
-
-    $body = @{
-        grant_type = "urn:ietf:params:oauth:grant-type:jwt-bearer"
-        assertion  = $jwt
+    try {
+        # Load service account JSON
+        $json = Get-Content $JsonKeyPath -Raw | ConvertFrom-Json
+    }
+    catch {
+        throw "Unable to read the service account JSON file. Check the file path and file permissions."
     }
 
-    $token = Invoke-RestMethod -Method Post `
-        -Uri "https://oauth2.googleapis.com/token" `
-        -Body $body
+    try {
+        $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 
-    return $token.access_token
+        $jwtHeader = @{ alg = "RS256"; typ = "JWT" } | ConvertTo-Json -Compress
+        $jwtClaim = @{
+            iss   = $json.client_email
+            scope = "https://www.googleapis.com/auth/admin.directory.user"
+            aud   = "https://oauth2.googleapis.com/token"
+            exp   = $now + 3600
+            iat   = $now
+            sub   = $AdminUser
+        } | ConvertTo-Json -Compress
+
+        $headerEncoded = [Convert]::ToBase64String(
+            [Text.Encoding]::UTF8.GetBytes($jwtHeader)
+        ).TrimEnd("=")
+
+        $claimEncoded = [Convert]::ToBase64String(
+            [Text.Encoding]::UTF8.GetBytes($jwtClaim)
+        ).TrimEnd("=")
+
+        $rsa = [System.Security.Cryptography.RSA]::Create()
+        $rsa.ImportFromPem($json.private_key)
+
+        $signature = $rsa.SignData(
+            [Text.Encoding]::UTF8.GetBytes("$headerEncoded.$claimEncoded"),
+            [System.Security.Cryptography.HashAlgorithmName]::SHA256,
+            [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
+        )
+
+        $sigEncoded = [Convert]::ToBase64String($signature).TrimEnd("=")
+        $jwt = "$headerEncoded.$claimEncoded.$sigEncoded"
+    }
+    catch {
+        throw "Failed to generate the OAuth JWT. Ensure the script is running in PowerShell 7+ and the JSON key is valid."
+    }
+
+    try {
+        $body = @{
+            grant_type = "urn:ietf:params:oauth:grant-type:jwt-bearer"
+            assertion  = $jwt
+        }
+
+        $token = Invoke-RestMethod -Method Post `
+            -Uri "https://oauth2.googleapis.com/token" `
+            -Body $body `
+            -ErrorAction Stop
+
+        return $token.access_token
+    }
+    catch {
+        $statusCode = $_.Exception.Response.StatusCode.value__ 2>$null
+        $errorText  = $_.Exception.Message
+
+        switch ($statusCode) {
+            400 {
+                $friendly = "Token request rejected. The service account is not authorised for domain-wide delegation or the admin email is invalid."
+            }
+            401 {
+                $friendly = "Authentication failed. The service account key may be invalid or revoked."
+            }
+            403 {
+                $friendly = "Permission denied. Check domain-wide delegation, OAuth scopes, and ensure the admin user is a Super Admin."
+            }
+            default {
+                $friendly = "Failed to obtain an access token from Google. Check service account configuration and permissions."
+            }
+        }
+
+        throw "$friendly (HTTP $statusCode)"
+    }
 }
+
 
 function Update-GoogleUser {
     param(
@@ -140,8 +195,34 @@ EnsureModule -Name "PowerShellGet"
 
 Write-Host "Google Workspace user attribute repair (Exclaimer fix)`n"
 
-$jsonPath = Read-Host "Enter full path to JSON key file (i.e: C:\Temp\my_token.json)"
-$adminUser = Read-Host "Enter Google admin email for domain-wide delegation"
+# Prompt for JSON key file path
+do {
+    $jsonPath = Read-Host "Enter full path to JSON key file (e.g. C:\Temp\my_token.json)"
+
+    # Remove surrounding quotes if present
+    $jsonPath = $jsonPath.Trim('"')
+
+    if (-not (Test-Path -Path $jsonPath -PathType Leaf)) {
+        Write-Host "File not found. Please enter a valid file path." -ForegroundColor Yellow
+        $jsonPath = $null
+    }
+} until ($jsonPath)
+
+
+# Prompt for Google Admin email address
+$emailRegex = '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'
+
+do {
+    $adminUser = Read-Host "Enter Google Admin email address for delegation"
+
+    # Force lowercase
+    $adminUser = $adminUser.ToLower()
+
+    if ($adminUser -notmatch $emailRegex) {
+        Write-Host "Invalid email address format. Please try again." -ForegroundColor Yellow
+        $adminUser = $null
+    }
+} until ($adminUser)
 
 $accessToken = Get-GoogleAccessToken -JsonKeyPath $jsonPath -AdminUser $adminUser
 
