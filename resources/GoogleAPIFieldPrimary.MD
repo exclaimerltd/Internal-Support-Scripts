@@ -71,23 +71,23 @@ Select ***“Admin SDK API”*** and then click on ***“Enable”***
 
 ---
 
-16. Sign into the Google Admin Console in a new tab (https://admin.google.com)
+15. Sign into the Google Admin Console in a new tab (https://admin.google.com)
 
-17. Navigate to ***Security > Access and data control > API controls***
+16. Navigate to ***Security > Access and data control > API controls***
 
-18. Click on ***“Manage Domain Wide Delegation”***
+17. Click on ***“Manage Domain Wide Delegation”***
 
 ![image013](img/GoogleAPIFieldPrimary/image012.png)
 
-19. Click on ***“Add New”***
+18. Click on ***“Add New”***
 
-20. For Client ID, paste in the ***“OAuth 2 Client ID”*** for the service account
+19. For Client ID, paste in the ***“OAuth 2 Client ID”*** for the service account
 
-21. For OAuth scopes, enter in `https://www.googleapis.com/auth/admin.directory.user`
+20. For OAuth scopes, enter in `https://www.googleapis.com/auth/admin.directory.user`
 
 ![image013](img/GoogleAPIFieldPrimary/image013.png)
 
-22. Click on ***“Authorize”***
+21. Click on ***“Authorize”***
 
 ---
 
