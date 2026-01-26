@@ -60,10 +60,7 @@ In the new window, click on ***“New Project”***
 
 14. Go to ***“APIs & Services > Enabled APIs & Services”***
 
-Click on ***“Enable APIs and services”***
-
 ![image009](img/GoogleAPIFieldPrimary/image009.png)
-
 
 Search for ***“Admin SDK API”***
 
