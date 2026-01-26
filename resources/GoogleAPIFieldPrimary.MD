@@ -22,7 +22,9 @@ In the new window, click on ***“New Project”***
 
 3. Add a descriptive name and select your organization.
 
-4. With the Project selected, navigate to ***“IAM & Admin > Service Accounts”***.
+4. With the Project selected, open the ***Navigation Menu*** and go to ***“IAM & Admin > Service Accounts”***.
+
+![image009](img/GoogleAPIFieldPrimary/image014.png)
 
 5. Click on ***“Create service account”***.
 
