@@ -42,11 +42,11 @@ In the new window, click on ***“New Project”***
 
 ![image007](img/GoogleAPIFieldPrimary/image007.png)
 
-11. Select JSON and click ***“Create”***
+11. Select ***"JSON"*** and click ***“Create”***
 
 ![image008](img/GoogleAPIFieldPrimary/image008.png)
 
-12. A JSON file will be downloaded. This will be required for the script.
+12. A ***JSON*** file will be downloaded. This will be required for the script.
 
 ---
 
@@ -104,7 +104,7 @@ Install PowerShell on Windows - PowerShell | Microsoft Learn
 
 Please execute the PowerShell script provided and complete the following steps:
 
-1. Open PowerShell 7 (Press Win+R and type in ***“pwsh”*** and run)
+1. Open PowerShell 7 (Press Win + R and type in ***“pwsh”*** and run)
 
 The command window should show PowerShell 7.x.x
 
