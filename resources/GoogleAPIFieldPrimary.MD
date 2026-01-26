@@ -52,19 +52,22 @@ In the new window, click on ***“New Project”***
 
 13. Click on the ***Navigation Menu*** ***“https://console.cloud.google.com/apis/library”***
 
-![image009](img/GoogleAPIFieldPrimary/image009.png)
+![image009](img/GoogleAPIFieldPrimary/image014.png)
 
 14. Go to ***“APIs & Services > Enabled APIs & Services”***
 
 Click on ***“Enable APIs and services”***
 
-![image010](img/GoogleAPIFieldPrimary/image010.png)
+![image009](img/GoogleAPIFieldPrimary/image009.png)
+
 
 Search for ***“Admin SDK API”***
 
-![image011](img/GoogleAPIFieldPrimary/image011.png)
+![image010](img/GoogleAPIFieldPrimary/image010.png)
 
 Select ***“Admin SDK API”*** and then click on ***“Enable”***
+
+![image011](img/GoogleAPIFieldPrimary/image011.png)
 
 ---
 
