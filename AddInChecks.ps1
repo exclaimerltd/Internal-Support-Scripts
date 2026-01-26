@@ -1435,7 +1435,8 @@ else {
                         }
                         'OutlookMobileGCCRestrictionsEnabled' {
                             $impact = if ($rawValue) {
-                                '⚠️ Cloud add-ins not supported on Outlook Mobile.'
+                                '❌ Cloud add-ins not supported on Outlook Mobile.'                                
+                            $addGCCSideNote = $true
                             } else {
                                 '✅ Mobile add-ins supported.'
                             }
@@ -1468,6 +1469,16 @@ else {
                     }
 
                 Add-Content $FullLogFilePath '</table></div>'
+
+                if ($addGCCSideNote) {
+                    $sideNote = @'
+<div class="info-after-error"><span><b>ℹ️ 'OutlookMobileGCCRestrictionsEnabled' is 'true':</b> run the below command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to 'false':<br><code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $true</code></span></div>
+<p class="side-note">If you have re-opened PowerShell, you may need to run:</p>
+<code>Connect-ExchangeOnline</code>
+<p class="side-note">Once this is completed, please re-run the full script again to verify changes.</p>
+'@
+                    Add-Content -Path $FullLogFilePath -Value $sideNote
+                }
                 # Add side-note immediately after the table row for AppsForOfficeEnabled
                 if ($addAppsSideNote) {
                     $sideNote = @'
