@@ -118,7 +118,7 @@ function Get-GoogleAccessToken {
         $statusCode = $_.Exception.Response.StatusCode.value__ 2>$null
 
         switch ($statusCode) {
-            400 { $friendly = "Token request rejected. The service account is not authorised for domain-wide delegation or the admin email is invalid." }
+            400 { $friendly = "Token request rejected. Invalid Token or Service Account is not authorised for domain-wide delegation or the admin email is invalid." }
             401 { $friendly = "Authentication failed. The service account key may be invalid or revoked." }
             403 { $friendly = "Permission denied. Check domain-wide delegation, OAuth scopes, and ensure the admin user is a Super Admin." }
             default { $friendly = "Failed to obtain an access token from Google. Check service account configuration and permissions." }
