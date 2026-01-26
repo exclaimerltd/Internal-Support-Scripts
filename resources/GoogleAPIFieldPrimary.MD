@@ -6,7 +6,7 @@ This script will set the `primary` flag on a user's `organizations` entry in Goo
 
 Before running this script, complete the following steps:
 
-1. Go to https://console.cloud.google.com/ and sign in with your Super Admin account.
+1. Go to "https://console.cloud.google.com/" and sign in with your Super Admin account.
 
 2. Create a new project by clicking ***“Create Project”***.
 
@@ -50,7 +50,7 @@ In the new window, click on ***“New Project”***
 
 ---
 
-13. Click on the ***Navigation Menu*** ***“https://console.cloud.google.com/apis/library”***
+13. Click on the ***Navigation Menu*** “https://console.cloud.google.com/apis/library”
 
 ![image009](img/GoogleAPIFieldPrimary/image014.png)
 
@@ -96,7 +96,7 @@ Select ***“Admin SDK API”*** and then click on ***“Enable”***
 PowerShell 7 is required to run this script. To install this, please go to the following site:
 
 Install PowerShell on Windows - PowerShell | Microsoft Learn  
-https://learn.microsoft.com/en-gb/powershell/scripting/install/install-powershell-on-windows?view=powershell-7.5
+(https://learn.microsoft.com/en-gb/powershell/scripting/install/install-powershell-on-windows)
 
 ---
 
