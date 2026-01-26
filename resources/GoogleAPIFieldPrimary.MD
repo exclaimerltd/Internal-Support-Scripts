@@ -18,7 +18,7 @@ If you already have a project and it has automatically been opened, click on ***
 
 In the new window, click on ***“New Project”***
 
-![image004](img/GoogleAPIFieldPrimary/image004.jpg)
+![image004](img/GoogleAPIFieldPrimary/image004.png)
 
 3. Add a descriptive name and select your organization.
 
@@ -50,7 +50,7 @@ In the new window, click on ***“New Project”***
 
 ---
 
-13. Click on the ***Navigation Menu***
+13. Click on the ***Navigation Menu*** ***“https://console.cloud.google.com/apis/library”***
 
 ![image009](img/GoogleAPIFieldPrimary/image009.png)
 
@@ -66,19 +66,15 @@ Search for ***“Admin SDK API”***
 
 Select ***“Admin SDK API”*** and then click on ***“Enable”***
 
-![image012](img/GoogleAPIFieldPrimary/image012.png)
-
-15. Or, you can use the link ***“https://console.developers.google.com/apis/api/admin.googleapis.com/overview”***
-
 ---
 
 16. Sign into the Google Admin Console in a new tab (https://admin.google.com)
 
 17. Navigate to ***Security > Access and data control > API controls***
 
-![image013](img/GoogleAPIFieldPrimary/image013.png)
-
 18. Click on ***“Manage Domain Wide Delegation”***
+
+![image013](img/GoogleAPIFieldPrimary/image012.png)
 
 19. Click on ***“Add New”***
 
@@ -86,9 +82,9 @@ Select ***“Admin SDK API”*** and then click on ***“Enable”***
 
 21. For OAuth scopes, enter in `https://www.googleapis.com/auth/admin.directory.user`
 
-22. Click on ***“Authorize”***
+![image013](img/GoogleAPIFieldPrimary/image013.png)
 
-![image014](img/GoogleAPIFieldPrimary/image014.png)
+22. Click on ***“Authorize”***
 
 ---
 
@@ -109,7 +105,7 @@ Please execute the PowerShell script provided and complete the following steps:
 
 The command window should show PowerShell 7.x.x
 
-![image015](img/GoogleAPIFieldPrimary/image015.jpg)
+![image015](img/GoogleAPIFieldPrimary/image015.png)
 
 2. Run the command:
 
