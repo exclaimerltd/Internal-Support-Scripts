@@ -1472,7 +1472,7 @@ else {
 
                 if ($addGCCSideNote) {
                     $sideNote = @'
-<div class="info-after-error"><span><b>ℹ️ 'OutlookMobileGCCRestrictionsEnabled' is 'true':</b> run the below command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to 'false':<br><code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $true</code></span></div>
+<div class="info-after-error"><span><b>ℹ️ 'OutlookMobileGCCRestrictionsEnabled' is 'true':</b> run the below command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to 'false':<br><code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $false</code></span></div>
 <p class="side-note">If you have re-opened PowerShell, you may need to run:</p>
 <code>Connect-ExchangeOnline</code>
 <p class="side-note">Once this is completed, please re-run the full script again to verify changes.</p>
