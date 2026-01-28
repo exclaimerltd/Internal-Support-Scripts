@@ -1640,9 +1640,9 @@ else {
                 switch ($prop.Name) {
                     'IsShared' {
                         $notes = if ($raw) {
-                            'Shared mailbox.'
+                            'Is a Shared mailbox.'
                         } else {
-                            'User mailbox.'
+                            'Not a Shared Mailbox.'
                         }
                     }
                     'AccountDisabled' {
