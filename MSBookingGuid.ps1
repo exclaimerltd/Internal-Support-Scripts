@@ -37,7 +37,7 @@
         - Exports results to a timestamped CSV file
 
 .INSTRUCTIONS
-    1. Open PowerShell (run as Administrator only if module installation is required)
+    1. Open PowerShell (run as Administrator if module installation is required)
     2. Execute the script:
         `.\MSBookingGuid.ps1`
     3. Sign in when prompted
