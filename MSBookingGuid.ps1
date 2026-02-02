@@ -71,7 +71,7 @@ function CheckExchangeOnlineModule {
     }
 }
 
-#CheckExchangeOnlineModule
+CheckExchangeOnlineModule
 
 function SetOutputPath {
     # Default path: Downloads folder
