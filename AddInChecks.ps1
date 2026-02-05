@@ -570,7 +570,7 @@ function GetWindowsNetworkDetails {
     Add-Content $FullLogFilePath '<h2>🌐 Network Connection Details</h2>'
     Add-Content $FullLogFilePath '<table>'
     # --- HTML Table Header ---
-    Add-Content $FullLogFilePath '<tr><th>Interface</th><th>Network Name</th><th>Category</th><th>IPv4 Connectivity</th><th>IPv6 Connectivity</th><th>Interface Metric</th></tr>'
+    Add-Content $FullLogFilePath '<tr><th>Interface</th><th>Network Name</th><th>Category</th><th>IPv4 Connectivity</th><th>IPv6 Connectivity</th><th title="Interface priority, lower is higher">Interface Metric</th></tr>'
 
     # --- Collect Network Profiles ---
     $profiles = Get-NetConnectionProfile
@@ -602,7 +602,7 @@ function GetWindowsNetworkDetails {
 
             # --- HTML Logging ---
             Add-Content $FullLogFilePath (
-                "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td></tr>" -f `
+                "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td title=`"Interface priority, lower is higher`">{5}</td></tr>" -f `
                 $interfaceAlias, $networkName, $category, $ipv4, $ipv6, $interfaceMetric
             )
         }
