@@ -213,7 +213,7 @@ if ($scope -eq "1") {
 else {
     $headers = @{ Authorization = "Bearer $accessToken" }
     $allUsers = Invoke-RestMethod `
-        -Uri "https://admin.googleapis.com/admin/directory/v1/users?customer=my_customer&maxResults=500" `
+        -Uri "https://admin.googleapis.com/admin/directory/v1/users?customer=my_customer&maxResults=500&query=isSuspended=false" `
         -Headers $headers
 
     $users = $allUsers.users | ForEach-Object { $_.primaryEmail }
