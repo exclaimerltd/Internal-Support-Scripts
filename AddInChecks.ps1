@@ -569,14 +569,15 @@ function GetWindowsNetworkDetails {
     Add-Content $FullLogFilePath '<div class="section">'
     Add-Content $FullLogFilePath '<h2>🌐 Network Connection Details</h2>'
     Add-Content $FullLogFilePath '<table>'
-    Add-Content $FullLogFilePath '<tr><th>Interface</th><th>Network Name</th><th>Category</th><th>IPv4 Connectivity</th><th>IPv6 Connectivity</th></tr>'
+    # --- HTML Table Header ---
+    Add-Content $FullLogFilePath '<tr><th>Interface</th><th>Network Name</th><th>Category</th><th>IPv4 Connectivity</th><th>IPv6 Connectivity</th><th>Interface Metric</th></tr>'
 
     # --- Collect Network Profiles ---
     $profiles = Get-NetConnectionProfile
 
     if (-not $profiles) {
         Write-Host "No active network connections found." -ForegroundColor Yellow
-        Add-Content $FullLogFilePath '<tr><td colspan="5">No active network connections detected.</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td colspan="6">No active network connections detected.</td></tr>'
     }
     else {
         foreach ($profile in $profiles) {
@@ -586,17 +587,23 @@ function GetWindowsNetworkDetails {
             $ipv4           = $profile.IPv4Connectivity
             $ipv6           = $profile.IPv6Connectivity
 
+            # --- Get InterfaceMetric (IPv4) ---
+            $metricObj = Get-NetIPInterface |
+                        Where-Object { $_.InterfaceAlias -eq $interfaceAlias -and $_.AddressFamily -eq 'IPv4' }
+            $interfaceMetric = if ($metricObj) { $metricObj.InterfaceMetric } else { 'N/A' }
+
             # --- Console Output ---
             Write-Host "Interface:        $interfaceAlias" -ForegroundColor White
             Write-Host "Network Name:     $networkName" -ForegroundColor White
             Write-Host "Category:         $category" -ForegroundColor White
             Write-Host "IPv4 Connectivity $ipv4" -ForegroundColor DarkGray
-            Write-Host "IPv6 Connectivity $ipv6`n" -ForegroundColor DarkGray
+            Write-Host "IPv6 Connectivity $ipv6" -ForegroundColor DarkGray
+            Write-Host "Interface Metric: $interfaceMetric`n" -ForegroundColor Yellow
 
             # --- HTML Logging ---
             Add-Content $FullLogFilePath (
-                "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>" -f `
-                $interfaceAlias, $networkName, $category, $ipv4, $ipv6
+                "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td></tr>" -f `
+                $interfaceAlias, $networkName, $category, $ipv4, $ipv6, $interfaceMetric
             )
         }
     }
