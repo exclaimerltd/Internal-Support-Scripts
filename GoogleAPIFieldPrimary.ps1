@@ -145,12 +145,12 @@ function Get-GoogleAccessToken {
 
 }
 
-
 function Update-GoogleUser {
     param(
         [string]$UserEmail,
         [string]$AccessToken,
-        [hashtable]$Payload
+        [hashtable]$Payload,
+        [int]$Count
     )
 
     $headers = @{
@@ -174,14 +174,13 @@ function Update-GoogleUser {
         return $false
     }
     finally {
-        # Log to CSV
         $logEntry = [PSCustomObject]@{
+            Count     = $Count
             Timestamp = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
             UserEmail = $UserEmail
             Status    = $status
         }
 
-        # If file doesn't exist, create with headers
         if (-not (Test-Path -Path $FullLogFilePath)) {
             $logEntry | Export-Csv -Path $FullLogFilePath -NoTypeInformation
         }
@@ -190,8 +189,6 @@ function Update-GoogleUser {
         }
     }
 }
-
-
 
 # ================== SCRIPT START ==================
 
@@ -271,9 +268,15 @@ else {
     while ($pageToken)
 }
 
+# Count goes here
+$totalUsers = $users.Count
+$counter = 0
+Write-Host "`nTotal users to be updated: $totalUsers`n"
 foreach ($user in $users) {
-    Write-Host "`rProcessing: $user".PadRight(120) -ForegroundColor Yellow -NoNewline
+    $counter++
 
+    Write-Host "`rProcessing ($counter / $totalUsers): $user".PadRight(120) `
+        -ForegroundColor Yellow -NoNewline
 
     # Fetch current organizations array
     $current = Invoke-RestMethod `
@@ -283,26 +286,50 @@ foreach ($user in $users) {
     $orgs = @()
     if ($current.organizations) { $orgs = $current.organizations }
     if ($orgs.Count -eq 0) {
-        Write-Warning "$user has no existing organization. Skipping."
+        Write-Host "`rSkipping ($counter / $totalUsers): no org - $user".PadRight(120) `
+            -ForegroundColor DarkYellow -NoNewline
+        continue
+    }
+
+    # CHECK: already primary?
+    if ($orgs[0].primary -eq $true) {
+        Write-Host "`rSkipping ($counter / $totalUsers): already primary - $user".PadRight(120) `
+            -ForegroundColor DarkYellow -NoNewline
+
+        # Optional: log skip
+        $logEntry = [PSCustomObject]@{
+            Count     = $counter
+            Timestamp = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+            UserEmail = $user
+            Status    = "Skipped (already primary)"
+        }
+
+        if (-not (Test-Path $FullLogFilePath)) {
+            $logEntry | Export-Csv $FullLogFilePath -NoTypeInformation
+        }
+        else {
+            $logEntry | Export-Csv $FullLogFilePath -NoTypeInformation -Append
+        }
+
         continue
     }
 
     # Only update the first organization
     foreach ($prop in $orgUpdate[0].PSObject.Properties.Name) {
         if (-not $orgs[0].PSObject.Properties[$prop]) {
-            # Add the property if it doesn't exist
             $orgs[0] | Add-Member -MemberType NoteProperty -Name $prop -Value $orgUpdate[0].$prop -Force
         }
         else {
-            # Otherwise, update existing
             $orgs[0].$prop = $orgUpdate[0].$prop
         }
     }
-    
+
     $payload = @{ organizations = $orgs }
 
-    Update-GoogleUser -UserEmail $user -AccessToken $accessToken -Payload $payload  | Out-Null
+    Update-GoogleUser -UserEmail $user -AccessToken $accessToken -Payload $payload -Count $counter | Out-Null
 }
+
+
 Write-Host "`rProcessing completed".PadRight(120) -ForegroundColor Green -NoNewline
 # Final message after all users are processed
 Write-Host "`n`nUpdate completed. Log of processed users has been saved to:" -ForegroundColor Green
