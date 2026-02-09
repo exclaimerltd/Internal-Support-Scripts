@@ -217,7 +217,7 @@ else {
     $pageToken = $null
 
     do {
-        $uri = "https://admin.googleapis.com/admin/directory/v1/users?customer=my_customer&maxResults=2&query=isSuspended=false"
+        $uri = "https://admin.googleapis.com/admin/directory/v1/users?customer=my_customer&maxResults=500&query=isSuspended=false"
 
         if ($pageToken) {
             $uri += "&pageToken=$pageToken"
