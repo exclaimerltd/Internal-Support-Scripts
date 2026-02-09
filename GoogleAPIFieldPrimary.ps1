@@ -271,7 +271,7 @@ else {
 # Count goes here
 $totalUsers = $users.Count
 $counter = 0
-Write-Host "`nTotal users to be updated: $totalUsers`n"
+Write-Host "`nTotal users to be processed: $totalUsers`n"
 foreach ($user in $users) {
     $counter++
 
