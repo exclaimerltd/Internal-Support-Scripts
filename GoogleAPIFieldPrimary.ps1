@@ -23,6 +23,21 @@ if ($PSVersionTable.PSEdition -ne 'Core' -or $PSVersionTable.PSVersion.Major -lt
     return  # Stop script execution without closing the session
 }
 
+# Default path: Downloads folder
+$Global:FilePath = [System.IO.Path]::Combine([Environment]::GetFolderPath('UserProfile'), 'Downloads')
+$LogFile = "GoogleUsersUpdateLog_$(Get-Date -Format 'HHmmss').csv"
+
+# Check if the path exists, if not, use C:\Temp
+if (-not (Test-Path -Path $Global:FilePath)) {
+    $Global:FilePath = "C:\Temp"
+    if (-not (Test-Path -Path $Global:FilePath)) {
+        New-Item -Path $Global:FilePath -ItemType Directory -Force | Out-Null
+    }
+}
+
+# Final full path for the log file
+$FullLogFilePath = Join-Path $Global:FilePath $LogFile
+
 # Prompt user to review pre-requisites page
 Write-Host "`nPlease review the pre requisites in the page below:" -ForegroundColor Cyan
 Write-Host "https://github.com/exclaimerltd/Internal-Support-Scripts/blob/master/resources/GoogleAPIFieldPrimary.MD"
@@ -142,6 +157,7 @@ function Update-GoogleUser {
         Authorization = "Bearer $AccessToken"
     }
 
+    $status = ""
     try {
         Invoke-RestMethod `
             -Method Patch `
@@ -150,12 +166,32 @@ function Update-GoogleUser {
             -Body ($Payload | ConvertTo-Json -Depth 5) `
             -ContentType "application/json"
 
-        Write-Host "Successfully processed: $UserEmail" -ForegroundColor Green
+        $status = "Success"
+        return $true
     }
     catch {
-        Write-Warning "Failed to update $UserEmail - $($_.Exception.Message)"
+        $status = "Failed: $($_.Exception.Message)"
+        return $false
+    }
+    finally {
+        # Log to CSV
+        $logEntry = [PSCustomObject]@{
+            Timestamp = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+            UserEmail = $UserEmail
+            Status    = $status
+        }
+
+        # If file doesn't exist, create with headers
+        if (-not (Test-Path -Path $FullLogFilePath)) {
+            $logEntry | Export-Csv -Path $FullLogFilePath -NoTypeInformation
+        }
+        else {
+            $logEntry | Export-Csv -Path $FullLogFilePath -NoTypeInformation -Append
+        }
     }
 }
+
+
 
 # ================== SCRIPT START ==================
 
@@ -206,6 +242,7 @@ Write-Host "`nField to update: $field"
 $orgUpdate = ConvertFrom-Json '[{"primary": true}]'
 
 $scope = Read-Host "Update (1) single user or (2) all users?"
+Write-Host ""
 
 if ($scope -eq "1") {
     $users = @((Read-Host "Enter user email address"))
@@ -235,7 +272,8 @@ else {
 }
 
 foreach ($user in $users) {
-    Write-Host "`nProcessing: $user" -ForegroundColor Yellow
+    Write-Host "`rProcessing: $user".PadRight(120) -ForegroundColor Yellow -NoNewline
+
 
     # Fetch current organizations array
     $current = Invoke-RestMethod `
@@ -265,5 +303,11 @@ foreach ($user in $users) {
 
     Update-GoogleUser -UserEmail $user -AccessToken $accessToken -Payload $payload  | Out-Null
 }
+Write-Host "`rProcessing completed".PadRight(120) -ForegroundColor Green -NoNewline
+# Final message after all users are processed
+Write-Host "`n`nUpdate completed. Log of processed users has been saved to:" -ForegroundColor Green
+Write-Host $FullLogFilePath -ForegroundColor Cyan
+Write-Host "`nAllow Google sync time before validating changes."
 
-Write-Host "`nUpdate completed. Allow Google sync time before re-running Exclaimer sync."
+# To add - maybe user countdown
+# number user output
