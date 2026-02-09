@@ -212,11 +212,26 @@ if ($scope -eq "1") {
 }
 else {
     $headers = @{ Authorization = "Bearer $accessToken" }
-    $allUsers = Invoke-RestMethod `
-        -Uri "https://admin.googleapis.com/admin/directory/v1/users?customer=my_customer&maxResults=500&query=isSuspended=false" `
-        -Headers $headers
 
-    $users = $allUsers.users | ForEach-Object { $_.primaryEmail }
+    $users = @()
+    $pageToken = $null
+
+    do {
+        $uri = "https://admin.googleapis.com/admin/directory/v1/users?customer=my_customer&maxResults=2&query=isSuspended=false"
+
+        if ($pageToken) {
+            $uri += "&pageToken=$pageToken"
+        }
+
+        $response = Invoke-RestMethod -Uri $uri -Headers $headers
+
+        if ($response.users) {
+            $users += $response.users | ForEach-Object { $_.primaryEmail }
+        }
+
+        $pageToken = $response.nextPageToken
+    }
+    while ($pageToken)
 }
 
 foreach ($user in $users) {
