@@ -336,5 +336,3 @@ Write-Host "`n`nUpdate completed. Log of processed users has been saved to:" -Fo
 Write-Host $FullLogFilePath -ForegroundColor Cyan
 Write-Host "`nAllow Google sync time before validating changes."
 
-# To add - maybe user countdown
-# number user output
