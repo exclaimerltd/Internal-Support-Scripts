@@ -275,7 +275,7 @@ Write-Host "`nTotal users to be processed: $totalUsers`n"
 foreach ($user in $users) {
     $counter++
 
-    Write-Host "`rProcessing ($counter / $totalUsers): $user".PadRight(120) `
+    Write-Host "`rProcessing ($counter / $totalUsers): $user".PadRight(80) `
         -ForegroundColor Yellow -NoNewline
 
     # Fetch current organizations array
@@ -286,14 +286,14 @@ foreach ($user in $users) {
     $orgs = @()
     if ($current.organizations) { $orgs = $current.organizations }
     if ($orgs.Count -eq 0) {
-        Write-Host "`rSkipping ($counter / $totalUsers): no org - $user".PadRight(120) `
+        Write-Host "`rSkipping ($counter / $totalUsers): no org - $user".PadRight(80) `
             -ForegroundColor DarkYellow -NoNewline
         continue
     }
 
     # CHECK: already primary?
     if ($orgs[0].primary -eq $true) {
-        Write-Host "`rSkipping ($counter / $totalUsers): already primary - $user".PadRight(120) `
+        Write-Host "`rSkipping ($counter / $totalUsers): already primary - $user".PadRight(80) `
             -ForegroundColor DarkYellow -NoNewline
 
         # Optional: log skip
@@ -330,7 +330,7 @@ foreach ($user in $users) {
 }
 
 
-Write-Host "`rProcessing completed".PadRight(120) -ForegroundColor Green -NoNewline
+Write-Host "`rProcessing completed".PadRight(80) -ForegroundColor Green -NoNewline
 # Final message after all users are processed
 Write-Host "`n`nUpdate completed. Log of processed users has been saved to:" -ForegroundColor Green
 Write-Host $FullLogFilePath -ForegroundColor Cyan

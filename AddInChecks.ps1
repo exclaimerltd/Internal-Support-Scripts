@@ -437,10 +437,10 @@ function CheckEndpoints {
 
     foreach ($endpoint in $endpoints) {
         $TimeTaken = Measure-Command {
-            $result = Test-NetConnection -ComputerName $endpoint -Port 443 -InformationLevel Quiet
+            $Global:netTestResult = Test-NetConnection -ComputerName $endpoint -Port 443 -InformationLevel Quiet
         }
 
-        $status = if ($result) { "Success" } else { "Failed" }
+        $status = if ($Global:netTestResult) { "Success" } else { "Failed" }
 
         $results += [PSCustomObject]@{
             "Endpoint" = $endpoint
@@ -573,19 +573,19 @@ function GetWindowsNetworkDetails {
     Add-Content $FullLogFilePath '<tr><th>Interface</th><th>Network Name</th><th>Category</th><th>IPv4 Connectivity</th><th>IPv6 Connectivity</th><th title="Interface priority, lower is higher">Interface Metric</th></tr>'
 
     # --- Collect Network Profiles ---
-    $profiles = Get-NetConnectionProfile
+    $netProfiles = Get-NetConnectionProfile
 
-    if (-not $profiles) {
+    if (-not $netProfiles) {
         Write-Host "No active network connections found." -ForegroundColor Yellow
         Add-Content $FullLogFilePath '<tr><td colspan="6">No active network connections detected.</td></tr>'
     }
     else {
-        foreach ($profile in $profiles) {
-            $interfaceAlias = $profile.InterfaceAlias
-            $networkName    = if ($profile.Name) { $profile.Name } else { 'N/A' }
-            $category       = $profile.NetworkCategory
-            $ipv4           = $profile.IPv4Connectivity
-            $ipv6           = $profile.IPv6Connectivity
+        foreach ($netProfile in $netProfiles) {
+            $interfaceAlias = $netProfile.InterfaceAlias
+            $networkName    = if ($netProfile.Name) { $netProfile.Name } else { 'N/A' }
+            $category       = $netProfile.NetworkCategory
+            $ipv4           = $netProfile.IPv4Connectivity
+            $ipv6           = $netProfile.IPv6Connectivity
 
             # --- Get InterfaceMetric (IPv4) ---
             $metricObj = Get-NetIPInterface |
