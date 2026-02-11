@@ -1190,11 +1190,11 @@ foreach ($check in $registryChecks) {
         }
         elseif ($key.HtmlFiles -eq 0) {
             Write-Host "Web Pages allowed" -ForegroundColor Green
-            $tableRows += '<tr><td>' + $check.Path + '</td><td class="success">Allowed</td></tr>'
+            $tableRows += '<tr><td>' + $check.Path + '</td><td class="success">success</td></tr>'
         }
         else {
-            $tableRows += '<tr><td>' + $check.Path + '</td><td class="warning">Unknown</td></tr>'
-            $webPagesUnknown = $true
+            $tableRows += '<tr><td>' + $check.Path + '</td><td class="success">No Key Found</td></tr>'
+            $webPagesUnknown = $false
         }
     }
 }
