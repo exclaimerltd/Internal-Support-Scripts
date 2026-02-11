@@ -96,6 +96,7 @@ $FullLogFilePath = Join-Path $Global:FilePath $LogFile
         .info-after-note { color:#0c5460; background-color:#d1ecf1; border:1px solid #bee5eb; border-left:4px solid #0c5460; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
         .info-after-error { color:#721c24; background-color:#f8d7da; border:1px solid #f5c6cb; border-left:4px solid #c82333; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
         .info-after-warning { color:#856404; background-color:#fff3cd; border:1px solid #ffeeba; border-left:4px solid #ffc107; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+        .info-after-success { color:#155724; background-color:#d4edda; border:1px solid #c3e6cb; border-left:4px solid #28a745; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
         .side-note { color: #555; font-size: 12px; margin-top: 5px; font-style: italic; }
         code { background-color: #f1f1f1; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #c7254e; }
     </style>
@@ -1254,7 +1255,7 @@ if ($tableRows) {
 
     else {
         Write-Host "No blocking detected for Web Pages." -ForegroundColor Green
-        Add-Content $FullLogFilePath '<p class="success">No Word File Block restrictions detected for Web Pages.</p>'
+        Add-Content $FullLogFilePath '<div class="info-after-success">✅ <strong>No issues detected:</strong> No Word File Block restrictions were found for Web Pages.</div>'
     }
 
 
@@ -1767,12 +1768,12 @@ else {
             } catch {}
         }
         else {
-            Add-Content $FullLogFilePath '<p class="warning">Exchange Online connection failed or cancelled by user.</p>'
+            Add-Content $FullLogFilePath '<div class="info-after-warning"><strong>Exchange Online connection failed or cancelled by user.</strong></div>'
             CaptureManualAddInVersion -FullLogFilePath $FullLogFilePath
         }
     }
     else {
-        Add-Content $FullLogFilePath '<p class="warning">Exchange Online module not available. Manual Add-in version collection required.</p>'
+        Add-Content $FullLogFilePath '<div class="info-after-warning"><strong>Exchange Online module not available. Manual Add-in version collection required.</strong></div>'
         CaptureManualAddInVersion -FullLogFilePath $FullLogFilePath
     }
     Write-Host "`n✅ Exclaimer Add-in details collection completed." -ForegroundColor Green
