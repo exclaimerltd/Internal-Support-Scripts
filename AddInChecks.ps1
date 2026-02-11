@@ -1175,53 +1175,72 @@ InspectOutlookConfiguration
         }
     )
 
-    $webPagesBlocked = $false
+$webPagesBlocked = $false
+$tableRows = ''
 
-        foreach ($check in $registryChecks) {
-            if (Test-Path $check.Path) {
-                $key = Get-ItemProperty -Path $check.Path -ErrorAction SilentlyContinue
-                if ($key.HtmlFiles -eq 1 -or $key.HtmlFiles -eq 2) {
-                    Write-Host "Web Pages BLOCKED" -ForegroundColor Red
-                    Add-Content $FullLogFilePath "<p>❌ Web Pages are <strong>blocked</strong>.</p>"
-                    $webPagesBlocked = $true
-                }
-                elseif ($key.HtmlFiles -eq 0) {
-                    Write-Host "Web Pages allowed" -ForegroundColor Green
-                    Add-Content $FullLogFilePath "<p>✅ Web Pages allowed.</p>"
-                }
-            }
+foreach ($check in $registryChecks) {
+    if (Test-Path $check.Path) {
+        $key = Get-ItemProperty -Path $check.Path -ErrorAction SilentlyContinue
+
+        if ($key.HtmlFiles -eq 1 -or $key.HtmlFiles -eq 2) {
+            Write-Host "Web Pages BLOCKED" -ForegroundColor Red
+            $tableRows += '<tr><td>' + $check.Path + '</td><td class="fail">Blocked</td></tr>'
+            $webPagesBlocked = $true
         }
+        elseif ($key.HtmlFiles -eq 0) {
+            Write-Host "Web Pages allowed" -ForegroundColor Green
+            $tableRows += '<tr><td>' + $check.Path + '</td><td class="success">Allowed</td></tr>'
+        }
+        else {
+            $tableRows += '<tr><td>' + $check.Path + '</td><td class="warning">Unknown</td></tr>'
+        }
+    }
+}
+
+if ($tableRows) {
+    $webStatusTable = '<div class="section">' +
+        '<table>' +
+        '<tr><th>Registry Path</th><th>Status</th></tr>' +
+        $tableRows +
+        '</table></div>'
+
+    Add-Content -Path $FullLogFilePath -Value $webStatusTable
+}
 
     if ($webPagesBlocked) {
+
         Write-Host "`nWARNING: Word is blocking Web Pages. HTML based signatures cannot be inserted into the Outlook email body." -ForegroundColor Red
         Write-Host "This setting must be disabled to allow signature injection." -ForegroundColor Red
 
-Add-Content $FullLogFilePath @"
-<p style='color:red;'>
-<strong>Impact:</strong> Word is blocking Web Page file types (.htm/.html).  
-This prevents Exclaimer signatures from being added to the Outlook message body.
-</p>
-<p>
-<strong>Where to find this setting:</strong><br>
-Microsoft Word &gt; File &gt; Options &gt; Trust Center &gt; Trust Center Settings &gt; File Block Settings &gt; Web Pages
-</p>
-<p>
-<strong>Note on the setting:</strong><br>
-If the box for Web Pages is <strong>checked</strong>, the file type is blocked.  
-The desired state for signatures to work is <strong>unchecked</strong>.
-</p>
-<p>
-<strong>Why this is required:</strong><br>
-Outlook uses Word as the email editor, and File Block / Trust Center settings are read at application startup.  
-If this setting was recently changed or applied by policy, Outlook must be restarted for the change to take effect.
-</p>
-<p>
-<strong>Note:</strong><br>
-If this option is selected but greyed out, the setting is being enforced by Group Policy (GPO) and cannot be changed locally by the user.  
-In managed environments, an administrator would need to review the policy controlling Word File Block settings.
-</p>
-"@
-    }
+        $webBlockMessage = '<div class="info-after-error">' +
+            '<strong>Impact:</strong> Web Page file types (.htm/.html) are currently blocked in Microsoft Word. ' +
+            'This prevents Exclaimer signatures from being inserted into Outlook.' +
+            '<div style="margin-top:10px; font-weight:normal;">' +
+            '<strong>Required action:</strong>' +
+            '<ol style="margin-top:6px;">' +
+            '<li>Open Microsoft Word</li>' +
+            '<li>Go to <strong>File</strong> &gt; <strong>Options</strong> &gt; <strong>Trust Center</strong></li>' +
+            '<li>Select <strong>Trust Center Settings</strong> &gt; <strong>File Block Settings</strong></li>' +
+            '<li>Locate <strong>Web Pages</strong> and ensure the checkbox is <strong>unchecked</strong></li>' +
+            '<li>Restart Outlook after making changes</li>' +
+            '</ol>' +
+            '<strong>Important:</strong> If the setting is greyed out, it is enforced by Group Policy and must be reviewed by your IT administrator.' +
+            '</div></div>'
+
+        Add-Content -Path $FullLogFilePath -Value $webBlockMessage
+
+            $confirmationRequest = '<div class="info-after-note">' +
+                'Confirmation required' +
+                '<div style="margin-top:8px; font-weight:normal;">' +
+                'Please let us know whether the steps above have resolved the issue reported.' +
+                '<ul style="margin-top:6px;">' +
+                '<li>Confirmed resolved, the Add-in is now working as expected</li>' +
+                '<li>Not resolved, further troubleshooting is required</li>' +
+                '</ul>' +
+                'Your confirmation allows us to accurately record the outcome and proceed accordingly.' +
+                '</div></div>'
+            Add-Content -Path $FullLogFilePath -Value $confirmationRequest
+        }
     else {
         Write-Host "No blocking detected for Web Pages." -ForegroundColor Green
         Add-Content $FullLogFilePath "<p>✅ No Word File Block restrictions detected for Web Pages.</p>"
@@ -1485,23 +1504,45 @@ else {
                 Add-Content $FullLogFilePath '</table></div>'
 
                 if ($addGCCSideNote) {
-                    $sideNote = @'
-<div class="info-after-error"><span><b>ℹ️ 'OutlookMobileGCCRestrictionsEnabled' is 'true':</b> run the below command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to 'false':<br><code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $false</code></span></div>
-<p class="side-note">If you have re-opened PowerShell, you may need to run:</p>
-<code>Connect-ExchangeOnline</code>
-<p class="side-note">Once this is completed, please re-run the full script again to verify changes.</p>
-'@
+                    $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''OutlookMobileGCCRestrictionsEnabled'' is ''true'':</b> run the below command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to ''false'':<br><code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $false</code></span></div>' +
+                        '<p class="side-note">If you have re-opened PowerShell, you may need to run:</p>' +
+                        '<code>Connect-ExchangeOnline</code>' +
+                        '<p class="side-note">Once this is completed, please re-run the full script again to verify the changes.</p>'
+
                     Add-Content -Path $FullLogFilePath -Value $sideNote
+
+                    $confirmationRequest = '<div class="info-after-note">' +
+                        'Confirmation required' +
+                        '<div style="margin-top:8px; font-weight:normal;">' +
+                        'Please let us know whether the steps above have resolved the issue reported.' +
+                        '<ul style="margin-top:6px;">' +
+                        '<li>Confirmed resolved, the Add-in is now working as expected</li>' +
+                        '<li>Not resolved, further troubleshooting is required</li>' +
+                        '</ul>' +
+                        'Your confirmation allows us to accurately record the outcome and proceed accordingly.' +
+                        '</div></div>'
+                    Add-Content -Path $FullLogFilePath -Value $confirmationRequest
                 }
                 # Add side-note immediately after the table row for AppsForOfficeEnabled
                 if ($addAppsSideNote) {
-                    $sideNote = @'
-<div class="info-after-error"><span><b>ℹ️ 'AppsForOfficeEnabled' is disabled:</b> run the below command in PowerShell to enable AppsForOffice:<br><code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>
-<p class="side-note">If you have re-opened PowerShell, you may need to run:</p>
-<code>Connect-ExchangeOnline</code>
-<p class="side-note">Once this is completed, please re-run the full script again to verify changes.</p>
-'@
+                    $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''AppsForOfficeEnabled'' is disabled:</b> run the below command in PowerShell to enable Apps for Office:<br><code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>' +
+                        '<p class="side-note">If you have re-opened PowerShell, you may need to run:</p>' +
+                        '<code>Connect-ExchangeOnline</code>' +
+                        '<p class="side-note">Once this is completed, please re-run the full script again to verify the changes.</p>'
+
                     Add-Content -Path $FullLogFilePath -Value $sideNote
+
+                    $confirmationRequest = '<div class="info-after-note">' +
+                        'Confirmation required' +
+                        '<div style="margin-top:8px; font-weight:normal;">' +
+                        'Please let us know whether the steps above have resolved the issue reported.' +
+                        '<ul style="margin-top:6px;">' +
+                        '<li>Confirmed resolved, the Add-in is now working as expected</li>' +
+                        '<li>Not resolved, further troubleshooting is required</li>' +
+                        '</ul>' +
+                        'Your confirmation allows us to accurately record the outcome and proceed accordingly.' +
+                        '</div></div>'
+                    Add-Content -Path $FullLogFilePath -Value $confirmationRequest
                 }
             }
             catch {
@@ -1542,7 +1583,7 @@ else {
 
                 # --- HTML Logging (safe formatting) ---
                 Add-Content $FullLogFilePath '<h3>🧩 Exclaimer Add-in Information (Admin)</h3>'
-                Add-Content $FullLogFilePath '<table><tr><th>Type</th><th>Display Name</th><th>Version</th><th>Enabled</th><th>Scope</th><th>Deployment</th></tr>'
+                Add-Content $FullLogFilePath '<table><tr><th>Type</th><th>Display Name</th><th>Version</th><th>Enabled</th><th>Scope</th><th title="Deployment method, see table below">Type</th></tr>'
 
                 if ($ProdResult) {
                     $enabledColor = if ($ProdResult.Enabled -ne $true) { ' style="color:red;font-weight:bold;"' } else { '' }
@@ -1553,7 +1594,7 @@ else {
                         default         { '' }
                     }
 
-                    Add-Content $FullLogFilePath ('<tr><td>Production</td><td>{0}</td><td>{1}</td><td{5}>{2}</td><td>{3}</td><td{6}>{4}</td></tr>' -f `
+                    Add-Content $FullLogFilePath ('<tr><td>Production</td><td>{0}</td><td>{1}</td><td{5}>{2}</td><td>{3}</td><td{6} title="Deployment method, see table below">{4}</td></tr>' -f `
                             [System.Web.HttpUtility]::HtmlEncode($ProdResult.DisplayName),
                             [System.Web.HttpUtility]::HtmlEncode($ProdResult.AppVersion),
                             [System.Web.HttpUtility]::HtmlEncode($ProdResult.Enabled),
@@ -1572,7 +1613,7 @@ else {
                         default         { '' }
                     }
 
-                Add-Content $FullLogFilePath ('<tr><td>Preview</td><td>{0}</td><td>{1}</td><td{5}>{2}</td><td>{3}</td><td{6}>{4}</td></tr>' -f `
+                Add-Content $FullLogFilePath ('<tr><td>Preview</td><td>{0}</td><td>{1}</td><td{5}>{2}</td><td>{3}</td><td{6} title="Deployment method, see table below">{4}</td></tr>' -f `
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.DisplayName),
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.AppVersion),
                         [System.Web.HttpUtility]::HtmlEncode($PreviewResult.Enabled),
@@ -1605,6 +1646,18 @@ else {
 
                     $sideNote = '<p class="side-note">If you have both Production and Preview versions deployed, only one requires being enabled.</p><p class="side-note">If you have re-opened PowerShell, then you may need to run the command below before enabling the Add-in.</p><code>Connect-ExchangeOnline</code><p class="side-note">When an Add-in is disabled for a user, it should not appear or function in Outlook. We have observed cases where it may still load in Outlook on the web, but this is not expected behaviour. If this occurs, it may need to be raised with Microsoft for further review.</p>'
                     Add-Content -Path $FullLogFilePath -Value $sideNote
+
+                    $confirmationRequest = '<div class="info-after-note">' +
+                        'Confirmation required' +
+                        '<div style="margin-top:8px; font-weight:normal;">' +
+                        'Please let us know whether the steps above have resolved the issue reported.' +
+                        '<ul style="margin-top:6px;">' +
+                        '<li>Confirmed resolved, the Add-in is now working as expected</li>' +
+                        '<li>Not resolved, further troubleshooting is required</li>' +
+                        '</ul>' +
+                        'Your confirmation allows us to accurately record the outcome and proceed accordingly.' +
+                        '</div></div>'
+                    Add-Content -Path $FullLogFilePath -Value $confirmationRequest
                 }
 
                 # --- Add explanatory table for deployment methods ---
