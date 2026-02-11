@@ -95,6 +95,7 @@ $FullLogFilePath = Join-Path $Global:FilePath $LogFile
         a { color: #0078D4; text-decoration: none; } a:hover { text-decoration: underline; }
         .info-after-note { color:#0c5460; background-color:#d1ecf1; border:1px solid #bee5eb; border-left:4px solid #0c5460; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
         .info-after-error { color:#721c24; background-color:#f8d7da; border:1px solid #f5c6cb; border-left:4px solid #c82333; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+        .info-after-warning { color:#856404; background-color:#fff3cd; border:1px solid #ffeeba; border-left:4px solid #ffc107; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
         .side-note { color: #555; font-size: 12px; margin-top: 5px; font-style: italic; }
         code { background-color: #f1f1f1; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #c7254e; }
     </style>
@@ -1181,7 +1182,6 @@ $tableRows = ''
 foreach ($check in $registryChecks) {
     if (Test-Path $check.Path) {
         $key = Get-ItemProperty -Path $check.Path -ErrorAction SilentlyContinue
-
         if ($key.HtmlFiles -eq 1 -or $key.HtmlFiles -eq 2) {
             Write-Host "Web Pages BLOCKED" -ForegroundColor Red
             $tableRows += '<tr><td>' + $check.Path + '</td><td class="fail">Blocked</td></tr>'
@@ -1193,6 +1193,7 @@ foreach ($check in $registryChecks) {
         }
         else {
             $tableRows += '<tr><td>' + $check.Path + '</td><td class="warning">Unknown</td></tr>'
+            $webPagesUnknown = $true
         }
     }
 }
@@ -1211,7 +1212,6 @@ if ($tableRows) {
 
         Write-Host "`nWARNING: Word is blocking Web Pages. HTML based signatures cannot be inserted into the Outlook email body." -ForegroundColor Red
         Write-Host "This setting must be disabled to allow signature injection." -ForegroundColor Red
-
         $webBlockMessage = '<div class="info-after-error">' +
             '<strong>Impact:</strong> Web Page file types (.htm/.html) are currently blocked in Microsoft Word. ' +
             'This prevents Exclaimer signatures from being inserted into Outlook.' +
@@ -1226,25 +1226,37 @@ if ($tableRows) {
             '</ol>' +
             '<strong>Important:</strong> If the setting is greyed out, it is enforced by Group Policy and must be reviewed by your IT administrator.' +
             '</div></div>'
-
         Add-Content -Path $FullLogFilePath -Value $webBlockMessage
+    }
 
-            $confirmationRequest = '<div class="info-after-note">' +
-                'Confirmation required' +
-                '<div style="margin-top:8px; font-weight:normal;">' +
-                'Please let us know whether the steps above have resolved the issue reported.' +
-                '<ul style="margin-top:6px;">' +
-                '<li>Confirmed resolved, the Add-in is now working as expected</li>' +
-                '<li>Not resolved, further troubleshooting is required</li>' +
-                '</ul>' +
-                'Your confirmation allows us to accurately record the outcome and proceed accordingly.' +
-                '</div></div>'
-            Add-Content -Path $FullLogFilePath -Value $confirmationRequest
-        }
+    elseif ($webPagesUnknown) {
+        Write-Host "`nWARNING: Unable to determine Word Web Page File Block setting." -ForegroundColor Yellow
+        $webUnknownMessage = '<div class="info-after-warning">' +
+            '<strong>Manual verification required:</strong> The script was unable to determine the current Web Page File Block setting in Microsoft Word.' +
+            '<div style="margin-top:10px; font-weight:normal;">' +
+            '<strong>Please check:</strong>' +
+            '<ol style="margin-top:6px;">' +
+            '<li>Open Microsoft Word</li>' +
+            '<li>Go to <strong>File</strong> &gt; <strong>Options</strong> &gt; <strong>Trust Center</strong></li>' +
+            '<li>Select <strong>Trust Center Settings</strong> &gt; <strong>File Block Settings</strong></li>' +
+            '<li>Confirm whether <strong>Web Pages</strong> (.htm/.html) is checked or <strong>unchecked</strong></li>' +
+            '</ol>' +
+            'If the option is greyed out, it is likely enforced by Group Policy.' +
+            '<br><br>' +
+            '<strong>When replying to your ticket please confrim:</strong>' +
+            '<ul style="margin-top:6px;">' +
+            '<li>Whether it is checked or unchecked</li>' +
+            '<li>Whether it is editable or greyed out</li>' +
+            '</ul>' +
+            'We will review your response and advise on next steps.' +
+            '</div></div>'
+        Add-Content -Path $FullLogFilePath -Value $webUnknownMessage    }
+
     else {
         Write-Host "No blocking detected for Web Pages." -ForegroundColor Green
-        Add-Content $FullLogFilePath "<p>✅ No Word File Block restrictions detected for Web Pages.</p>"
+        Add-Content $FullLogFilePath '<p class="success">No Word File Block restrictions detected for Web Pages.</p>'
     }
+
 
     Write-Host "`n========== Microsoft Edge WebView2 Runtime ==========" -ForegroundColor Cyan
 
