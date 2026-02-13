@@ -98,7 +98,7 @@ $FullLogFilePath = Join-Path $Global:FilePath $LogFile
         .info-after-warning { color:#856404; background-color:#fff3cd; border:1px solid #ffeeba; border-left:4px solid #ffc107; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
         .info-after-success { color:#155724; background-color:#d4edda; border:1px solid #c3e6cb; border-left:4px solid #28a745; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
         .side-note { color: #555; font-size: 12px; margin-top: 5px; font-style: italic; }
-        code { background-color: #f1f1f1; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #c7254e; }
+        code { background-color: #f1f1f1; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #c7254e; display:inline; }
     </style>
 </head>
 <body>
@@ -831,45 +831,57 @@ function InspectOutlookConfiguration {
     $newOutlookInstalled  = IsNewOutlookAppInstalled
     $newOutlookEnabled    = IsNewOutlookEnabled
 
-    $installedSummary = "<ul>"
-    if ($classicInstalled -and $newOutlookInstalled) {
-        Write-Host "Both Classic Outlook and New Outlook are installed."
-        $installedSummary += "<li><span class='success'>Both Classic and New Outlook are installed</span></li>"
-    } elseif ($classicInstalled) {
-        Write-Host "Only Classic Outlook is installed."
-        $installedSummary += "<li><span class='success'>Only Classic Outlook is installed</span></li>"
-    } elseif ($newOutlookInstalled) {
-        Write-Host "Only New Outlook is installed."
-        $installedSummary += "<li><span class='success'>Only New Outlook is installed</span></li>"
-    } else {
-        Write-Host "No Outlook installation detected."
-        $installedSummary += "<li><span class='fail'>No Outlook installation detected</span></li>"
-    }
+ # Build Outlook installation summary table
+$installedSummary = "<table>"
+$installedSummary += "<tr><th>Client</th><th>Status</th></tr>"
 
-    $installedSummary += "</ul>"
-    Add-Content $FullLogFilePath $installedSummary
-    
+if ($classicInstalled -and $newOutlookInstalled) {
+    Write-Host "Both Classic Outlook and New Outlook are installed."
+    $installedSummary += "<tr><td>Classic + New Outlook</td><td><span class='success'>Installed</span></td></tr>"
+} elseif ($classicInstalled) {
+    Write-Host "Only Classic Outlook is installed."
+    $installedSummary += "<tr><td>Classic Outlook</td><td><span class='success'>Installed</span></td></tr>"
+} elseif ($newOutlookInstalled) {
+    Write-Host "Only New Outlook is installed."
+    $installedSummary += "<tr><td>New Outlook</td><td><span class='success'>Installed</span></td></tr>"
+} else {
+    Write-Host "No Outlook installation detected."
+    $installedSummary += "<tr><td>Classic / New Outlook</td><td><span class='fail'>Not Installed</span></td></tr>"
+}
 
+# Add toggle status for New Outlook
+if ($newOutlookInstalled) {
     if ($newOutlookEnabled) {
         Write-Host "New Outlook is installed, and the toggle is ON (New Outlook is Default)." -ForegroundColor Yellow
-        Add-Content $FullLogFilePath "<ul><span class='info-after-note'>New Outlook is installed, and the toggle is ON (New Outlook is Default).</span></ul>"
+        $installedSummary += "<tr><td>New Outlook Toggle</td><td><span>ON (New Outlook is Default)</span></td></tr>"
     } else {
         Write-Host "New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)." -ForegroundColor Yellow
-        Add-Content $FullLogFilePath "<ul><span class='info-after-note'>New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)</span></ul>"
+        $installedSummary += "<tr><td>New Outlook Toggle</td><td><span>OFF (Classic Outlook is Default)</span></td></tr>"
     }
+}
+
+$installedSummary += "</table>"
+Add-Content $FullLogFilePath $installedSummary
 
     if ($newOutlookInstalled) {
-        Add-Content $FullLogFilePath "<h3>New Outlook</h3><ul>"
         $newOutlookVersion = Get-NewOutlookVersion
+
         Write-Host "`n========== New Outlook Information ==========" -ForegroundColor Cyan
+
+        Add-Content $FullLogFilePath "<h3>New Outlook</h3>"
+        Add-Content $FullLogFilePath "<table>"
+        Add-Content $FullLogFilePath "<tr><th>Property</th><th>Value</th></tr>"
+
+        # Version row
         if ($newOutlookVersion) {
             Write-Host "New Outlook Version: $newOutlookVersion"
-            Add-Content $FullLogFilePath "<li>Version: $newOutlookVersion</li>"
+            Add-Content $FullLogFilePath "<tr><td>Version</td><td>$newOutlookVersion</td></tr>"
         } else {
             Write-Host "New Outlook version could not be determined." -ForegroundColor Yellow
-            Add-Content $FullLogFilePath "<li><span class='warning'>Version could not be determined</span></li>"
+            Add-Content $FullLogFilePath "<tr><td>Version</td><td><span class='warning'>Could not be determined</span></td></tr>"
         }
-        Add-Content $FullLogFilePath "</ul>"
+
+        Add-Content $FullLogFilePath "</table>"
     }
 
     if ($classicInstalled) {
@@ -1703,57 +1715,96 @@ else {
             # --- Getting Mailbox Details ---
             Write-Host "`nCollecting organization configuration related to Outlook Add-ins..." -ForegroundColor Cyan
             try {
-            $mailbox = Get-Mailbox -Identity $user -ErrorAction Stop |
-                Select-Object Name, AccountDisabled, IsShared, HiddenFromAddressListsEnabled
+                $mailbox = Get-Mailbox -Identity $user -ErrorAction Stop |
+                    Select-Object Name,
+                                UserPrincipalName,
+                                PrimarySmtpAddress,
+                                AccountDisabled,
+                                IsShared,
+                                HiddenFromAddressListsEnabled
 
-            # Separator row
-            Add-Content $FullLogFilePath '<table>'
-            Add-Content $FullLogFilePath '<tr><th colspan="6">📬 Mailbox Details</th></tr>'
-            Add-Content $FullLogFilePath '<tr><th>Property</th><th colspan="2">Value</th><th colspan="3">Notes</th></tr>'
+                # Separator row
+                Add-Content $FullLogFilePath '<table>'
+                Add-Content $FullLogFilePath '<tr><th colspan="6">📬 Mailbox Details</th></tr>'
+                Add-Content $FullLogFilePath '<tr><th>Property</th><th colspan="2">Value</th><th colspan="3">Notes</th></tr>'
 
-            foreach ($prop in $mailbox.PSObject.Properties) {
-                $name  = [System.Web.HttpUtility]::HtmlEncode($prop.Name)
-                $raw   = $prop.Value
-                $value = if ($null -eq $raw) { 'N/A' } else { [System.Web.HttpUtility]::HtmlEncode([string]$raw) }
-                $notes = ''
+                foreach ($prop in $mailbox.PSObject.Properties) {
+                    $name  = [System.Web.HttpUtility]::HtmlEncode($prop.Name)
+                    $raw   = $prop.Value
+                    $value = if ($null -eq $raw) { 'N/A' } else { [System.Web.HttpUtility]::HtmlEncode([string]$raw) }
+                    $notes = ''
 
-                switch ($prop.Name) {
-                    'IsShared' {
-                        $notes = if ($raw) {
-                            'Is a Shared mailbox.'
-                        } else {
-                            'Not a Shared Mailbox.'
+                    switch ($prop.Name) {
+                        'UserPrincipalName' {
+                            $notes = 'Authentication identity used for modern authentication.'
+                        }
+                        'PrimarySmtpAddress' {
+                            $notes = 'Primary email address of the mailbox.'
+                        }
+                        'IsShared' {
+                            $notes = if ($raw) {
+                                'Is a Shared mailbox.'
+                            } else {
+                                'Not a Shared Mailbox.'
+                            }
+                        }
+                        'AccountDisabled' {
+                            $notes = if ($raw) {
+                                'Associated user account is disabled. Expected for shared mailboxes.'
+                            } else {
+                                'Associated user account is enabled.'
+                            }
+                        }
+                        'HiddenFromAddressListsEnabled' {
+                            $notes = if ($raw) {
+                                'Mailbox is hidden. Can cause Classic Outlook Add-in to apply the user signature by default.'
+                            } else {
+                                'Mailbox is visible.'
+                            }
+                        }
+                        Default {
+                            $notes = 'Informational.'
                         }
                     }
-                    'AccountDisabled' {
-                        $notes = if ($raw) {
-                            'Associated user account is disabled. Expected for shared mailboxes.'
-                        } else {
-                            'Associated user account is enabled.'
-                        }
-                    }
-                    'HiddenFromAddressListsEnabled' {
-                        $notes = if ($raw) {
-                            'Mailbox is hidden. Can cause Classic Outlook Add-in to apply the user signature by default.'
-                        } else {
-                            'Mailbox is visible.'
-                        }
-                    }
-                    Default {
-                        $notes = 'Informational.'
-                    }
+
+                    Add-Content $FullLogFilePath (
+                        "<tr><td>{0}</td><td colspan='2'>{1}</td><td colspan='3'>{2}</td></tr>" -f
+                        $name,
+                        $value,
+                        [System.Web.HttpUtility]::HtmlEncode($notes)
+                    )
                 }
 
-                Add-Content $FullLogFilePath (
-                    "<tr><td>{0}</td><td colspan='2'>{1}</td><td colspan='3'>{2}</td></tr>" -f
-                    $name,
-                    $value,
-                    [System.Web.HttpUtility]::HtmlEncode($notes)
-                )
-            }
+                Add-Content $FullLogFilePath '</table>'
+                # Compare UPN and Primary SMTP
+                    $upn  = [string]$mailbox.UserPrincipalName
+                    $smtp = [string]$mailbox.PrimarySmtpAddress
 
-            Add-Content $FullLogFilePath '</table>'
-        }
+                    $upn  = $upn.Trim()  -replace "`r|`n",""
+                    $smtp = $smtp.Trim() -replace "`r|`n",""
+
+                    if ($upn -and $smtp -and ($upn.ToLower() -ne $smtp.ToLower())) {
+
+                        $articleUrl = 'https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/operations/configuring-alternate-login-id'
+
+                        Add-Content $FullLogFilePath (
+                            "<div class='info-after-warning'>
+                                ⚠ UPN and Primary SMTP address do not match.<br><br>
+                                UPN: <code>{0}</code><br>
+                                SMTP: <code>{1}</code><br><br>
+                                This can contribute to modern authentication token mismatches and login hint errors in Outlook.
+                                Review alternate login ID guidance here:<br>
+                                <a href='{2}' target='_blank'>{2}</a>
+                            </div>" -f
+                            [System.Web.HttpUtility]::HtmlEncode($upn),
+                            [System.Web.HttpUtility]::HtmlEncode($smtp),
+                            $articleUrl
+                        )
+                    }
+                    else {
+                        Add-Content $FullLogFilePath "<div class='info-after-success'>✔ UPN and Primary SMTP address match.</div>"
+                    }
+            }
         catch {
             Add-Content $FullLogFilePath '<table>'
             Add-Content $FullLogFilePath '<tr><th colspan="6">📬 Mailbox Details</th></tr>'
