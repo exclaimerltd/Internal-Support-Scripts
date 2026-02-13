@@ -831,34 +831,34 @@ function InspectOutlookConfiguration {
     $newOutlookInstalled  = IsNewOutlookAppInstalled
     $newOutlookEnabled    = IsNewOutlookEnabled
 
- # Build Outlook installation summary table
-$installedSummary = "<table>"
-$installedSummary += "<tr><th>Client</th><th>Status</th></tr>"
+    # Build Outlook installation summary table
+    $installedSummary = "<table>"
+    $installedSummary += "<tr><th>Client</th><th>Status</th></tr>"
 
-if ($classicInstalled -and $newOutlookInstalled) {
-    Write-Host "Both Classic Outlook and New Outlook are installed."
-    $installedSummary += "<tr><td>Classic + New Outlook</td><td><span class='success'>Installed</span></td></tr>"
-} elseif ($classicInstalled) {
-    Write-Host "Only Classic Outlook is installed."
-    $installedSummary += "<tr><td>Classic Outlook</td><td><span class='success'>Installed</span></td></tr>"
-} elseif ($newOutlookInstalled) {
-    Write-Host "Only New Outlook is installed."
-    $installedSummary += "<tr><td>New Outlook</td><td><span class='success'>Installed</span></td></tr>"
-} else {
-    Write-Host "No Outlook installation detected."
-    $installedSummary += "<tr><td>Classic / New Outlook</td><td><span class='fail'>Not Installed</span></td></tr>"
-}
-
-# Add toggle status for New Outlook
-if ($newOutlookInstalled) {
-    if ($newOutlookEnabled) {
-        Write-Host "New Outlook is installed, and the toggle is ON (New Outlook is Default)." -ForegroundColor Yellow
-        $installedSummary += "<tr><td>New Outlook Toggle</td><td><span>ON (New Outlook is Default)</span></td></tr>"
+    if ($classicInstalled -and $newOutlookInstalled) {
+        Write-Host "Both Classic Outlook and New Outlook are installed."
+        $installedSummary += "<tr><td>Classic + New Outlook</td><td><span class='success'>Installed</span></td></tr>"
+    } elseif ($classicInstalled) {
+        Write-Host "Only Classic Outlook is installed."
+        $installedSummary += "<tr><td>Classic Outlook</td><td><span class='success'>Installed</span></td></tr>"
+    } elseif ($newOutlookInstalled) {
+        Write-Host "Only New Outlook is installed."
+        $installedSummary += "<tr><td>New Outlook</td><td><span class='success'>Installed</span></td></tr>"
     } else {
-        Write-Host "New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)." -ForegroundColor Yellow
-        $installedSummary += "<tr><td>New Outlook Toggle</td><td><span>OFF (Classic Outlook is Default)</span></td></tr>"
+        Write-Host "No Outlook installation detected."
+        $installedSummary += "<tr><td>Classic / New Outlook</td><td><span class='fail'>Not Installed</span></td></tr>"
     }
-}
+
+    # Add toggle status for New Outlook
+    if ($newOutlookInstalled) {
+        if ($newOutlookEnabled) {
+            Write-Host "New Outlook is installed, and the toggle is ON (New Outlook is Default)." -ForegroundColor Yellow
+            $installedSummary += "<tr><td>New Outlook Toggle</td><td><span>ON (New Outlook is Default)</span></td></tr>"
+        } else {
+            Write-Host "New Outlook is installed, but the toggle is OFF (Classic Outlook is Default)." -ForegroundColor Yellow
+            $installedSummary += "<tr><td>New Outlook Toggle</td><td><span>OFF (Classic Outlook is Default)</span></td></tr>"
+        }
+    }
 
 $installedSummary += "</table>"
 Add-Content $FullLogFilePath $installedSummary
