@@ -152,7 +152,7 @@ function configure_exclaimer_connectors {
         -SenderDomains smtp:* `
         -RequireTls $true `
         -RestrictDomainsToIPAddresses $false `
-        -RestrictDomainsToCertificate $false `
+        -RestrictDomainsToCertificate $true `
         -CloudServicesMailEnabled $true `
         -TreatMessagesAsInternal $false `
         -TlsSenderCertificateName $Details.ExclDomain |
