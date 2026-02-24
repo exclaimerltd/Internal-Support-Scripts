@@ -6,8 +6,10 @@ CalendlyZen automatically updates Calendly links copied to your clipboard so tha
 
 **Example 1**
 
-Before:   https://calendly.com/adele.vance/45min
+Before:   `https://calendly.com/adele.vance/45min`
+
 After:    https://calendly.com/adele.vance/45min/?name={{ticket.requester.name}}&email={{ticket.requester.email}}&a1={{ticket.id}}
+
 Rendered: https://calendly.com/adele.vance/45min/?name=adelev&email=adelev@1025.nc-portal.uk&a1=665067
 
 **Example 2**
