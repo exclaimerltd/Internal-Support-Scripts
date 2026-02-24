@@ -1,5 +1,10 @@
 # CalendlyZen Extension – Quick Guide
 
+## What it tries to solve
+
+When requesters book a meeting through Calendly, providing an incorrect ticket number will prevent the booking from being linked to the correct ticket, which can sometimes cause issues or delays with ticket processing.
+This extension ensures that the ticket details are automatically populated on the Calendly booking form.
+
 ## What It Does
 
 CalendlyZen automatically updates Calendly links copied to your clipboard so that when pasted in Zendesk, they include the ticket requester’s name, email, and ticket ID.
