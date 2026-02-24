@@ -6,16 +6,14 @@ CalendlyZen automatically updates Calendly links copied to your clipboard so tha
 
 **Example 1**
 
-Before:   `https://calendly.com/adele.vance/45min`
-
-After:    https://calendly.com/adele.vance/45min/?name={{ticket.requester.name}}&email={{ticket.requester.email}}&a1={{ticket.id}}
-
-Rendered: https://calendly.com/adele.vance/45min/?name=adelev&email=adelev@1025.nc-portal.uk&a1=665067
+- Before:   `https://calendly.com/adele.vance/45min`
+- After:    `https://calendly.com/adele.vance/45min/?name={{ticket.requester.name}}&email={{ticket.requester.email}}&a1={{ticket.id}}`
+- Rendered: `https://calendly.com/adele.vance/45min/?name=adelev&email=adelev@1025.nc-portal.uk&a1=665067`
 
 **Example 2**
-Before:   https://calendly.com/d/cx94-dcb-zmj
-After:    https://calendly.com/d/cx93-78k-xx4/?name={{ticket.requester.name}}&email={{ticket.requester.email}}&a1={{ticket.id}}
-Rendered: https://calendly.com/d/cx93-78k-xx4/?name=adelev&email=adelev@1025.nc-portal.uk&a1=665067
+- Before:   `https://calendly.com/d/cx94-dcb-zmj`
+- After:    `https://calendly.com/d/cx93-78k-xx4/?name={{ticket.requester.name}}&email={{ticket.requester.email}}&a1={{ticket.id}}`
+- Rendered: `https://calendly.com/d/cx93-78k-xx4/?name=adelev&email=adelev@1025.nc-portal.uk&a1=665067`
 
 When rendered in Zendesk, it automatically fills in actual values.
 
