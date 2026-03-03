@@ -1650,6 +1650,19 @@ else {
 
                 Add-Content $FullLogFilePath '</table>'
 
+                # Check for unexpected Type values in Production and Preview results
+                $unexpectedTypes = @()
+                if ($ProdResult -and ($ProdResult.Type -in 'Marketplace','PrivateCatalog')) {
+                    $unexpectedTypes += $ProdResult.Type
+                }
+                if ($PreviewResult -and ($PreviewResult.Type -in 'Marketplace','PrivateCatalog')) {
+                    $unexpectedTypes += $PreviewResult.Type
+                }
+
+                if ($unexpectedTypes.Count -gt 0) {
+                    Add-Content $FullLogFilePath '<div class="info-after-error"><strong>Warning: Unexpected deployment type detected.</strong> Please check the deployment "Version" method and Add-in "Type".</div>'
+                }
+
                 # Add attention note if either is not enabled
                 $attentionMessages = @()
 
