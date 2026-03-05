@@ -1052,62 +1052,254 @@ While 32-bit applications can work with add-ins, they can use up a system's avai
 "@
             }
         }
-        # Checking for existing local signatures
-        $baseSignaturePath = [System.IO.Path]::Combine($env:APPDATA, "Microsoft")
-        $possibleFolders = @("Signatures", "Handtekeningen")
-        $signaturePath = $null
-
-        foreach ($folder in $possibleFolders) {
-            $fullPath = Join-Path $baseSignaturePath $folder
-            if (Test-Path $fullPath) {
-                $signaturePath = $fullPath
-                break
-            }
-        }
-
-        if ($signaturePath) {
-            $htmFiles = Get-ChildItem -Path $signaturePath -Filter *.htm -File -ErrorAction SilentlyContinue
-
-            if ($htmFiles.Count -gt 0) {
-                # Console output
-                Write-Host "`n--- Local Outlook Signatures Found ---" -ForegroundColor Yellow
-                $signatureData = $htmFiles | ForEach-Object {
-                    $content = Get-Content -Path $_.FullName -Raw -ErrorAction SilentlyContinue
-                    $hasRemialSans = ($content -match "remialcxesans")
-                    $exclaimerUsed = if ($hasRemialSans) { "Yes" } else { "No" }
-
-                    # Output to console
-                    [PSCustomObject]@{
-                        Name         = $_.BaseName
-                        DateModified = $_.LastWriteTime
-                        Exclaimer    = $exclaimerUsed
-                    }
-                }
-
-                $signatureData | Format-Table -AutoSize
-
-                # HTML output
-                Add-Content $FullLogFilePath "<h3>Local Outlook Signatures</h3>"
-                Add-Content $FullLogFilePath "<table><tr><th>Name</th><th>Date Modified</th><th>Exclaimer Signature</th></tr>"
-
-                foreach ($sig in $signatureData) {
-                    $sigRow = "<tr><td>$($sig.Name)</td><td>$($sig.DateModified)</td><td>$($sig.Exclaimer)</td></tr>"
-                    Add-Content $FullLogFilePath $sigRow
-                }
-
-                Add-Content $FullLogFilePath "</table>"
-
-            } else {
-                Write-Host "`nNo .htm signature files found in $signaturePath" -ForegroundColor DarkGray
-                Add-Content $FullLogFilePath "<p>✅ No local signature files found in $signaturePath</p>"
-            }
-        }
 
     }
     
 }
 
 InspectOutlookConfiguration
+
+# --- Check Classic Outlook Encoding Configuration ---
+Write-Host "`n========== Classic Outlook Encoding Configuration ==========" -ForegroundColor Cyan
+
+# Build function to search user hives
+function Get-ClassicOutlookEncoding {
+    param([string]$userEmail)
+    
+    # Extract username from email (UPN - part before @)
+    $emailUsername = $userEmail -split '@' | Select-Object -First 1
+    
+    # Search for user hives in HKEY_USERS
+    $userHives = @()
+    try {
+        $hives = Get-ChildItem 'Registry::HKEY_USERS' -ErrorAction SilentlyContinue | 
+            Where-Object { 
+                $_.PSChildName -match '^S-' -and 
+                $_.PSChildName.Length -ge 30 -and 
+                $_.PSChildName -notmatch '_Classes$'
+            }
+        
+        foreach ($hive in $hives) {
+            $hiveName = $hive.PSChildName
+            $volEnvPath = "Registry::HKEY_USERS\$hiveName\Volatile Environment"
+            
+            try {
+                $volEnv = Get-Item $volEnvPath -ErrorAction SilentlyContinue
+                if ($volEnv) {
+                    $registeredUsername = $volEnv.GetValue('USERNAME')
+                    if ($registeredUsername) {
+                        $userHives += @{
+                            Hive = $hiveName
+                            Username = $registeredUsername
+                        }
+                    }
+                }
+            }
+            catch {
+                continue
+            }
+        }
+    }
+    catch {
+        # Silently handle errors
+    }
+    
+    $matchedHive = $null
+    
+    # Try to find matching hive by username
+    foreach ($hiveInfo in $userHives) {
+        if ($hiveInfo.Username -eq $emailUsername) {
+            $matchedHive = $hiveInfo.Hive
+            break
+        }
+    }
+    
+    # If no match found, ask user to select
+    if (-not $matchedHive -and $userHives.Count -gt 0) {
+        Write-Host "Could not automatically match username '$emailUsername' to a hive." -ForegroundColor Yellow
+        Write-Host "Found the following user hives:`n" -ForegroundColor Cyan
+        
+        for ($i = 0; $i -lt $userHives.Count; $i++) {
+            Write-Host "[$($i+1)] $($userHives[$i].Username)`n" -ForegroundColor Yellow
+        }
+        
+        $selection = Read-Host "Enter the number of the correct hive (or press Enter to skip)"
+        
+        if ($selection -match '^\d+$' -and [int]$selection -gt 0 -and [int]$selection -le $userHives.Count) {
+            $matchedHive = $userHives[[int]$selection - 1].Hive
+        }
+    }
+    
+    # Get encoding value if hive was identified
+    if ($matchedHive) {
+        $encodingPath = "Registry::HKEY_USERS\$matchedHive\SOFTWARE\Microsoft\Office\16.0\Outlook\Options\MSHTML\International"
+        
+        try {
+            $encodingReg = Get-Item $encodingPath -ErrorAction SilentlyContinue
+            if ($encodingReg) {
+                $codePage = $encodingReg.GetValue('Default_CodePageOut')
+                
+                if ($null -ne $codePage) {
+                    # Console output
+                    if ($codePage -eq 65001) {
+                        Write-Host "Outlook encoding is configured to UTF-8" -ForegroundColor Green
+                    }
+                    else {
+                        Write-Host "Outlook encoding code page: $codePage" -ForegroundColor White
+                    }
+                    
+                    # HTML output
+                    Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
+                    Add-Content $FullLogFilePath "<table><tr><th>Setting</th><th>Value</th><th>Notes</th></tr>"
+                    
+                    $htmlNote = $null
+                    if ($codePage -eq 65001) {
+                        Add-Content $FullLogFilePath "<tr><td>Preferred Encoding</td><td><span class='success'>65001 (UTF-8)</span></td><td><span class='success'>OK</span></td></tr>"
+                        $htmlNote = "<div class='info-after-success'>✅ Encoding is UTF-8; no action required.</div>"
+                    }
+                    else {
+                        Add-Content $FullLogFilePath "<tr><td>Preferred Encoding</td><td><span class='warning'>$codePage</span></td><td><span class='warning'>Please review</span></td></tr>"
+                        $htmlNote = "<div class='info-after-warning'>
+                                ⚠️ Detected code page $codePage. Please review 
+                                <a href='https://learn.microsoft.com/en-us/windows/win32/intl/code-page-identifiers' target='_blank'>Code Page Identifiers</a>.
+                                <br> If you experience issues with foreign characters displaying incorrectly in emails, see 
+                                <a href='https://support.exclaimer.com/hc/en-gb/articles/6622042157085-Foreign-characters-are-not-displayed-correctly' target='_blank'>support article</a>.
+                                </div>"
+                    }
+                    
+                    Add-Content $FullLogFilePath "</table>"
+                    if ($htmlNote) { Add-Content $FullLogFilePath $htmlNote }
+                }
+                else {
+                    Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
+                    Add-Content $FullLogFilePath "<p class='warning'>⚠️ Outlook encoding configuration not found. Preferred Encoding registry value is not set.</p>"
+                }
+            }
+            else {
+                Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
+                Add-Content $FullLogFilePath "<p class='warning'>⚠️ Outlook encoding registry path not found for this user.</p>"
+            }
+        }
+        catch {
+            Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
+            Add-Content $FullLogFilePath "<p class='warning'>⚠️ Error accessing Outlook encoding configuration: $_</p>"
+        }
+    }
+    elseif ($userHives.Count -eq 0) {
+        Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
+        Add-Content $FullLogFilePath "<p class='warning'>⚠️ No user hives found in HKEY_USERS.</p>"
+    }
+    else {
+        Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
+        Add-Content $FullLogFilePath "<p class='warning'>⚠️ User hive selection was skipped. Encoding configuration could not be retrieved.</p>"
+    }
+}
+
+# Call the function with the user's email
+Get-ClassicOutlookEncoding -userEmail $Global:userInput.Email
+
+    # Define registry paths for 64-bit and 32-bit uninstall keys
+    $registryPaths = @(
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"
+    )
+    Write-Host "`n--- Word File Block Settings Check (Web Pages) ---" -ForegroundColor Yellow
+    Add-Content $FullLogFilePath "<h3>Word File Block Settings (Web Pages)</h3>"
+
+    $registryChecks = @(
+        @{
+            Path = "HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\FileBlock"
+            Scope = "Policy (GPO)"
+        },
+        @{
+            Path = "HKCU:\Software\Microsoft\Office\16.0\Word\Security\FileBlock"
+            Scope = "User"
+        }
+    )
+
+$webPagesBlocked = $false
+$webPagesUnknown = $false
+$tableRows = ''
+
+foreach ($check in $registryChecks) {
+    if (Test-Path $check.Path) {
+        $key = Get-ItemProperty -Path $check.Path -ErrorAction SilentlyContinue
+        if ($key.HtmlFiles -eq 1 -or $key.HtmlFiles -eq 2) {
+            Write-Host "Web Pages BLOCKED" -ForegroundColor Red
+            $tableRows += '<tr><td>' + $check.Path + '</td><td class="fail">Blocked</td></tr>'
+            $webPagesBlocked = $true
+        }
+        elseif ($key.HtmlFiles -eq 0) {
+            Write-Host "Web Pages allowed" -ForegroundColor Green
+            $tableRows += '<tr><td>' + $check.Path + '</td><td class="success">success</td></tr>'
+        }
+        else {
+            $tableRows += '<tr><td>' + $check.Path + '</td><td class="success">No Key Found</td></tr>'
+            $webPagesUnknown = $false
+        }
+    }
+}
+
+# Build the complete section (table + messages)
+$webSection = '<div class="section">'
+
+if ($tableRows) {
+    $webSection += '<table>' +
+        '<tr><th>Registry Path</th><th>Status</th></tr>' +
+        $tableRows +
+        '</table>'
+}
+
+# Add status messages within the same section
+if ($webPagesBlocked) {
+    Write-Host "`nWARNING: Word is blocking Web Pages. HTML based signatures cannot be inserted into the Outlook email body." -ForegroundColor Red
+    Write-Host "This setting must be disabled to allow signature injection." -ForegroundColor Red
+    $webSection += '<div class="info-after-error">' +
+        '<strong>Impact:</strong> Web Page file types (.htm/.html) are currently blocked in Microsoft Word. ' +
+        'This prevents Exclaimer signatures from being inserted into Outlook.' +
+        '<div style="margin-top:10px; font-weight:normal;">' +
+        '<strong>Required action:</strong>' +
+        '<ol style="margin-top:6px;">' +
+        '<li>Open Microsoft Word</li>' +
+        '<li>Go to <strong>File</strong> &gt; <strong>Options</strong> &gt; <strong>Trust Center</strong></li>' +
+        '<li>Select <strong>Trust Center Settings</strong> &gt; <strong>File Block Settings</strong></li>' +
+        '<li>Locate <strong>Web Pages</strong> and ensure the checkbox is <strong>unchecked</strong></li>' +
+        '<li>Restart Outlook after making changes</li>' +
+        '</ol>' +
+        '<strong>Important:</strong> If the setting is greyed out, it is enforced by Group Policy and must be reviewed by your IT administrator.' +
+        '</div></div>'
+}
+elseif ($webPagesUnknown) {
+    Write-Host "`nWARNING: Unable to determine Word Web Page File Block setting." -ForegroundColor Yellow
+    $webSection += '<div class="info-after-warning">' +
+        '<strong>Manual verification required:</strong> The script was unable to determine the current Web Page File Block setting in Microsoft Word.' +
+        '<div style="margin-top:10px; font-weight:normal;">' +
+        '<strong>Please check:</strong>' +
+        '<ol style="margin-top:6px;">' +
+        '<li>Open Microsoft Word</li>' +
+        '<li>Go to <strong>File</strong> &gt; <strong>Options</strong> &gt; <strong>Trust Center</strong></li>' +
+        '<li>Select <strong>Trust Center Settings</strong> &gt; <strong>File Block Settings</strong></li>' +
+        '<li>Confirm whether <strong>Web Pages</strong> (.htm/.html) is checked or <strong>unchecked</strong></li>' +
+        '</ol>' +
+        'If the option is greyed out, it is likely enforced by Group Policy.' +
+        '<br><br>' +
+        '<strong>When replying to your ticket please confrim:</strong>' +
+        '<ul style="margin-top:6px;">' +
+        '<li>Whether it is checked or unchecked</li>' +
+        '<li>Whether it is editable or greyed out</li>' +
+        '</ul>' +
+        'We will review your response and advise on next steps.' +
+        '</div></div>'
+}
+else {
+    Write-Host "No blocking detected for Web Pages." -ForegroundColor Green
+    $webSection += '<div class="info-after-success">✅ <strong>No issues detected:</strong> No Word File Block restrictions were found for Web Pages.</div>'
+}
+
+# Close the section and output
+$webSection += '</div>'
+Add-Content -Path $FullLogFilePath -Value $webSection
+
 
     # Define registry paths to search
     $registryPaths = @(
@@ -1150,6 +1342,7 @@ InspectOutlookConfiguration
         $foundApps | Select-Object DisplayName, DisplayVersion, InstallType | Format-Table -AutoSize
 
         # HTML output
+        Add-Content $FullLogFilePath '<div class="section">'
         Add-Content $FullLogFilePath "<h3>Exclaimer Cloud Signature Update Agent for Windows</h3>"
         Add-Content $FullLogFilePath "<table><tr><th>Display Name</th><th>Version</th><th>Install Type</th></tr>"
 
@@ -1162,114 +1355,74 @@ InspectOutlookConfiguration
         }
 
         Add-Content $FullLogFilePath "</table>"
+        Add-Content $FullLogFilePath "</div>"
     }
     else {
         Write-Host "The Exclaimer Cloud Signature Update Agent is not installed." -ForegroundColor Yellow
-        Add-Content $FullLogFilePath "<p>✅ The Exclaimer Cloud Signature Update Agent is not installed.</p>"
+        Add-Content $FullLogFilePath '<div class="section">'
+        Add-Content $FullLogFilePath "<h3>Exclaimer Cloud Signature Update Agent for Windows</h3>"
+        Add-Content $FullLogFilePath '<table><tr><th>Status</th><th>Details</th></tr><tr><td class="success">Not Installed</td><td>✅ The Exclaimer Cloud Signature Update Agent is not installed.</td></tr></table>'
+        Add-Content $FullLogFilePath "</div>"
     }
 
-    Add-Content $FullLogFilePath "</div>"
+    # Remove the extra </div> since we now close properly
+    # Add-Content $FullLogFilePath "</div>"
 
-    # Define registry paths for 64-bit and 32-bit uninstall keys
-    $registryPaths = @(
-        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\",
-        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"
-    )
-    Write-Host "`n--- Word File Block Settings Check (Web Pages) ---" -ForegroundColor Yellow
-    Add-Content $FullLogFilePath "<h3>Word File Block Settings (Web Pages)</h3>"
+            # Checking for existing local signatures
+        $baseSignaturePath = [System.IO.Path]::Combine($env:APPDATA, "Microsoft")
+        $possibleFolders = @("Signatures", "Handtekeningen")
+        $signaturePath = $null
 
-    $registryChecks = @(
-        @{
-            Path = "HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\FileBlock"
-            Scope = "Policy (GPO)"
-        },
-        @{
-            Path = "HKCU:\Software\Microsoft\Office\16.0\Word\Security\FileBlock"
-            Scope = "User"
+        foreach ($folder in $possibleFolders) {
+            $fullPath = Join-Path $baseSignaturePath $folder
+            if (Test-Path $fullPath) {
+                $signaturePath = $fullPath
+                break
+            }
         }
-    )
 
-$webPagesBlocked = $false
-$tableRows = ''
+        if ($signaturePath) {
+            $htmFiles = Get-ChildItem -Path $signaturePath -Filter *.htm -File -ErrorAction SilentlyContinue
 
-foreach ($check in $registryChecks) {
-    if (Test-Path $check.Path) {
-        $key = Get-ItemProperty -Path $check.Path -ErrorAction SilentlyContinue
-        if ($key.HtmlFiles -eq 1 -or $key.HtmlFiles -eq 2) {
-            Write-Host "Web Pages BLOCKED" -ForegroundColor Red
-            $tableRows += '<tr><td>' + $check.Path + '</td><td class="fail">Blocked</td></tr>'
-            $webPagesBlocked = $true
+            if ($htmFiles.Count -gt 0) {
+                # Console output
+                Write-Host "`n--- Local Outlook Signatures Found ---" -ForegroundColor Yellow
+                $signatureData = $htmFiles | ForEach-Object {
+                    $content = Get-Content -Path $_.FullName -Raw -ErrorAction SilentlyContinue
+                    $hasRemialSans = ($content -match "remialcxesans")
+                    $exclaimerUsed = if ($hasRemialSans) { "Yes" } else { "No" }
+
+                    # Output to console
+                    [PSCustomObject]@{
+                        Name         = $_.BaseName
+                        DateModified = $_.LastWriteTime
+                        Exclaimer    = $exclaimerUsed
+                    }
+                }
+
+                $signatureData | Format-Table -AutoSize
+
+                # HTML output
+                Add-Content $FullLogFilePath '<div class="section">'
+                Add-Content $FullLogFilePath "<h3>Local Outlook Signatures</h3>"
+                Add-Content $FullLogFilePath "<table><tr><th>Name</th><th>Date Modified</th><th>Exclaimer Signature</th></tr>"
+
+                foreach ($sig in $signatureData) {
+                    $sigRow = "<tr><td>$($sig.Name)</td><td>$($sig.DateModified)</td><td>$($sig.Exclaimer)</td></tr>"
+                    Add-Content $FullLogFilePath $sigRow
+                }
+
+                Add-Content $FullLogFilePath "</table>"
+                Add-Content $FullLogFilePath "</div>"
+
+            } else {
+                Write-Host "`nNo .htm signature files found in $signaturePath" -ForegroundColor DarkGray
+                Add-Content $FullLogFilePath '<div class="section">'
+                Add-Content $FullLogFilePath "<h3>Local Outlook Signatures</h3>"
+                Add-Content $FullLogFilePath "<table><tr><th>Status</th><th>Details</th></tr><tr><td class='success'>No Signatures Found</td><td>✅ No local signature files found in $signaturePath</td></tr></table>"
+                Add-Content $FullLogFilePath "</div>"
+            }
         }
-        elseif ($key.HtmlFiles -eq 0) {
-            Write-Host "Web Pages allowed" -ForegroundColor Green
-            $tableRows += '<tr><td>' + $check.Path + '</td><td class="success">success</td></tr>'
-        }
-        else {
-            $tableRows += '<tr><td>' + $check.Path + '</td><td class="success">No Key Found</td></tr>'
-            $webPagesUnknown = $false
-        }
-    }
-}
-
-if ($tableRows) {
-    $webStatusTable = '<div class="section">' +
-        '<table>' +
-        '<tr><th>Registry Path</th><th>Status</th></tr>' +
-        $tableRows +
-        '</table></div>'
-
-    Add-Content -Path $FullLogFilePath -Value $webStatusTable
-}
-
-    if ($webPagesBlocked) {
-
-        Write-Host "`nWARNING: Word is blocking Web Pages. HTML based signatures cannot be inserted into the Outlook email body." -ForegroundColor Red
-        Write-Host "This setting must be disabled to allow signature injection." -ForegroundColor Red
-        $webBlockMessage = '<div class="info-after-error">' +
-            '<strong>Impact:</strong> Web Page file types (.htm/.html) are currently blocked in Microsoft Word. ' +
-            'This prevents Exclaimer signatures from being inserted into Outlook.' +
-            '<div style="margin-top:10px; font-weight:normal;">' +
-            '<strong>Required action:</strong>' +
-            '<ol style="margin-top:6px;">' +
-            '<li>Open Microsoft Word</li>' +
-            '<li>Go to <strong>File</strong> &gt; <strong>Options</strong> &gt; <strong>Trust Center</strong></li>' +
-            '<li>Select <strong>Trust Center Settings</strong> &gt; <strong>File Block Settings</strong></li>' +
-            '<li>Locate <strong>Web Pages</strong> and ensure the checkbox is <strong>unchecked</strong></li>' +
-            '<li>Restart Outlook after making changes</li>' +
-            '</ol>' +
-            '<strong>Important:</strong> If the setting is greyed out, it is enforced by Group Policy and must be reviewed by your IT administrator.' +
-            '</div></div>'
-        Add-Content -Path $FullLogFilePath -Value $webBlockMessage
-    }
-
-    elseif ($webPagesUnknown) {
-        Write-Host "`nWARNING: Unable to determine Word Web Page File Block setting." -ForegroundColor Yellow
-        $webUnknownMessage = '<div class="info-after-warning">' +
-            '<strong>Manual verification required:</strong> The script was unable to determine the current Web Page File Block setting in Microsoft Word.' +
-            '<div style="margin-top:10px; font-weight:normal;">' +
-            '<strong>Please check:</strong>' +
-            '<ol style="margin-top:6px;">' +
-            '<li>Open Microsoft Word</li>' +
-            '<li>Go to <strong>File</strong> &gt; <strong>Options</strong> &gt; <strong>Trust Center</strong></li>' +
-            '<li>Select <strong>Trust Center Settings</strong> &gt; <strong>File Block Settings</strong></li>' +
-            '<li>Confirm whether <strong>Web Pages</strong> (.htm/.html) is checked or <strong>unchecked</strong></li>' +
-            '</ol>' +
-            'If the option is greyed out, it is likely enforced by Group Policy.' +
-            '<br><br>' +
-            '<strong>When replying to your ticket please confrim:</strong>' +
-            '<ul style="margin-top:6px;">' +
-            '<li>Whether it is checked or unchecked</li>' +
-            '<li>Whether it is editable or greyed out</li>' +
-            '</ul>' +
-            'We will review your response and advise on next steps.' +
-            '</div></div>'
-        Add-Content -Path $FullLogFilePath -Value $webUnknownMessage    }
-
-    else {
-        Write-Host "No blocking detected for Web Pages." -ForegroundColor Green
-        Add-Content $FullLogFilePath '<div class="info-after-success">✅ <strong>No issues detected:</strong> No Word File Block restrictions were found for Web Pages.</div>'
-    }
-
 
     Write-Host "`n========== Microsoft Edge WebView2 Runtime ==========" -ForegroundColor Cyan
 
@@ -1802,7 +1955,7 @@ else {
 
                         Add-Content $FullLogFilePath (
                             "<div class='info-after-warning'>
-                                ⚠ UPN and Primary SMTP address do not match.<br><br>
+                                ⚠️ UPN and Primary SMTP address do not match.<br><br>
                                 UPN: <code>{0}</code><br>
                                 SMTP: <code>{1}</code><br><br>
                                 This can contribute to modern authentication token mismatches and login hint errors in Outlook.
