@@ -1,4 +1,4 @@
-﻿# <#
+﻿# <# 
 # .SYNOPSIS
 #     Gathers diagnostics and configuration data relevant to Exclaimer Add-In and signature deployment across Outlook clients.
 #
