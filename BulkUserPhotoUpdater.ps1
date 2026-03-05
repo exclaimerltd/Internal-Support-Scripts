@@ -1,4 +1,4 @@
-<#
+<# 
 .SYNOPSIS
     Bulk updates Microsoft 365 user photos using Microsoft Graph app-only authentication based on file names.
 
