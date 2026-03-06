@@ -78,7 +78,7 @@ function ShowBulkUserPhotoUpdaterAppRegistrationGuide {
     Write-Host ""
     Write-Host "Step 1: Azure AD App Registration" -ForegroundColor Yellow
     Write-Host "This script will guide you through registering an Azure AD application needed for" `
-               "app-only authentication to update user photos in Microsoft 365." -ForegroundColor White
+        "app-only authentication to update user photos in Microsoft 365." -ForegroundColor White
     Write-Host ""
 
     Write-Host "Open your web browser and navigate to the following page:" -ForegroundColor Green
@@ -155,11 +155,11 @@ function EnsureMgUsersModule {
         Write-Host "Installing '$moduleName'..." -ForegroundColor Cyan
 
         Install-Module -Name $moduleName `
-                       -Repository PSGallery `
-                       -Scope CurrentUser `
-                       -Force `
-                       -AllowClobber `
-                       -ErrorAction Stop
+            -Repository PSGallery `
+            -Scope CurrentUser `
+            -Force `
+            -AllowClobber `
+            -ErrorAction Stop
 
         Write-Host "Module '$moduleName' installed successfully." -ForegroundColor Green
     }

@@ -82,7 +82,7 @@ function confirmExclaimerSupportApproval {
         }
     }
 
-function modern-auth-mfa-connect {    
+function modernAuthConnect {    
     Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
     Start-Sleep -Seconds 3
     Import-Module ExchangeOnlineManagement
@@ -417,7 +417,7 @@ function showExclaimerCompletionNotice {
 
 confirmExclaimerSupportApproval
 checkExchangeOnlineModule
-modern-auth-mfa-connect
+modernAuthConnect
 $details = getConfigDetails
 if (-not $details) {
     Write-Host "Script stopped. No changes made." -ForegroundColor Yellow
