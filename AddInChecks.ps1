@@ -1510,7 +1510,7 @@ function CaptureManualAddInVersion {
     Write-Host "`n✅ Thank you — version recorded as: $addInVersion" -ForegroundColor Green
 
     # --- HTML Logging (safe formatting) ---
-    Add-Content $FullLogFilePath '<h2>🧩 Exclaimer Add-in Information (Manual)</h2>'
+    Add-Content $FullLogFilePath '<h2>🧩 Exclaimer Add-in Information (Visual Check)</h2>'
     Add-Content $FullLogFilePath ('<p>User-provided Add-in version: <strong>{0}</strong></p>' -f [System.Web.HttpUtility]::HtmlEncode($addInVersion))
 }
 
