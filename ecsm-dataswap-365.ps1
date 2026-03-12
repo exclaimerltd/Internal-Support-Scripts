@@ -14,7 +14,7 @@
     - You can further filter the Get-User command that obtains the user information with the -filter parameter.  Examples of this below
         - Get-User -Filter "HomePhone -like '*'"
 .PRODUCTS
-    Exclaimer Cloud - Sigonatures for Office 365
+    Exclaimer Cloud - Signatures for Office 365
 .REQUIREMENTS
     - Global Administrator Account
 #>
