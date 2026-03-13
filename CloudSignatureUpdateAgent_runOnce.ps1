@@ -45,9 +45,22 @@
 #        - Task runs at logon and stops after 15 minutes
 # >
 
+# Ensure the script is running with elevated permissions
+$isAdmin = ([Security.Principal.WindowsPrincipal] `
+        [Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if (-not $isAdmin) {
+    Write-Host 'Elevated privileges are required. Relaunching as administrator...'
+    Start-Sleep -Seconds 3
+    exit 1
+}
+
 # -------------------------------
 # Remove Exclaimer Agent Run keys (all users)
 # -------------------------------
+
+
 
 # Function to remove Run key from a user hive
 function Remove-UserRunKey {
@@ -79,18 +92,18 @@ Write-Host "Removed HKLM Run key for Cloud Signature Update Agent"
 # Detect user profiles (skip system profiles)
 $userProfiles = Get-ChildItem 'C:\Users' | Where-Object { $_.Name -notin @("Public","Default","Default User","DefaultAppPool") }
 
-foreach ($profile in $userProfiles) {
-    if (-not (Test-Path $profile.FullName)) { continue }
+foreach ($userProfile in $userProfiles) {
+    if (-not (Test-Path $userProfile.FullName)) { continue }
 
-    $localAppData = Join-Path $profile.FullName "AppData\Local"
+    $localAppData = Join-Path $userProfile.FullName "AppData\Local"
     $exePath = Join-Path $localAppData "Programs\Exclaimer Ltd\Cloud Signature Update Agent\Exclaimer.CloudSignatureAgent.exe"
 
     if (-not (Test-Path $exePath)) {
-        Write-Host "Agent not found for profile $($profile.Name). Skipping task creation."
+        Write-Host "Agent not found for profile $($userProfile.Name). Skipping task creation."
         continue
     }
 
-    Write-Host "Found agent for profile $($profile.Name) at $exePath"
+    Write-Host "Found agent for profile $($userProfile.Name) at $exePath"
 
     # Use username in task name to avoid collisions
     $taskName = "ExclaimerSignatureAgent_LogonRun"
@@ -111,7 +124,7 @@ foreach ($profile in $userProfiles) {
 
     # Run task as the detected user
     $principal = New-ScheduledTaskPrincipal `
-        -UserId $profile.Name `
+        -UserId $userProfile.Name `
         -LogonType Interactive `
         -RunLevel Limited
 
@@ -124,7 +137,7 @@ foreach ($profile in $userProfiles) {
         -Principal $principal `
         -Description "Runs Exclaimer Cloud Signature Update Agent at logon with limited runtime"
 
-    Write-Host "Scheduled task '$taskName' created for user $($profile.Name)."
+    Write-Host "Scheduled task '$taskName' created for user $($userProfile.Name)."
 }
 
 Write-Host "All Run keys cleaned and tasks created successfully."
