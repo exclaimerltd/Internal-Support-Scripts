@@ -6,7 +6,6 @@
 #     It will then prompt the user to Sign in with Microsoft.
 # 
 # .NOTES
-#     Email: helpdesk@exclaimer.com
 #     Created: 25th January 2024
 #     Updated: 7th October 2024
 # 

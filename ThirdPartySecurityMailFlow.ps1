@@ -9,7 +9,6 @@
 #
 #    Please refer to the REQUIREMENTS for the information needed to run this script correctly.
 #.NOTES
-#    Email: helpdesk@exclaimer.com
 #    Date: 8th August 2024
 #.PRODUCTS
 #    Exclaimer Cloud - Signatures for Office 365

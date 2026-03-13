@@ -7,7 +7,6 @@
 #     Finally ask for details of search required and output that data into a file in "C:\Temp"
 # 
 # .NOTES
-#     Email: helpdesk@exclaimer.com
 #     Date: 3rd January 2024
 # 
 # .PRODUCTS

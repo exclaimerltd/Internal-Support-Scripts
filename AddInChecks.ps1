@@ -7,7 +7,6 @@
 #     It prompts for a user's email to determine their domain, fetches relevant endpoints, tests connectivity, inspects Outlook installations, and produces an HTML report "AddInChecks.html" in the user’s Downloads folder.
 #
 # .NOTES
-#     Email: helpdesk@exclaimer.com
 #     Date: 23rd September 2025
 #     Version: 1.0.0
 #

@@ -8,7 +8,6 @@
 #     The task is uniquely named per user to avoid conflicts and ensures offline signatures continue to function while reducing persistent ASR alert triggers.
 #
 # .NOTES
-#     Email: helpdesk@exclaimer.com
 #     Date: 13th March 2026
 #     Version: 1.0.0
 #

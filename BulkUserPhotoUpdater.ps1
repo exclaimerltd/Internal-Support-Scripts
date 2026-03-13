@@ -11,7 +11,6 @@
     files are reported.
 
 .NOTES
-    Email: helpdesk@exclaimer.com
     Date: 6th January 2026
     Version: 1.1.0
 

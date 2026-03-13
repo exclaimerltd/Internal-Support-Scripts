@@ -12,7 +12,6 @@
     Output is saved to the user's Downloads folder by default, with a fallback to C:\Temp.
 
 .NOTES
-    Email: helpdesk@exclaimer.com
     Date: 2nd February 2026
     Version: 1.0.0
 

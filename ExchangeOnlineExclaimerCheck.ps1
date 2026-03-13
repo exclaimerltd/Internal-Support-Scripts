@@ -7,7 +7,6 @@
 #    Output filename is "ExchangeOnlineExclaimerCheck.txt"
 #
 #.NOTES
-#    Email: helpdesk@exclaimer.com
 #    Date: 27th June 2021
 #    Updated: 20th June 2024
 #
