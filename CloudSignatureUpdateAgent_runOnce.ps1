@@ -59,9 +59,6 @@ if (-not $isAdmin) {
 # -------------------------------
 # Remove Exclaimer Agent Run keys (all users)
 # -------------------------------
-
-
-
 # Function to remove Run key from a user hive
 function Remove-UserRunKey {
     param($sid)
@@ -86,29 +83,41 @@ Remove-ItemProperty -Path $runKeyMachine -Name "Cloud Signature Update Agent" -E
 Write-Host "Removed HKLM Run key for Cloud Signature Update Agent"
 
 # -------------------------------
-# Create Scheduled Task for each user
+# Create Scheduled Task for each active user session
 # -------------------------------
 
-# Detect user profiles (skip system profiles)
-$userProfiles = Get-ChildItem 'C:\Users' | Where-Object { $_.Name -notin @("Public","Default","Default User","DefaultAppPool") }
+# Enumerate user hives with active sessions
+$userHives = Get-ChildItem 'Registry::HKEY_USERS' -ErrorAction SilentlyContinue |
+    Where-Object { $_.PSChildName -match '^S-1-5-21-' -and $_.PSChildName -notmatch '_Classes$' }
 
-foreach ($userProfile in $userProfiles) {
-    if (-not (Test-Path $userProfile.FullName)) { continue }
+foreach ($hive in $userHives) {
 
-    $localAppData = Join-Path $userProfile.FullName "AppData\Local"
+    $hiveName = $hive.PSChildName
+    $volEnvPath = "Registry::HKEY_USERS\$hiveName\Volatile Environment"
+
+    if (-not (Test-Path $volEnvPath)) { continue }
+
+    $envProps = Get-ItemProperty $volEnvPath
+
+    $username = $envProps.USERNAME
+    $userDomain = $envProps.USERDOMAIN
+    $localAppData = $envProps.LOCALAPPDATA
+
+    if (-not $username -or -not $localAppData) { continue }
+
     $exePath = Join-Path $localAppData "Programs\Exclaimer Ltd\Cloud Signature Update Agent\Exclaimer.CloudSignatureAgent.exe"
 
     if (-not (Test-Path $exePath)) {
-        Write-Host "Agent not found for profile $($userProfile.Name). Skipping task creation."
+        Write-Host "Agent not found for $userDomain\$username. Skipping task creation."
         continue
     }
 
-    Write-Host "Found agent for profile $($userProfile.Name) at $exePath"
+    Write-Host "Found agent for $userDomain\$username at $exePath"
 
     # Use username in task name to avoid collisions
-    $taskName = "ExclaimerSignatureAgent_LogonRun"
+    $taskName = "ExclaimerSignatureAgent_LogonRun_$username"
 
-    # Remove existing task if it exists
+    # Remove existing task if present
     if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
         Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
         Write-Host "Existing task '$taskName' removed."
@@ -116,7 +125,10 @@ foreach ($userProfile in $userProfiles) {
 
     # Define task
     $action = New-ScheduledTaskAction -Execute $exePath
-    $trigger = New-ScheduledTaskTrigger -AtLogOn
+    $trigger = New-ScheduledTaskTrigger `
+        -AtLogOn `
+        -User "$userDomain\$username"
+
     $settings = New-ScheduledTaskSettingsSet `
         -ExecutionTimeLimit (New-TimeSpan -Minutes 15) `
         -AllowStartIfOnBatteries `
@@ -124,11 +136,10 @@ foreach ($userProfile in $userProfiles) {
 
     # Run task as the detected user
     $principal = New-ScheduledTaskPrincipal `
-        -UserId $userProfile.Name `
+        -UserId "$userDomain\$username" `
         -LogonType Interactive `
         -RunLevel Limited
 
-    # Register the scheduled task
     Register-ScheduledTask `
         -TaskName $taskName `
         -Action $action `
@@ -137,7 +148,7 @@ foreach ($userProfile in $userProfiles) {
         -Principal $principal `
         -Description "Runs Exclaimer Cloud Signature Update Agent at logon with limited runtime"
 
-    Write-Host "Scheduled task '$taskName' created for user $($userProfile.Name)."
+    Write-Host "Scheduled task '$taskName' created for $userDomain\$username"
 }
 
 Write-Host "All Run keys cleaned and tasks created successfully."
