@@ -26,11 +26,12 @@
 #         - Detects active user sessions via HKU Volatile Environment
 #         - Validates Cloud Signature Update Agent installation path per user
 #         - Creates a scheduled task for each detected user to run the agent at logon
-#         - Scheduled task automatically terminates after 15 minutes
+#         - Scheduled task automatically terminates after a configurable runtime
 #         - Avoids task name conflicts by appending username
-#         - Adds configurable overrideExistingTasks option:
+#         - Adds configurable overrideExistingTask option:
 #             • 0 = Skip task creation if task already exists (default, idempotent for Intune)
 #             • 1 = Remove existing task and recreate it
+#         - Adds configurable runTimeLimitMinutes variable to adjust task runtime (default 15 minutes)
 #
 # .INSTRUCTIONS
 #     **Deployment via Intune (Recommended for testing and production rollout):**
@@ -46,14 +47,14 @@
 #     7. Verify on test endpoints:
 #        - Run keys removed from HKCU and HKLM
 #        - Scheduled task created per detected user
-#        - Task runs at user logon and stops automatically after 15 minutes
-#        - Script safely re-runs without recreating tasks unless overrideExistingTasks = 1
+#        - Task runs at user logon and stops automatically after $runTimeLimitMinutes minutes
+#        - Script safely re-runs without recreating tasks unless overrideExistingTask = 1
 # >
 # -------------------------------
-# Choose to or not override existing tasks
-# Set to "1" to remove existing tasks and create new ones, or "0" to skip task creation if a task with the same name already exists
+# Choose the runtime limit for the scheduled task and whether to override existing tasks if they already exist.
 # -------------------------------
-$overrideExistingTasks = 0
+$runTimeLimitMinutes = 15
+$overrideExistingTask = 0
 
 # -------------------------------
 # Ensure the script is running with elevated permissions
@@ -133,7 +134,7 @@ foreach ($hive in $userHives) {
 
     if ($existingTask) {
 
-        if ($overrideExistingTasks -eq 1) {
+        if ($overrideExistingTask -eq 1) {
             Write-Host "Scheduled task '$taskName' already exists. Override enabled. Recreating."
             Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
         }
@@ -151,7 +152,7 @@ foreach ($hive in $userHives) {
         -User "$userDomain\$username"
 
     $settings = New-ScheduledTaskSettingsSet `
-        -ExecutionTimeLimit (New-TimeSpan -Minutes 15) `
+        -ExecutionTimeLimit (New-TimeSpan -Minutes $runTimeLimitMinutes) `
         -AllowStartIfOnBatteries `
         -DontStopIfGoingOnBatteries
 
