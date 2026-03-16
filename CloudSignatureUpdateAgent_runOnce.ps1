@@ -21,12 +21,16 @@
 #     - Script executed in SYSTEM context for Intune deployment
 #
 # .VERSION
-#     1.0.0
+#     1.1.0
 #         - Cleans per-user and machine-level Run keys for Cloud Signature Update Agent
-#         - Detects all local user profiles and validates agent installation path
-#         - Creates a scheduled task for each user to run agent at logon
+#         - Detects active user sessions via HKU Volatile Environment
+#         - Validates Cloud Signature Update Agent installation path per user
+#         - Creates a scheduled task for each detected user to run the agent at logon
 #         - Scheduled task automatically terminates after 15 minutes
 #         - Avoids task name conflicts by appending username
+#         - Adds configurable overrideExistingTasks option:
+#             • 0 = Skip task creation if task already exists (default, idempotent for Intune)
+#             • 1 = Remove existing task and recreate it
 #
 # .INSTRUCTIONS
 #     **Deployment via Intune (Recommended for testing and production rollout):**
@@ -34,18 +38,26 @@
 #     2. Go to Microsoft Endpoint Manager portal → Devices → Scripts → Add → Windows 10 and later.
 #     3. Upload the PowerShell script.
 #     4. Configure settings:
-#        - Run script using logged-on credentials: **No** (system context required)
-#        - Enforce script signature check: **No**
-#        - Run script in 64-bit PowerShell Host: **Yes**
+#        - Run script using logged-on credentials: No (system context required)
+#        - Enforce script signature check: No
+#        - Run script in 64-bit PowerShell Host: Yes
 #     5. Assign the script to a test device group first.
 #     6. Monitor deployment under Devices → PowerShell scripts → Device status.
 #     7. Verify on test endpoints:
 #        - Run keys removed from HKCU and HKLM
-#        - Scheduled task exists per user
-#        - Task runs at logon and stops after 15 minutes
+#        - Scheduled task created per detected user
+#        - Task runs at user logon and stops automatically after 15 minutes
+#        - Script safely re-runs without recreating tasks unless overrideExistingTasks = 1
 # >
+# -------------------------------
+# Choose to or not override existing tasks
+# Set to "1" to remove existing tasks and create new ones, or "0" to skip task creation if a task with the same name already exists
+# -------------------------------
+$overrideExistingTasks = 0
 
+# -------------------------------
 # Ensure the script is running with elevated permissions
+# -------------------------------
 $isAdmin = ([Security.Principal.WindowsPrincipal] `
         [Security.Principal.WindowsIdentity]::GetCurrent()
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -59,34 +71,34 @@ if (-not $isAdmin) {
 # -------------------------------
 # Remove Exclaimer Agent Run keys (all users)
 # -------------------------------
-# Function to remove Run key from a user hive
-function Remove-UserRunKey {
+
+function RemoveUserRunKey {
     param($sid)
+
     $runPath = "Registry::HKEY_USERS\$sid\Software\Microsoft\Windows\CurrentVersion\Run"
+
     if (Test-Path $runPath) {
         Remove-ItemProperty -Path $runPath -Name "*Cloud Signature Update Agent" -ErrorAction SilentlyContinue
         Write-Host "Removed Run key for user hive $sid"
     }
 }
 
-# Enumerate all user SIDs under HKU (ignore _Classes)
 $userHives = Get-ChildItem 'Registry::HKEY_USERS' -ErrorAction SilentlyContinue | 
     Where-Object { $_.PSChildName -match '^S-' -and $_.PSChildName.Length -ge 30 -and $_.PSChildName -notmatch '_Classes$' }
 
 foreach ($hive in $userHives) {
-    Remove-UserRunKey -sid $hive.PSChildName
+    RemoveUserRunKey -sid $hive.PSChildName
 }
 
-# Remove machine-level Run key entry
 $runKeyMachine = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run"
 Remove-ItemProperty -Path $runKeyMachine -Name "Cloud Signature Update Agent" -ErrorAction SilentlyContinue
 Write-Host "Removed HKLM Run key for Cloud Signature Update Agent"
+
 
 # -------------------------------
 # Create Scheduled Task for each active user session
 # -------------------------------
 
-# Enumerate user hives with active sessions
 $userHives = Get-ChildItem 'Registry::HKEY_USERS' -ErrorAction SilentlyContinue |
     Where-Object { $_.PSChildName -match '^S-1-5-21-' -and $_.PSChildName -notmatch '_Classes$' }
 
@@ -114,17 +126,26 @@ foreach ($hive in $userHives) {
 
     Write-Host "Found agent for $userDomain\$username at $exePath"
 
-    # Use username in task name to avoid collisions
     $taskName = "ExclaimerSignatureAgent_LogonRun_$username"
 
-    # Remove existing task if present
-    if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
-        Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
-        Write-Host "Existing task '$taskName' removed."
+    # Only check if task name exists
+    $existingTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+
+    if ($existingTask) {
+
+        if ($overrideExistingTasks -eq 1) {
+            Write-Host "Scheduled task '$taskName' already exists. Override enabled. Recreating."
+            Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
+        }
+        else {
+            Write-Host "Scheduled task '$taskName' already exists. Skipping."
+            continue
+        }
+
     }
 
-    # Define task
     $action = New-ScheduledTaskAction -Execute $exePath
+
     $trigger = New-ScheduledTaskTrigger `
         -AtLogOn `
         -User "$userDomain\$username"
@@ -134,7 +155,6 @@ foreach ($hive in $userHives) {
         -AllowStartIfOnBatteries `
         -DontStopIfGoingOnBatteries
 
-    # Run task as the detected user
     $principal = New-ScheduledTaskPrincipal `
         -UserId "$userDomain\$username" `
         -LogonType Interactive `
@@ -151,4 +171,4 @@ foreach ($hive in $userHives) {
     Write-Host "Scheduled task '$taskName' created for $userDomain\$username"
 }
 
-Write-Host "All Run keys cleaned and tasks created successfully."
+Write-Host "All Run keys cleaned and scheduled task validation completed."
