@@ -328,7 +328,7 @@ function getConfigDetails {
     # Group restriction for Transport Rules
     # ----------------------------
     Write-Host "`nTransport Rule Options" -ForegroundColor Cyan
-    $restrictToGroup = Read-Host "Would you like to restrict this to a group? N/y"
+    $restrictToGroup = Read-Host "Would you like to restrict this to a group? (Y/N)"
 
     $groupFilter = $null
 
