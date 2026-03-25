@@ -64,7 +64,7 @@ if (-not (Test-Path -Path $Global:FilePath)) {
     }
 }
 
-# Final full path for the log file
+# Final full path for the log file 
 $DateTimeRun = Get-Date -Format "ddd dd MMMM yyyy, HH:MM 'UTC' K"
 $FullLogFilePath = Join-Path $Global:FilePath $LogFile
 

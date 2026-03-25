@@ -14,36 +14,42 @@
 # 
 # .REQUIREMENTS
 #     - Global Administrator access to the Microsoft Tenant
-#     - ExchangeOnlineManagement - https://learn.microsoft.com/en-us/powershell/exchange/exchange-online-powershell-v2?view=exchange-ps
+#     - ExchangeOnlineManagement module
 # 
 # .VERSION 
 #     1.1.0
-# 
-# .INSTRUCTIONS
-#     - Open PowerShell as Administrator
-#     - Run: set-executionpolicy unrestricted
-#     - Go to the directory where the Script is saved (i.e 'cd "C:\Users\ReplaceWithUserName\Downloads"')
-#     - Run the Script (i.e '.\GetAddInForAllUsers.ps1')
 
-# Script Parameters
 param(
-    [string]$OutputPath = "$PSScriptRoot\Exclaimer",
     [string]$AddInID = "efc30400-2ac5-48b7-8c9b-c0fd5f266be2",
     [switch]$VerboseLogging = $false
 )
 
-# Setting up logging if enabled
+# Preferred output path (Downloads → fallback C:\Temp)
+$OutputPath = [System.IO.Path]::Combine([Environment]::GetFolderPath('UserProfile'), 'Downloads')
+
+if (-not (Test-Path -Path $OutputPath)) {
+    $OutputPath = "C:\Temp"
+    if (-not (Test-Path -Path $OutputPath)) {
+        New-Item -Path $OutputPath -ItemType Directory -Force | Out-Null
+    }
+}
+
+# File naming
+$TimeStamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+$CsvFilePath = Join-Path $OutputPath "GetAddInForAllUsers_$TimeStamp.csv"
+$TranscriptLogFile = Join-Path $OutputPath "Transcript_$TimeStamp.txt"
+
+# Start transcript if enabled
 if ($VerboseLogging) {
-    $LogFile = "$OutputPath\ScriptLog.txt"
-    Write-Output "Verbose Logging Enabled: $LogFile"
-    Start-Transcript -Path $LogFile -Append -NoClobber
+    Write-Output "Verbose Logging Enabled: $TranscriptLogFile"
+    Start-Transcript -Path $TranscriptLogFile -Append -NoClobber
 }
 
 # Function to check and install required module
 function Ensure-ModuleInstalled {
     if (-not (Get-Module -ListAvailable -Name ExchangeOnlineManagement)) {
         Write-Host "`nThe required 'ExchangeOnlineManagement' Module is NOT installed" -ForegroundColor Red
-        $installMsModule = Read-Host ("Do you want to install the required 'ExchangeOnlineManagement' Module? Y/n")
+        $installMsModule = Read-Host "Do you want to install the required 'ExchangeOnlineManagement' Module? Y/n"
         if ($installMsModule -eq "Y") {
             try {
                 Install-Module ExchangeOnlineManagement -Scope CurrentUser -Force
@@ -61,27 +67,12 @@ function Ensure-ModuleInstalled {
     }
 }
 
-# Ensure output directory exists
-function Ensure-DirectoryExists {
-    if (-not (Test-Path -Path $OutputPath)) {
-        try {
-            New-Item $OutputPath -ItemType Directory -Force | Out-Null
-            Write-Host "Created directory: $OutputPath" -ForegroundColor Green
-        } catch {
-            Write-Host "Failed to create directory: $OutputPath. Error: $_" -ForegroundColor Red
-            Exit
-        }
-    } else {
-        Write-Host "Output directory already exists: $OutputPath" -ForegroundColor Green
-    }
-}
-
 # Function to connect to Exchange Online
 function Connect-ExchangeSession {
     try {
-        #$session = Get-Module ExchangeOnlineManagement | Format-Table -Property Name,Version
         $getsessions = Get-PSSession | Select-Object -Property State, Name
         $session = (@($getsessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*').Count -gt 0
+
         if (-not $session) {
             Write-Host "Starting a new session..." -ForegroundColor Green
             Connect-ExchangeOnline
@@ -99,6 +90,7 @@ function Get-MailboxAddInVersions {
     $results = @()
     try {
         $mailboxes = Get-Mailbox -ResultSize Unlimited | Where-Object { $_.AccountDisabled -eq $false }
+
         Write-Host "`nGathering information, please wait..........." -ForegroundColor Green
         Write-Host "`nNote:" -ForegroundColor Red
         Write-Host "Some mailboxes may not list an Add-in, you should try again after the specific mailbox has logged on to 'https://outlook.office.com/'...`n" -ForegroundColor Yellow
@@ -106,17 +98,19 @@ function Get-MailboxAddInVersions {
         foreach ($mailbox in $mailboxes) {
             $appIdentity = ($mailbox.UserPrincipalName -split "@")[0] + "\" + $AddInID
             $appVersion = Get-App -Identity $appIdentity -ErrorAction SilentlyContinue
-            [array]$results += [pscustomobject]@{
-                Mailbox    = $mailbox.DisplayName
-                AppVersion = $appVersion.AppVersion
-                Enabled    = $appVersion.Enabled
-                Deployment_Method       = $appVersion.Scope
+
+            $results += [pscustomobject]@{
+                Mailbox            = $mailbox.DisplayName
+                AppVersion         = $appVersion.AppVersion
+                Enabled            = $appVersion.Enabled
+                Deployment_Method  = $appVersion.Scope
             }
         }
 
-        # Output to CSV
-        $results | Export-Csv -Path "$OutputPath\GetAddInForAllUsers.csv" -NoTypeInformation
-        Write-Host "Output saved to $OutputPath\GetAddInForAllUsers.csv" -ForegroundColor Green
+        # Export results
+        $results | Export-Csv -Path $CsvFilePath -NoTypeInformation
+        Write-Host "Output saved to $CsvFilePath" -ForegroundColor Green
+
     } catch {
         Write-Host "Failed to retrieve mailbox information. Error: $_" -ForegroundColor Red
     }
@@ -132,17 +126,18 @@ function End-ExchangeSession {
     }
 }
 
-#Open Ouput directory
-function open-OutputDir {
-    Start "$OutputPath"
+# Open output directory
+function Open-OutputDir {
+    Start-Process $OutputPath
 }
 
-# Main Script Execution
+# Main execution
 Ensure-ModuleInstalled
-Ensure-DirectoryExists
 Connect-ExchangeSession
 Get-MailboxAddInVersions
 End-ExchangeSession
-open-OutputDir
+Open-OutputDir
 
-if ($VerboseLogging) { Stop-Transcript }
+if ($VerboseLogging) {
+    Stop-Transcript
+}
