@@ -1821,13 +1821,13 @@ else {
                 if ($ProdResult -and $ProdResult.Enabled -ne $true) {
                     $identity = "$user\$ProdID"
                     $enableCommand = "Enable-App -Identity `"$identity`""
-                    $attentionMessages += "<span><b>ℹ️ Production Add-in is Disabled:</b> Run the following command in PowerShell:</span><br><code>$enableCommand</code>"
+                    $attentionMessages += "<span><b>ℹ️ Production Add-in is Disabled:</b> Run the following command in PowerShell to re-enable it:</span><br><code>$enableCommand</code>"
                 }
 
                 if ($PreviewResult -and $PreviewResult.Enabled -ne $true) {
                     $identity = "$user\$PreviewID"
                     $enableCommand = "Enable-App -Identity `"$identity`""
-                    $attentionMessages += "<span><b>ℹ️ Preview Add-in is Disabled:</b> Run the following command in PowerShell:</span><code>$enableCommand</code>"
+                    $attentionMessages += "<span><b>ℹ️ Preview Add-in is Disabled:</b> Run the following command in PowerShell to re-enable it:</span><code>$enableCommand</code>"
                 }
 
                 if ($attentionMessages.Count -gt 0) {
