@@ -1589,6 +1589,7 @@ else {
         try {
             Write-Host "`n🔗 Connecting to Exchange Online..." -ForegroundColor Cyan
             Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
+            Import-Module ExchangeOnlineManagement -Force -ErrorAction Stop
             Start-Sleep -Seconds 3
             Connect-ExchangeOnline -ErrorAction Stop
             Write-Host "✅ Connected successfully!" -ForegroundColor Green
