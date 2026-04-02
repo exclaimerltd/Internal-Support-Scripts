@@ -1616,7 +1616,8 @@ else {
                     OAuth2ClientProfileEnabled,
                     OutlookMobileGCCRestrictionsEnabled,
                     AppsForOfficeEnabled,
-                    EwsApplicationAccessPolicy
+                    EwsApplicationAccessPolicy,
+                    EwsEnabled
 
                 Add-Content $FullLogFilePath '<div class="section">'
                 Add-Content $FullLogFilePath '<h3>Organization Configuration - Add-in Compatibility</h3>'
@@ -1671,6 +1672,15 @@ else {
                                 $impact = "⚠️ Unrecognized policy value ($value). Review manually."
                             }
                         }
+                        'EwsEnabled' {
+                            $impact = if ($rawValue -eq $false) {
+                                '❌ EWS is disabled at org level. Add-ins and services relying on EWS will fail.'
+                            } elseif ($rawValue -eq $true) {
+                                '✅ EWS is enabled.'
+                            } else {
+                                '⚠️ Unable to determine EWS state. Review manually.'
+                            }
+                        }
                         Default {
                             $impact = 'Review manually.'
                         }
@@ -1683,7 +1693,7 @@ else {
 
                 if ($addGCCSideNote) {
                     $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''OutlookMobileGCCRestrictionsEnabled'' is ''true'':</b> run the below command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to ''false'':<br><code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $false</code></span></div>' +
-                        '<p class="side-note">If you have re-opened PowerShell, you may need to run:</p>' +
+                        '<p class="side-note">If you have reopened PowerShell, you may need to run:</p>' +
                         '<code>Connect-ExchangeOnline</code>' +
                         '<p class="side-note">Once this is completed, please re-run the full script again to verify the changes.</p>'
 
@@ -1704,7 +1714,7 @@ else {
                 # Add side-note immediately after the table row for AppsForOfficeEnabled
                 if ($addAppsSideNote) {
                     $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''AppsForOfficeEnabled'' is disabled:</b> run the below command in PowerShell to enable Apps for Office:<br><code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>' +
-                        '<p class="side-note">If you have re-opened PowerShell, you may need to run:</p>' +
+                        '<p class="side-note">If you have reopened PowerShell, you may need to run:</p>' +
                         '<code>Connect-ExchangeOnline</code>' +
                         '<p class="side-note">Once this is completed, please re-run the full script again to verify the changes.</p>'
 
@@ -1835,7 +1845,7 @@ else {
                     $fullMessage = '<div class="info-after-error">' + ($attentionMessages -join "<br><br>") + '</div>'
                     Add-Content -Path $FullLogFilePath -Value $fullMessage
 
-                    $sideNote = '<p class="side-note">If you have both Production and Preview versions deployed, only one requires being enabled.</p><p class="side-note">If you have re-opened PowerShell, then you may need to run the command below before enabling the Add-in.</p><code>Connect-ExchangeOnline</code><p class="side-note">When an Add-in is disabled for a user, it should not appear or function in Outlook. We have observed cases where it may still load in Outlook on the web, but this is not expected behaviour. If this occurs, it may need to be raised with Microsoft for further review.</p>'
+                    $sideNote = '<p class="side-note">If you have both Production and Preview versions deployed, only one needs to enabled.</p><p class="side-note">If you have reopened PowerShell, then you may need to run the command below before enabling the Add-in.</p><code>Connect-ExchangeOnline</code><p class="side-note">When an Add-in is disabled for a user, it should not appear or function in Outlook. We have observed cases where it may still load in Outlook on the web, but this is not expected behaviour. If this occurs, it may need to be raised with Microsoft for further review.</p>'
                     Add-Content -Path $FullLogFilePath -Value $sideNote
 
                     $confirmationRequest = '<div class="info-after-note">' +
@@ -1881,6 +1891,8 @@ else {
             # --- Getting Mailbox Details ---
             Write-Host "`nCollecting organization configuration related to Outlook Add-ins..." -ForegroundColor Cyan
             try {
+                $casMailbox = Get-CASMailbox -Identity $user -ErrorAction Stop | Select-Object EwsEnabled
+
                 $mailbox = Get-Mailbox -Identity $user -ErrorAction Stop |
                     Select-Object Name,
                                 UserPrincipalName,
@@ -1888,6 +1900,9 @@ else {
                                 AccountDisabled,
                                 IsShared,
                                 HiddenFromAddressListsEnabled
+
+                # Append EwsEnabled as a synthetic property
+                $mailbox | Add-Member -NotePropertyName EwsEnabled -NotePropertyValue $casMailbox.EwsEnabled
 
                 # Separator row
                 Add-Content $FullLogFilePath '<table>'
@@ -1926,6 +1941,15 @@ else {
                                 'Mailbox is hidden. Can cause Classic Outlook Add-in to apply the user signature by default.'
                             } else {
                                 'Mailbox is visible.'
+                            }
+                        }
+                        'EwsEnabled' {
+                            $notes = if ($raw -eq $false) {
+                                '❌ EWS is disabled for this mailbox. Services relying on EWS may not function.'
+                            } elseif ($raw -eq $true) {
+                                '✅ EWS is enabled for this mailbox.'
+                            } else {
+                                '⚠️ Unable to determine EWS mailbox state. Review manually.'
                             }
                         }
                         Default {
