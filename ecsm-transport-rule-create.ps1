@@ -13,7 +13,6 @@
     Exclaimer Cloud - Signatures for Office 365
 .REQUIREMENTS
     - SMTP domain needs to already be added to Office 365 and verified
-    - Group for Transport Rule
     - Global Administrator Accounts
 .HISTORY
     1.0 - Creates transport rule, connectors and sets up Exclaimer Cloud in a enabled state
