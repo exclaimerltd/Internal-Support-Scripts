@@ -1555,7 +1555,7 @@ if (CheckExchangeOnlineModule) {
         # --- Organization-level Settings ---
         Write-Host "`nCollecting organization configuration related to Outlook Add-ins..." -ForegroundColor Cyan
 
-        try {
+try {
             $orgConfig = Get-OrganizationConfig | Select-Object `
                 ReleaseTrack,
                 OAuth2ClientProfileEnabled,
@@ -1563,6 +1563,11 @@ if (CheckExchangeOnlineModule) {
                 AppsForOfficeEnabled,
                 EwsApplicationAccessPolicy,
                 EwsEnabled
+
+            # Initialize flags
+            $addGCCSideNote = $false
+            $addAppsSideNote = $false
+            $addEwsSideNote = $false
 
             Add-Content $FullLogFilePath '<div class="section">'
             Add-Content $FullLogFilePath '<h3>Organization Configuration - Add-in Compatibility</h3>'
@@ -1592,16 +1597,16 @@ if (CheckExchangeOnlineModule) {
                     }
                     'OutlookMobileGCCRestrictionsEnabled' {
                         $impact = if ($rawValue) {
-                            '❌ Cloud add-ins not supported on Outlook Mobile.'                                
-                        $addGCCSideNote = $true
+                            $addGCCSideNote = $true
+                            '❌ Cloud add-ins not supported on Outlook Mobile.'
                         } else {
                             '✅ Mobile add-ins supported.'
                         }
                     }
                     'AppsForOfficeEnabled' {
                         $impact = if (-not $rawValue) {
+                            $addAppsSideNote = $true
                             '❌ Add-ins disabled organization-wide.'
-                        $addAppsSideNote = $true
                         } else {
                             '✅ Add-ins allowed.'
                         }
@@ -1619,10 +1624,15 @@ if (CheckExchangeOnlineModule) {
                     }
                     'EwsEnabled' {
                         $impact = if ($rawValue -eq $false) {
+                            $addEwsSideNote = $true
                             '❌ EWS is disabled at org level. Add-ins and services relying on EWS will fail.'
                         } elseif ($rawValue -eq $true) {
                             '✅ EWS is enabled.'
+                        } elseif ($null -eq $rawValue) {
+                            $addEwsSideNote = $true
+                            '⚠️ EWS state is NULL (not explicitly set). Recommend setting to TRUE to ensure EWS functionality.'
                         } else {
+                            $addEwsSideNote = $true
                             '⚠️ Unable to determine EWS state. Review manually.'
                         }
                     }
@@ -1632,50 +1642,38 @@ if (CheckExchangeOnlineModule) {
                 }
 
                 Add-Content $FullLogFilePath ("<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>" -f $name, $value, [System.Web.HttpUtility]::HtmlEncode($impact))
-                }
+            }
 
             Add-Content $FullLogFilePath '</table></div>'
 
             if ($addGCCSideNote) {
-                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''OutlookMobileGCCRestrictionsEnabled'' is ''true'':</b> run the below command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to ''false'':<br><code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $false</code></span></div>' +
-                    '<p class="side-note">If you have reopened PowerShell, you may need to run:</p>' +
-                    '<code>Connect-ExchangeOnline</code>' +
-                    '<p class="side-note">Once this is completed, please re-run the full script again to verify the changes.</p>'
-
+                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''OutlookMobileGCCRestrictionsEnabled'' is ''true'':</b> run the following command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to ''false'': <code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $false</code></span></div>' +
+                    '<div class="info-after-note">' +
+                        '<span>If you have reopened PowerShell, you may need to run first: ' +
+                        '<code>Connect-ExchangeOnline</code></span><br>' +
+                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
+                    '</div>'
                 Add-Content -Path $FullLogFilePath -Value $sideNote
-
-                $confirmationRequest = '<div class="info-after-note">' +
-                    'Confirmation required' +
-                    '<div style="margin-top:8px; font-weight:normal;">' +
-                    'Please let us know whether the steps above have resolved the issue reported.' +
-                    '<ul style="margin-top:6px;">' +
-                    '<li>Confirmed resolved, the Add-in is now working as expected</li>' +
-                    '<li>Not resolved, further troubleshooting is required</li>' +
-                    '</ul>' +
-                    'Your confirmation allows us to accurately record the outcome and proceed accordingly.' +
-                    '</div></div>'
-                Add-Content -Path $FullLogFilePath -Value $confirmationRequest
             }
-            # Add side-note immediately after the table row for AppsForOfficeEnabled
+
             if ($addAppsSideNote) {
-                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''AppsForOfficeEnabled'' is disabled:</b> run the below command in PowerShell to enable Apps for Office:<br><code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>' +
-                    '<p class="side-note">If you have reopened PowerShell, you may need to run:</p>' +
-                    '<code>Connect-ExchangeOnline</code>' +
-                    '<p class="side-note">Once this is completed, please re-run the full script again to verify the changes.</p>'
-
+                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''AppsForOfficeEnabled'' is disabled:</b> run the following command in PowerShell to enable Apps for Office: <code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>' +
+                    '<div class="info-after-note">' +
+                        '<span>If you have reopened PowerShell, you may need to run first: ' +
+                        '<code>Connect-ExchangeOnline</code></span><br>' +
+                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
+                    '</div>'
                 Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
 
-                $confirmationRequest = '<div class="info-after-note">' +
-                    'Confirmation required' +
-                    '<div style="margin-top:8px; font-weight:normal;">' +
-                    'Please let us know whether the steps above have resolved the issue reported.' +
-                    '<ul style="margin-top:6px;">' +
-                    '<li>Confirmed resolved, the Add-in is now working as expected</li>' +
-                    '<li>Not resolved, further troubleshooting is required</li>' +
-                    '</ul>' +
-                    'Your confirmation allows us to accurately record the outcome and proceed accordingly.' +
-                    '</div></div>'
-                Add-Content -Path $FullLogFilePath -Value $confirmationRequest
+            if ($addEwsSideNote) {
+                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''EwsEnabled'' is not TRUE:</b> run the following command in PowerShell to enable EWS: <code>Set-OrganizationConfig -EwsEnabled $true</code></span></div>' +
+                    '<div class="info-after-note">' +
+                        '<span>If you have reopened PowerShell, you may need to run first: ' +
+                        '<code>Connect-ExchangeOnline</code></span><br><br>' +
+                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
+                    '</div>'
+                Add-Content -Path $FullLogFilePath -Value $sideNote
             }
         }
         catch {
@@ -1779,7 +1777,7 @@ if (CheckExchangeOnlineModule) {
             if ($ProdResult -and $ProdResult.Enabled -ne $true) {
                 $identity = "$user\$ProdID"
                 $enableCommand = "Enable-App -Identity `"$identity`""
-                $attentionMessages += "<span><b>ℹ️ Production Add-in is Disabled:</b> Run the following command in PowerShell to re-enable it:</span><br><code>$enableCommand</code>"
+                $attentionMessages += "<span><b>ℹ️ Production Add-in is Disabled:</b> Run the following command in PowerShell to re-enable it:</span> <code>$enableCommand</code>"
             }
 
             if ($PreviewResult -and $PreviewResult.Enabled -ne $true) {
@@ -1794,18 +1792,6 @@ if (CheckExchangeOnlineModule) {
 
                 $sideNote = '<p class="side-note">If you have both Production and Preview versions deployed, only one needs to enabled.</p><p class="side-note">If you have reopened PowerShell, then you may need to run the command below before enabling the Add-in.</p><code>Connect-ExchangeOnline</code><p class="side-note">When an Add-in is disabled for a user, it should not appear or function in Outlook. We have observed cases where it may still load in Outlook on the web, but this is not expected behaviour. If this occurs, it may need to be raised with Microsoft for further review.</p>'
                 Add-Content -Path $FullLogFilePath -Value $sideNote
-
-                $confirmationRequest = '<div class="info-after-note">' +
-                    'Confirmation required' +
-                    '<div style="margin-top:8px; font-weight:normal;">' +
-                    'Please let us know whether the steps above have resolved the issue reported.' +
-                    '<ul style="margin-top:6px;">' +
-                    '<li>Confirmed resolved, the Add-in is now working as expected</li>' +
-                    '<li>Not resolved, further troubleshooting is required</li>' +
-                    '</ul>' +
-                    'Your confirmation allows us to accurately record the outcome and proceed accordingly.' +
-                    '</div></div>'
-                Add-Content -Path $FullLogFilePath -Value $confirmationRequest
             }
 
             # --- Add explanatory table for deployment methods ---
@@ -1895,6 +1881,8 @@ if (CheckExchangeOnlineModule) {
                             '❌ EWS is disabled for this mailbox. Services relying on EWS may not function.'
                         } elseif ($raw -eq $true) {
                             '✅ EWS is enabled for this mailbox.'
+                        } elseif ($null -eq $raw) {
+                            '⚠️ EWS state is NULL (inheriting org setting). Recommend explicitly setting to TRUE if EWS is needed.'
                         } else {
                             '⚠️ Unable to determine EWS mailbox state. Review manually.'
                         }
@@ -1968,7 +1956,6 @@ Write-Host "`n✅ Exclaimer Add-in details collection completed." -ForegroundCol
 }
 InpectEXOconfiguration
 function GetFirewallLogs {
-
     Write-Host "`n========== Windows Firewall Logging ==========" -ForegroundColor Cyan
 
     # --- Elevation check ---
@@ -2085,7 +2072,6 @@ function GetFirewallLogs {
 GetFirewallLogs
 
 function GetSupportSubmissionInstructions {
-
     Write-Host "`n========== Support Submission Instructions ==========" -ForegroundColor Cyan
     Write-Host "Please provide the following files to the support team:" -ForegroundColor White
     Write-Host ""
@@ -2124,7 +2110,7 @@ Write-Host "=========================================`n"
 Add-Content -Path $FullLogFilePath -Value @"
 <div class='section'>
   <h2>📄 Output Log Location</h2>
-  <p>This report has been saved to:<br><code>$FullLogFilePath</code></p>
+  <p>This report has been saved to: <code>$FullLogFilePath</code></p>
 </div>
 "@
 
