@@ -952,9 +952,8 @@ Add-Content $FullLogFilePath $installedSummary
 
             $map = @{
                 # Current Channel (Preview)
-                "19929.20012"="2604";
-                "19822.20142"="2603";"19822.20114"="2603";"19822.20104"="2603";"19822.20086"="2603";"19822.20050"="2603";"19822.20044"="2603";"19822.20012"="2603";
-                "19725.20126"="2602";"19725.20078"="2602";
+                "19929.20012"="2604";"19822.20104"="2603";"19822.20086"="2603";"19822.20050"="2603";"19822.20044"="2603";"19822.20012"="2603";
+                "19725.20078"="2602";
 
                 # Current Channel
                 "19822.20168"="2603";"19822.20142"="2603";"19822.20114"="2603";
@@ -1174,7 +1173,7 @@ function InspectClassicOutlookEncoding {
                         $htmlNote = "<div class='info-after-warning'>
                                 ⚠️ Detected code page $codePage. Please review 
                                 <a href='https://learn.microsoft.com/en-us/windows/win32/intl/code-page-identifiers' target='_blank'>Code Page Identifiers</a>.
-                                <br> If you experience issues with foreign characters displaying incorrectly in emails, see 
+                               <br> If you experience issues with foreign characters displaying incorrectly in emails, see 
                                 <a href='https://support.exclaimer.com/hc/en-gb/articles/6622042157085-Foreign-characters-are-not-displayed-correctly' target='_blank'>support article</a>.
                                 </div>"
                     }
@@ -1667,7 +1666,7 @@ try {
             Add-Content $FullLogFilePath '</table></div>'
 
             if ($addGCCSideNote) {
-                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''OutlookMobileGCCRestrictionsEnabled'' is ''true'':</b> run the following command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to ''false'': <code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $false</code></span></div>' +
+                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''OutlookMobileGCCRestrictionsEnabled'' is ''true'':</b><br>Run this command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to ''false'': <code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $false</code></span></div>' +
                     '<div class="info-after-note">' +
                         '<span>If you have reopened PowerShell, you may need to run first: ' +
                         '<code>Connect-ExchangeOnline</code></span><br>' +
@@ -1677,7 +1676,7 @@ try {
             }
 
             if ($addAppsSideNote) {
-                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''AppsForOfficeEnabled'' is disabled:</b> run the following command in PowerShell to enable Apps for Office: <code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>' +
+                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''AppsForOfficeEnabled'' is disabled:</b><br>Run this command in PowerShell to enable Apps for Office: <code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>' +
                     '<div class="info-after-note">' +
                         '<span>If you have reopened PowerShell, you may need to run first: ' +
                         '<code>Connect-ExchangeOnline</code></span><br>' +
@@ -1687,7 +1686,7 @@ try {
             }
 
             if ($addEwsSideNote) {
-                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''EwsEnabled'' is not TRUE:</b> run the following command in PowerShell to enable EWS: <code>Set-OrganizationConfig -EwsEnabled $true</code></span></div>' +
+                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''EwsEnabled'' is not TRUE:</b><br>Run this command in PowerShell to enable EWS: <code>Set-OrganizationConfig -EwsEnabled $true</code></span></div>' +
                     '<div class="info-after-note">' +
                         '<span>If you have reopened PowerShell, you may need to run first: ' +
                         '<code>Connect-ExchangeOnline</code></span><br><br>' +
@@ -1797,13 +1796,13 @@ try {
             if ($ProdResult -and $ProdResult.Enabled -ne $true) {
                 $identity = "$user\$ProdID"
                 $enableCommand = "Enable-App -Identity `"$identity`""
-                $attentionMessages += "<span><b>ℹ️ Production Add-in is Disabled:</b> Run the following command in PowerShell to re-enable it:</span> <code>$enableCommand</code>"
+                $attentionMessages += "<span><b>ℹ️ Production Add-in is Disabled:</b><br>Run this command in PowerShell to re-enable it:</span> <code>$enableCommand</code>"
             }
 
             if ($PreviewResult -and $PreviewResult.Enabled -ne $true) {
                 $identity = "$user\$PreviewID"
                 $enableCommand = "Enable-App -Identity `"$identity`""
-                $attentionMessages += "<span><b>ℹ️ Preview Add-in is Disabled:</b> Run the following command in PowerShell to re-enable it:</span><code>$enableCommand</code>"
+                $attentionMessages += "<span><b>ℹ️ Preview Add-in is Disabled:</b><br>Run this command in PowerShell to re-enable it:</span><code>$enableCommand</code>"
             }
 
             if ($attentionMessages.Count -gt 0) {
