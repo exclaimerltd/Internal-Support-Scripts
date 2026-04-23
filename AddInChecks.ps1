@@ -1210,7 +1210,7 @@ InspectClassicOutlookEncoding -userEmail $Global:userInput.Email
 
 function InspectWordFileBlocking {
     Write-Host "`n--- Word File Block Settings Check (Web Pages) ---" -ForegroundColor Yellow
-    Add-Content $FullLogFilePath "<h3>Word File Block Settings (Web Pages)</h3>"
+    # Add-Content $FullLogFilePath "<h3>Word File Block Settings (Web Pages)</h3>"
 
     $registryChecks = @(
         @{
@@ -1247,7 +1247,7 @@ foreach ($check in $registryChecks) {
 }
 
 # Build the complete section (table + messages)
-$webSection = '<div class="section">'
+$webSection = '<div class="section"><h3>Word File Block Settings (Web Pages)</h3>'
 
 if ($tableRows) {
     $webSection += '<table>' +
@@ -1589,7 +1589,7 @@ try {
             $addEwsSideNote = $false
 
             Add-Content $FullLogFilePath '<div class="section">'
-            Add-Content $FullLogFilePath '<h3>Organization Configuration - Add-in Compatibility</h3>'
+            Add-Content $FullLogFilePath '<h3>⚙️ Organization Configuration - Add-in Compatibility</h3>'
             Add-Content $FullLogFilePath '<table><tr><th>Setting</th><th>Value</th><th>Impact</th></tr>'
 
             foreach ($prop in $orgConfig.PSObject.Properties) {
@@ -1698,7 +1698,7 @@ try {
         catch {
             Write-Host "⚠️ Could not retrieve OrganizationConfig values." -ForegroundColor Yellow
             Add-Content $FullLogFilePath '<div class="section">'
-            Add-Content $FullLogFilePath '<h3>🧩 Organization Configuration - Add-in Compatibility</h3>'
+            Add-Content $FullLogFilePath '<h3>⚙️ Organization Configuration - Add-in Compatibility</h3>'
             Add-Content $FullLogFilePath '<p class="warning">Unable to retrieve organization configuration. Ensure proper Exchange Online connection and permissions.</p>'
             Add-Content $FullLogFilePath '</div>'
         }
@@ -1964,12 +1964,12 @@ try {
     }
     else {
         Add-Content $FullLogFilePath '<div class="info-after-warning"><strong>Exchange Online connection failed or cancelled by user.</strong></div>'
-        CaptureManualAddInVersion -FullLogFilePath $FullLogFilePath
+        -FullLogFilePath $FullLogFilePath
     }
 }
 else {
     Add-Content $FullLogFilePath '<div class="info-after-warning"><strong>Exchange Online module not available. Manual Add-in version collection required.</strong></div>'
-    CaptureManualAddInVersion -FullLogFilePath $FullLogFilePath
+    -FullLogFilePath $FullLogFilePath
 }
 Write-Host "`n✅ Exclaimer Add-in details collection completed." -ForegroundColor Green
 }
@@ -2138,7 +2138,7 @@ Add-Content -Path $FullLogFilePath -Value @"
 <script>
 let errorElements = document.querySelectorAll('.info-after-error');
 let currentIndex = 0;
-const scrollOffset = 250;
+const scrollOffset = 0;
 const scrollButton = document.getElementById('scrollToError');
 
 if (errorElements.length === 0) {
@@ -2146,7 +2146,28 @@ if (errorElements.length === 0) {
 } else {
     scrollButton.addEventListener('click', function() {
         const element = errorElements[currentIndex];
-        const targetY = window.scrollY + element.getBoundingClientRect().top - scrollOffset;
+        let targetElement = element;
+        // Find the nearest previous h2 or h3
+        let sibling = element.previousElementSibling;
+        while (sibling) {
+            if (sibling.tagName === 'H2' || sibling.tagName === 'H3') {
+                targetElement = sibling;
+                break;
+            }
+            sibling = sibling.previousElementSibling;
+        }
+        if (targetElement === element) {
+            // If no heading found in siblings, look up the tree
+            let parent = element.parentElement;
+            while (parent) {
+                if (parent.tagName === 'H2' || parent.tagName === 'H3') {
+                    targetElement = parent;
+                    break;
+                }
+                parent = parent.parentElement;
+            }
+        }
+        const targetY = window.scrollY + targetElement.getBoundingClientRect().top - scrollOffset;
         window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
         currentIndex = (currentIndex + 1) % errorElements.length;
     });
