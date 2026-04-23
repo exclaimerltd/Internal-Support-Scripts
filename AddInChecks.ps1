@@ -101,6 +101,23 @@ $FullLogFilePath = Join-Path $Global:FilePath $LogFile
         .info-after-success { color:#155724; background-color:#d4edda; border:1px solid #c3e6cb; border-left:4px solid #28a745; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
         .side-note { color: #555; font-size: 12px; margin-top: 5px; font-style: italic; }
         code { background-color: #f1f1f1; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #c7254e; display:inline; }
+        .floating-button {
+            position: fixed;
+            top: 35px;
+            right: 20px;
+            background-color: #d40000;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .floating-button:hover {
+            background-color: #f8aa00;
+        }
     </style>
 </head>
 <body>
@@ -935,10 +952,13 @@ Add-Content $FullLogFilePath $installedSummary
 
             $map = @{
                 # Current Channel (Preview)
-                "19725.20172"="2602";"19725.20170"="2602";"19725.20152"="2602";"19725.20126"="2602";
+                "19929.20012"="2604";
+                "19822.20142"="2603";"19822.20114"="2603";"19822.20104"="2603";"19822.20086"="2603";"19822.20050"="2603";"19822.20044"="2603";"19822.20012"="2603";
+                "19725.20126"="2602";"19725.20078"="2602";
 
                 # Current Channel
-                "19628.20214"="2601";"19628.20204"="2601";"19628.20166"="2601";"19628.20150"="2601";
+                "19822.20168"="2603";"19822.20142"="2603";"19822.20114"="2603";
+                "19725.20190"="2602";"19725.20172"="2602";"19725.20170"="2602";"19725.20152"="2602";"19725.20126"="2602";
                 "19530.20260"="2512";"19530.20226"="2512";"19530.20184"="2512";"19530.20144"="2512";"19530.20138"="2512";
                 "19426.20314"="2511";"19426.20294"="2511";"19426.20260"="2511";"19426.20218"="2511";"19426.20186"="2511";"19426.20170"="2511";
                 "19328.20306"="2510";"19328.20292"="2510";"19328.20266"="2510";"19328.20244"="2510";"19328.20232"="2510";"19328.20190"="2510";"19328.20178"="2510";"19328.20158"="2510";
@@ -2115,6 +2135,24 @@ Add-Content -Path $FullLogFilePath -Value @"
 "@
 
 @"
+<button id="scrollToError" class="floating-button">Scroll to Error</button>
+<script>
+let errorElements = document.querySelectorAll('.info-after-error');
+let currentIndex = 0;
+const scrollOffset = 250;
+const scrollButton = document.getElementById('scrollToError');
+
+if (errorElements.length === 0) {
+    scrollButton.style.display = 'none';
+} else {
+    scrollButton.addEventListener('click', function() {
+        const element = errorElements[currentIndex];
+        const targetY = window.scrollY + element.getBoundingClientRect().top - scrollOffset;
+        window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+        currentIndex = (currentIndex + 1) % errorElements.length;
+    });
+}
+</script>
 </div>
 </body>
 </html>
