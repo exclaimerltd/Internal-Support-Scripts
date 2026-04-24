@@ -520,7 +520,7 @@ function GetWindowsVersion {
     Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
 
     # --- Collect OS Info ---
-    $os      = Get-CimInstance -ClassName Win32_OperatingSystem
+    $os      = Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber, ProductType
     $caption = $os.Caption
     $version = $os.Version
     $build   = [int]$os.BuildNumber
