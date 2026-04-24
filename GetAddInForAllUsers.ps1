@@ -103,7 +103,7 @@ function Get-MailboxAddInVersions {
                 Mailbox            = $mailbox.DisplayName
                 AppVersion         = $appVersion.AppVersion
                 Enabled            = $appVersion.Enabled
-                Deployment_Method  = $appVersion.Scope
+                Deployment_Method  = $appVersion.Type
             }
         }
 
