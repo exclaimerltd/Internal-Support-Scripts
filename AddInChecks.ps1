@@ -101,9 +101,9 @@ $FullLogFilePath = Join-Path $Global:FilePath $LogFile
         .info-after-success { color:#155724; background-color:#d4edda; border:1px solid #c3e6cb; border-left:4px solid #28a745; padding:14px; border-radius:4px; font-weight:600; margin-top:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
         .side-note { color: #555; font-size: 12px; margin-top: 5px; font-style: italic; }
         code { background-color: #f1f1f1; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #c7254e; display:inline; }
-        .floating-button {
+        .floating-button-error {
             position: fixed;
-            top: 35px;
+            top: 20px;
             right: 20px;
             background-color: #d40000;
             color: white;
@@ -115,8 +115,25 @@ $FullLogFilePath = Join-Path $Global:FilePath $LogFile
             font-size: 14px;
             font-weight: 600;
         }
-        .floating-button:hover {
-            background-color: #f8aa00;
+        .floating-button-warning {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            background-color: #ffc107;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .floating-button-warning:hover {
+            background-color: #e0a800;
+        }
+        .floating-button-error:hover {
+            background-color: #a80000;
         }
     </style>
 </head>
@@ -1581,12 +1598,14 @@ try {
                 OutlookMobileGCCRestrictionsEnabled,
                 AppsForOfficeEnabled,
                 EwsApplicationAccessPolicy,
-                EwsEnabled
+                EwsEnabled,
+                EwsAllowOutlook
 
             # Initialize flags
             $addGCCSideNote = $false
             $addAppsSideNote = $false
             $addEwsSideNote = $false
+            $addEwsAllowOutlookSideNote = $false
 
             Add-Content $FullLogFilePath '<div class="section">'
             Add-Content $FullLogFilePath '<h3>⚙️ Organization Configuration - Add-in Compatibility</h3>'
@@ -1611,7 +1630,7 @@ try {
                         $impact = if (-not $rawValue) {
                             '❌ Add-ins cannot authenticate properly (modern auth disabled).'
                         } else {
-                            '✅ Required for modern add-ins.'
+                            '✅ Required for modern add-ins (OK).'
                         }
                     }
                     'OutlookMobileGCCRestrictionsEnabled' {
@@ -1627,7 +1646,7 @@ try {
                             $addAppsSideNote = $true
                             '❌ Add-ins disabled organization-wide.'
                         } else {
-                            '✅ Add-ins allowed.'
+                            '✅ Add-ins allowed/enabled.'
                         }
                     }
                     'EwsApplicationAccessPolicy' {
@@ -1644,15 +1663,29 @@ try {
                     'EwsEnabled' {
                         $impact = if ($rawValue -eq $false) {
                             $addEwsSideNote = $true
-                            '❌ EWS is disabled at org level. Add-ins and services relying on EWS will fail.'
+                            '❌ "EwsEnabled" is disabled at org level. Classic Outlook services relying on Classic Outlook will fail.'
                         } elseif ($rawValue -eq $true) {
-                            '✅ EWS is enabled.'
+                            '✅ "EwsEnabled" is enabled.'
                         } elseif ($null -eq $rawValue) {
-                            $addEwsSideNote = $true
-                            '⚠️ EWS state is NULL (not explicitly set). Recommend setting to TRUE to ensure EWS functionality.'
+                            $addEwsSideNoteWarning = $true
+                            '⚠️ "EwsEnabled" state is "NULL" (not explicitly set). Recommend setting to "TRUE" to ensure Classic Outlook functionality.'
                         } else {
                             $addEwsSideNote = $true
-                            '⚠️ Unable to determine EWS state. Review manually.'
+                            '⚠️ Unable to determine "EwsEnabled" state. Review manually.'
+                        }
+                    }
+                    'EwsAllowOutlook' {
+                        $impact = if ($rawValue -eq $false) {
+                            $addEwsAllowOutlookSideNote = $true
+                            '❌ "EwsAllowOutlook" is disabled at org level. Classic Outlook services relying on "EwsAllowOutlook" will fail.'
+                        } elseif ($rawValue -eq $true) {
+                            '✅ "EwsAllowOutlook" is enabled.'
+                        } elseif ($null -eq $rawValue) {
+                            $addEwsAllowOutlookSideNoteWarning = $true
+                            '⚠️ "EwsAllowOutlook" state is "NULL" (not explicitly set). Recommend setting to "TRUE" to ensure Classic Outlook functionality.'
+                        } else {
+                            $addEwsAllowOutlookSideNote = $true
+                            '⚠️ Unable to determine "EwsAllowOutlook" state. Review manually.'
                         }
                     }
                     Default {
@@ -1685,15 +1718,72 @@ try {
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
-            if ($addEwsSideNote) {
-                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''EwsEnabled'' is not TRUE:</b><br>Run this command in PowerShell to enable EWS: <code>Set-OrganizationConfig -EwsEnabled $true</code></span></div>' +
+            if ($addEwsSideNoteWarning) {
+                $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsEnabled'' is not explicitly set to TRUE:</b><br>' +
+                    'EWS is used by Outlook Classic (Windows) for certain add-in scenarios.<br><br>' +
+                    'When not explicitly enabled, behaviour may vary depending on mailbox configuration and could impact add-in functionality.<br><br>' +
+                    'Recommended action:<br>' +
+                    '<code>Set-OrganizationConfig -EwsEnabled $true</code><br><br>' +
+                    'Note: Mailbox-level EWS settings can still override this organization setting.' +
+                    '</span></div>' +
                     '<div class="info-after-note">' +
                         '<span>If you have reopened PowerShell, you may need to run first: ' +
                         '<code>Connect-ExchangeOnline</code></span><br><br>' +
                         '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
                     '</div>'
+
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
+
+            if ($addEwsSideNote) {
+                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''EwsEnabled'' is disabled:</b><br>' +
+                    'EWS is required for certain Outlook add-in functionality, particularly in <b>Outlook Classic (Windows)</b>.<br><br>' +
+                    'When disabled, add-ins may fail to initialise.<br><br>' +
+                    'Run this command in PowerShell to enable EWS at the organization level:<br>' +
+                    '<code>Set-OrganizationConfig -EwsEnabled $true</code><br><br>' +
+                    'Note: Mailbox-level EWS settings can still override this organization setting.' +
+                    '</span></div>' +
+                    '<div class="info-after-note">' +
+                        '<span>If you have reopened PowerShell, you may need to run first: ' +
+                        '<code>Connect-ExchangeOnline</code></span><br><br>' +
+                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
+                    '</div>'
+
+                Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
+
+            if ($addEwsAllowOutlookSideNoteWarning) {
+                $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsAllowOutlook'' is not explicitly set to TRUE:</b><br>' +
+                    'This setting controls whether Outlook clients can access EWS, particularly in <b>Outlook Classic (Windows)</b>.<br><br>' +
+                    'When not explicitly set, behaviour may depend on mailbox-level configuration and could impact add-in functionality.<br><br>' +
+                    'Recommended action:<br>' +
+                    '<code>Set-OrganizationConfig -EwsAllowOutlook $true</code><br><br>' +
+                    'Note: Mailbox-level EWS settings can still override this organization setting.' +
+                    '</span></div>' +
+                    '<div class="info-after-note">' +
+                        '<span>If you have reopened PowerShell, you may need to run first: <code>Connect-ExchangeOnline</code></span><br><br>' +
+                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
+                    '</div>'
+
+                Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
+
+            if ($addEwsAllowOutlookSideNote) {
+                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''EwsAllowOutlook'' is disabled:</b><br>' +
+                    'This setting controls whether Outlook clients can access EWS, particularly in <b>Outlook Classic (Windows)</b>.<br><br>' +
+                    'When disabled, add-ins may fail to initialise.<br><br>' +
+                    'Run this command to explicitly allow Outlook access at the organization level:<br>' +
+                    '<code>Set-OrganizationConfig -EwsAllowOutlook $true</code><br><br>' +
+                    'Note: Mailbox-level EWS settings can still override this organization setting.' +
+                    '</span></div>' +
+                    '<div class="info-after-note">' +
+                        '<span>If you have reopened PowerShell, you may need to run first: <code>Connect-ExchangeOnline</code></span><br><br>' +
+                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
+                    '</div>'
+
+                Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
+
         }
         catch {
             Write-Host "⚠️ Could not retrieve OrganizationConfig values." -ForegroundColor Yellow
@@ -1843,7 +1933,7 @@ try {
         # --- Getting Mailbox Details ---
         Write-Host "`nCollecting organization configuration related to Outlook Add-ins..." -ForegroundColor Cyan
         try {
-            $casMailbox = Get-CASMailbox -Identity $user -ErrorAction Stop | Select-Object EwsEnabled
+            $casMailbox = Get-CASMailbox -Identity $user -ErrorAction Stop | Select-Object EwsEnabled, EwsAllowOutlook
 
             $mailbox = Get-Mailbox -Identity $user -ErrorAction Stop |
                 Select-Object Name,
@@ -1855,6 +1945,7 @@ try {
 
             # Append EwsEnabled as a synthetic property
             $mailbox | Add-Member -NotePropertyName EwsEnabled -NotePropertyValue $casMailbox.EwsEnabled
+            $mailbox | Add-Member -NotePropertyName EwsAllowOutlook -NotePropertyValue $casMailbox.EwsAllowOutlook
 
             # Separator row
             Add-Content $FullLogFilePath '<table>'
@@ -1897,13 +1988,24 @@ try {
                     }
                     'EwsEnabled' {
                         $notes = if ($raw -eq $false) {
-                            '❌ EWS is disabled for this mailbox. Services relying on EWS may not function.'
+                            '❌ "EwsEnabled" is disabled for this mailbox. Services relying on "EWS" may not function.'
                         } elseif ($raw -eq $true) {
-                            '✅ EWS is enabled for this mailbox.'
+                            '✅ "EwsEnabled" is enabled for this mailbox.'
                         } elseif ($null -eq $raw) {
-                            '⚠️ EWS state is NULL (inheriting org setting). Recommend explicitly setting to TRUE if EWS is needed.'
+                            '⚠️ "EwsEnabled" state is NULL (inheriting org setting).'
                         } else {
-                            '⚠️ Unable to determine EWS mailbox state. Review manually.'
+                            '⚠️ Unable to determine "EwsEnabled" mailbox state. Review manually.'
+                        }
+                    }
+                    'EwsAllowOutlook' {
+                        $notes = if ($raw -eq $false) {
+                            '❌ "EwsAllowOutlook" is disabled for this mailbox. Services relying on "EWS" may not function.'
+                        } elseif ($raw -eq $true) {
+                            '✅ "EwsAllowOutlook" is enabled for this mailbox.'
+                        } elseif ($null -eq $raw) {
+                            '⚠️ "EwsAllowOutlook" state is NULL (inheriting org setting).'
+                        } else {
+                            '⚠️ Unable to determine "EwsAllowOutlook" mailbox state. Review manually.'
                         }
                     }
                     Default {
@@ -2134,44 +2236,58 @@ Add-Content -Path $FullLogFilePath -Value @"
 "@
 
 @"
-<button id="scrollToError" class="floating-button">Scroll to Error</button>
+<button id="scrollToWarning" class="floating-button-warning">Go to Warning</button>
+<button id="scrollToError" class="floating-button-error">Go to Error</button>
 <script>
-let errorElements = document.querySelectorAll('.info-after-error');
-let currentIndex = 0;
-const scrollOffset = 0;
-const scrollButton = document.getElementById('scrollToError');
-
-if (errorElements.length === 0) {
-    scrollButton.style.display = 'none';
-} else {
-    scrollButton.addEventListener('click', function() {
-        const element = errorElements[currentIndex];
-        let targetElement = element;
-        // Find the nearest previous h2 or h3
-        let sibling = element.previousElementSibling;
-        while (sibling) {
-            if (sibling.tagName === 'H2' || sibling.tagName === 'H3') {
-                targetElement = sibling;
-                break;
-            }
-            sibling = sibling.previousElementSibling;
-        }
-        if (targetElement === element) {
-            // If no heading found in siblings, look up the tree
-            let parent = element.parentElement;
-            while (parent) {
-                if (parent.tagName === 'H2' || parent.tagName === 'H3') {
-                    targetElement = parent;
-                    break;
-                }
-                parent = parent.parentElement;
-            }
-        }
+function initScrollButton(buttonId, elementSelector) {
+    const elements = document.querySelectorAll(elementSelector);
+    const button = document.getElementById(buttonId);
+    
+    if (elements.length === 0) {
+        button.style.display = 'none';
+        return;
+    }
+    
+    let currentIndex = 0;
+    const scrollOffset = 0;
+    
+    button.addEventListener('click', function() {
+        const element = elements[currentIndex];
+        let targetElement = findNearestHeading(element);
+        
         const targetY = window.scrollY + targetElement.getBoundingClientRect().top - scrollOffset;
         window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
-        currentIndex = (currentIndex + 1) % errorElements.length;
+        currentIndex = (currentIndex + 1) % elements.length;
     });
 }
+
+function findNearestHeading(element) {
+    // Find the nearest previous h2 or h3
+    let sibling = element.previousElementSibling;
+    while (sibling) {
+        if (sibling.tagName === 'H2' || sibling.tagName === 'H3') {
+            return sibling;
+        }
+        sibling = sibling.previousElementSibling;
+    }
+    
+    // If no heading found in siblings, look up the tree (max 10 levels)
+    let parent = element.parentElement;
+    let depth = 0;
+    while (parent && depth < 10) {
+        if (parent.tagName === 'H2' || parent.tagName === 'H3') {
+            return parent;
+        }
+        parent = parent.parentElement;
+        depth++;
+    }
+    
+    return element;
+}
+
+// Initialize both scroll buttons
+initScrollButton('scrollToWarning', '.info-after-warning');
+initScrollButton('scrollToError', '.info-after-error');
 </script>
 </div>
 </body>
