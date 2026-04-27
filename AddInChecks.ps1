@@ -103,7 +103,7 @@ $FullLogFilePath = Join-Path $Global:FilePath $LogFile
         code { background-color: #f1f1f1; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #c7254e; display:inline; }
         .floating-button-error {
             position: fixed;
-            top: 60px;
+            top: 20px;
             right: 20px;
             background-color: #d40000;
             color: white;
@@ -117,7 +117,7 @@ $FullLogFilePath = Join-Path $Global:FilePath $LogFile
         }
         .floating-button-warning {
             position: fixed;
-            top: 20px;
+            top: 60px;
             right: 20px;
             background-color: #ffc107;
             color: white;
@@ -969,7 +969,7 @@ Add-Content $FullLogFilePath $installedSummary
 
             $map = @{
                 # Current Channel (Preview)
-                "19929.20090"="2604";"19929.20012"="2604";"19822.20180"="2603";"19822.20104"="2603";"19822.20086"="2603";"19822.20050"="2603";"19822.20044"="2603";"19822.20012"="2603";
+                "19929.20090"="2604";"19929.20012"="2604";"19822.20180"="2603";"19822.20182"="2603";"19822.20104"="2603";"19822.20086"="2603";"19822.20050"="2603";"19822.20044"="2603";"19822.20012"="2603";
                 "19725.20078"="2602";"19725.20244"="2602";
 
                 # Current Channel
@@ -1073,6 +1073,23 @@ Add-Content $FullLogFilePath $installedSummary
                 Add-Content $FullLogFilePath @"
 <div class="side-note">
 While 32-bit applications can work with add-ins, they can use up a system's available virtual address space. With 64-bit apps, you have up to 128&nbsp;TB of virtual address space which the app and any add-ins running the same process can share. With 32-bit apps, you might get as little as 2&nbsp;GB of virtual address space which in many cases is not enough and can cause the app to stop responding or crash. <a href="$officeBitnessDocUrl">Microsoft Support</a>
+</div>
+"@
+            }
+
+            # Check for known issue with build 19822.20114 (Version 2603)
+            if ($officeBuild -eq "19822.20114") {
+                Write-Host "`n========== ⚠️  KNOWN ISSUE DETECTED ==========" -ForegroundColor Yellow
+                Write-Host "After updating to Version 2603 (Build 19822.20114), XML manifest addins missing from ribbon after version 2603 update." -ForegroundColor Red
+                Write-Host "`nSTATUS: For more information, see: https://support.microsoft.com/en-us/office/outlook-on-premise-exchange-web-add-ins-stopped-loading-after-updating-to-version-2603-fe1a0622-f190-4bb8-9fdb-e541591af5be" -ForegroundColor Yellow
+                Write-Host "The Outlook Team is addressing this issue with a change from the service. The change is expected to be available by end of day 4/22/26. To pick up the change, restart Outlook. It can take up to four hours for service changes to be picked up by Outlook." -ForegroundColor White
+                
+                Add-Content $FullLogFilePath @"
+<div class="info-after-warning">
+    <h3 style="color: #f57c00; margin-top: 0;">⚠️ Known Issue Detected</h3>
+    <p><strong>Issue:</strong> After updating to Version 2603 (Build 19822.20114), XML manifest addins missing from ribbon after version 2603 update.</p>
+    <p><strong>STATUS:</strong> <span style="color: green; font-weight: bold;"><a href="https://support.microsoft.com/en-us/office/outlook-on-premise-exchange-web-add-ins-stopped-loading-after-updating-to-version-2603-fe1a0622-f190-4bb8-9fdb-e541591af5be" target="_blank">Learn more about this issue</a></span></p>
+    <p>MICROSOFT: The Outlook Team is addressing this issue with a change from the service. The change is expected to be available by end of day 4/22/26. To pick up the change, restart Outlook. It can take up to four hours for service changes to be picked up by Outlook.</p>
 </div>
 "@
             }
@@ -2066,12 +2083,10 @@ try {
     }
     else {
         Add-Content $FullLogFilePath '<div class="info-after-warning"><strong>Exchange Online connection failed or cancelled by user.</strong></div>'
-        -FullLogFilePath $FullLogFilePath
     }
 }
 else {
     Add-Content $FullLogFilePath '<div class="info-after-warning"><strong>Exchange Online module not available. Manual Add-in version collection required.</strong></div>'
-    -FullLogFilePath $FullLogFilePath
 }
 Write-Host "`n✅ Exclaimer Add-in details collection completed." -ForegroundColor Green
 }
