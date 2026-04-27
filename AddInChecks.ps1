@@ -103,7 +103,7 @@ $FullLogFilePath = Join-Path $Global:FilePath $LogFile
         code { background-color: #f1f1f1; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #c7254e; display:inline; }
         .floating-button-error {
             position: fixed;
-            top: 20px;
+            top: 60px;
             right: 20px;
             background-color: #d40000;
             color: white;
@@ -117,7 +117,7 @@ $FullLogFilePath = Join-Path $Global:FilePath $LogFile
         }
         .floating-button-warning {
             position: fixed;
-            top: 60px;
+            top: 20px;
             right: 20px;
             background-color: #ffc107;
             color: white;
