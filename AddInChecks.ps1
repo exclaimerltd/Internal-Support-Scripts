@@ -1948,7 +1948,7 @@ try {
         }
 
         # --- Getting Mailbox Details ---
-        Write-Host "`nCollecting organization configuration related to Outlook Add-ins..." -ForegroundColor Cyan
+        Write-Host "`nCollecting mailbox configuration related to Outlook Add-ins..." -ForegroundColor Cyan
         try {
             $casMailbox = Get-CASMailbox -Identity $user -ErrorAction Stop | Select-Object EwsEnabled, EwsAllowOutlook
 
@@ -1965,6 +1965,7 @@ try {
             $mailbox | Add-Member -NotePropertyName EwsAllowOutlook -NotePropertyValue $casMailbox.EwsAllowOutlook
 
             # Separator row
+            Add-Content $FullLogFilePath '<h3>Mailbox configuration (Admin)</h3>'
             Add-Content $FullLogFilePath '<table>'
             Add-Content $FullLogFilePath '<tr><th colspan="6">📬 Mailbox Details</th></tr>'
             Add-Content $FullLogFilePath '<tr><th>Property</th><th colspan="2">Value</th><th colspan="3">Notes</th></tr>'
@@ -1973,6 +1974,9 @@ try {
                 $name  = [System.Web.HttpUtility]::HtmlEncode($prop.Name)
                 $raw   = $prop.Value
                 $value = if ($null -eq $raw) { 'N/A' } else { [System.Web.HttpUtility]::HtmlEncode([string]$raw) }
+                if (($prop.Name -eq 'EwsEnabled' -or $prop.Name -eq 'EwsAllowOutlook') -and $raw -eq $false) {
+                    $value = '<span style="color:red;font-weight:bold;">{0}</span>' -f $value
+                }
                 $notes = ''
 
                 switch ($prop.Name) {
@@ -2039,6 +2043,36 @@ try {
             }
 
             Add-Content $FullLogFilePath '</table>'
+
+            # EWS mailbox-level error notices
+            if ($mailbox.EwsEnabled -eq $false) {
+                $sideNote = '<div class="info-after-error"><span><b>❌ ''EwsEnabled'' is disabled on this mailbox:</b><br>' +
+                    'Services relying on EWS (including certain Outlook Classic add-in scenarios) may not function for this mailbox.<br><br>' +
+                    'Recommended action:<br>' +
+                    ('<code>Set-CASMailbox -Identity "{0}" -EwsEnabled $true</code>' -f [System.Web.HttpUtility]::HtmlEncode($user)) +
+                    '</span></div>' +
+                    '<div class="info-after-note">' +
+                        '<span>If you have reopened PowerShell, you may need to run first: ' +
+                        '<code>Connect-ExchangeOnline</code></span><br><br>' +
+                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
+                    '</div>'
+                Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
+
+            if ($mailbox.EwsAllowOutlook -eq $false) {
+                $sideNote = '<div class="info-after-error"><span><b>❌ ''EwsAllowOutlook'' is disabled on this mailbox:</b><br>' +
+                    'Outlook is blocked from using EWS against this mailbox, which can break add-in scenarios that depend on EWS.<br><br>' +
+                    'Recommended action:<br>' +
+                    ('<code>Set-CASMailbox -Identity "{0}" -EwsAllowOutlook $true</code>' -f [System.Web.HttpUtility]::HtmlEncode($user)) +
+                    '</span></div>' +
+                    '<div class="info-after-note">' +
+                        '<span>If you have reopened PowerShell, you may need to run first: ' +
+                        '<code>Connect-ExchangeOnline</code></span><br><br>' +
+                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
+                    '</div>'
+                Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
+
             # Compare UPN and Primary SMTP
                 $upn  = [string]$mailbox.UserPrincipalName
                 $smtp = [string]$mailbox.PrimarySmtpAddress
