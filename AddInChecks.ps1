@@ -2073,6 +2073,36 @@ try {
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
+            if ($null -eq $mailbox.EwsEnabled) {
+                $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsEnabled'' is not explicitly set on this mailbox:</b><br>' +
+                    'EWS is used by <b>Outlook Classic (Windows)</b> for certain add-in scenarios.<br><br>' +
+                    'When not explicitly set at mailbox level, behaviour falls back to the organization-level setting and could impact add-in functionality.<br><br>' +
+                    'Recommended action:<br>' +
+                    ('<code>Set-CASMailbox -Identity "{0}" -EwsEnabled $true</code>' -f [System.Web.HttpUtility]::HtmlEncode($user)) + '<br><br>' +
+                    'Note: Mailbox-level EWS settings override the organization setting when explicitly configured.' +
+                    '</span></div>' +
+                    '<div class="info-after-note">' +
+                        '<span>If you have reopened PowerShell, you may need to run first: <code>Connect-ExchangeOnline</code></span><br><br>' +
+                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
+                    '</div>'
+                Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
+
+            if ($null -eq $mailbox.EwsAllowOutlook) {
+                $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsAllowOutlook'' is not explicitly set on this mailbox:</b><br>' +
+                    'This setting controls whether Outlook clients can access EWS, particularly in <b>Outlook Classic (Windows)</b>.<br><br>' +
+                    'When not explicitly set at mailbox level, behaviour falls back to the organization-level setting and could impact add-in functionality.<br><br>' +
+                    'Recommended action:<br>' +
+                    ('<code>Set-CASMailbox -Identity "{0}" -EwsAllowOutlook $true</code>' -f [System.Web.HttpUtility]::HtmlEncode($user)) + '<br><br>' +
+                    'Note: Mailbox-level EWS settings override the organization setting when explicitly configured.' +
+                    '</span></div>' +
+                    '<div class="info-after-note">' +
+                        '<span>If you have reopened PowerShell, you may need to run first: <code>Connect-ExchangeOnline</code></span><br><br>' +
+                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
+                    '</div>'
+                Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
+
             # Compare UPN and Primary SMTP
                 $upn  = [string]$mailbox.UserPrincipalName
                 $smtp = [string]$mailbox.PrimarySmtpAddress
