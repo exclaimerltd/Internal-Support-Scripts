@@ -69,7 +69,7 @@ function checkExchangeOnlineModule {
     else {
         [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
         [System.Windows.MessageBox]::Show('ExchangeOnlineManagement module not installed, will attempt to install it now...', 'ExchangeOnlineExclaimerCheck', 'OK', 'Information')
-        Install-Module ExchangeOnlineManagement
+        Install-Module -Name ExchangeOnlineManagement -RequiredVersion 3.6.0 -Force
     }
 }
 
