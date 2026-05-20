@@ -163,28 +163,33 @@ $AddCode = $null
 #Declaring Group Policy deployment keys to be removed
 $GPRegKey = @(
 )
-#Searching for User-specific Group Policy deployments
-$SearchUGP1 = Get-ChildItem -path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt"
-$SearchUGP2 = $SearchUGP1 | ForEach-Object {
-Get-ItemProperty -path Registry::$psitem | Where-Object {$_."Deployment Name" -clike "*Cloud Signature Update Agent*"} | Select-Object PSPath
+# Searching for User-specific Group Policy deployments
+if (Test-Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt") {
+    $SearchUGP1 = Get-ChildItem -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt"
+    $SearchUGP2 = $SearchUGP1 | ForEach-Object {
+        Get-ItemProperty -Path Registry::$psitem | Where-Object {$_."Deployment Name" -clike "*Cloud Signature Update Agent*"} | Select-Object PSPath
+    }
+    $SearchUGP3 = $SearchUGP2 -replace ".*{", "{" -replace "}}", "}"
+    # Adding User-specific Group Policy IDs to array
+    ForEach ($SearchUGP in $SearchUGP3) { $GPRegKey += "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt\$SearchUGP" }
+    $SearchUGP1 = $null
+    $SearchUGP2 = $null
+    $SearchUGP3 = $null
 }
-$SearchUGP3 = $SearchUGP2 -replace".*{", "{" -replace "}}", "}"
-#Adding User-specific Group Policy IDs to array
-ForEach ($SearchUGP in $SearchUGP3) { $GPRegKey += "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt\$SearchUGP"}
-$SearchUGP1 = $null
-$SearchUGP2 = $null
-$SearchUGP3 = $null
-#Searching for machine-specific Group Policy deployments
-$SearchMGP1 = Get-ChildItem -path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt"
-$SearchMGP2 = $SearchMGP1 | ForEach-Object {
-Get-ItemProperty -path Registry::$psitem | Where-Object {$_."Deployment Name" -clike "*Cloud Signature Update Agent*"} | Select-Object PSPath
+
+# Searching for machine-specific Group Policy deployments
+if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt") {
+    $SearchMGP1 = Get-ChildItem -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt"
+    $SearchMGP2 = $SearchMGP1 | ForEach-Object {
+        Get-ItemProperty -Path Registry::$psitem | Where-Object {$_."Deployment Name" -clike "*Cloud Signature Update Agent*"} | Select-Object PSPath
+    }
+    $SearchMGP3 = $SearchMGP2 -replace ".*{", "{" -replace "}}", "}"
+    # Adding machine-specific Group Policy IDs to array
+    ForEach ($SearchMGP in $SearchMGP3) { $GPRegKey += "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt\$SearchMGP" }
+    $SearchMGP1 = $null
+    $SearchMGP2 = $null
+    $SearchMGP3 = $null
 }
-$SearchMGP3 = $SearchMGP2 -replace".*{", "{" -replace "}}", "}"
-#Adding machine-specific Group Policy IDs to array
-ForEach ($SearchMGP in $SearchMGP3) { $GPRegKey += "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Appmgmt\$SearchMGP"}
-$SearchMGP1 = $null
-$SearchMGP2 = $null
-$SearchMGP3 = $null
 #Declaring Product ID-specific registry keys to be removed
     $CSUAPIDSRegKey = $CSUAProdID | foreach-object {
     "HKCR:\Installer\Features\$PSItem"
