@@ -3,9 +3,9 @@ $LogPath = "C:\Temp\NetworkTest_$logTimeStamp.txt"
 $Target = "8.8.8.8"
 
 $DomainsToCheck = @(
-    @{ Host = "au.outlooksignatures.exclaimer.net"; Port = 443 },
+    @{ Host = "eu.outlooksignatures.exclaimer.net"; Port = 443 },
     @{ Host = "outlookclient.exclaimer.net";        Port = 443 },
-    @{ Host = "login.microsoftonline.com";         Port = 443 }  # NOTE: trailing 's' - verify if intentional
+    @{ Host = "login.microsoftonline.com";         Port = 443 }
 )
 
 if (!(Test-Path "C:\Temp")) {
@@ -17,7 +17,7 @@ $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 Write-Host "Running: Check $LogPath" -ForegroundColor Yellow
 
-$maxAttempts = 200  # Set to 0 to run indefinitely)
+$maxAttempts = 200   # NOTE: Set to 0 to run indefinitely
 $iterationCounter = 0
 
 while ($true) {
@@ -172,5 +172,5 @@ while ($true) {
         break
     }
 
-    Start-Sleep -Seconds 5
+    Start-Sleep -Seconds 10 # NOTE: Interval in seconds between checks
 }
