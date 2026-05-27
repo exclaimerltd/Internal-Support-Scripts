@@ -17,7 +17,7 @@ $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 Write-Host "Running: Check $LogPath" -ForegroundColor Yellow
 
-$maxAttempts = 200   # NOTE: Set to 0 to run indefinitely
+$maxAttempts = 400   # NOTE: Set to 0 to run indefinitely
 $iterationCounter = 0
 
 while ($true) {
