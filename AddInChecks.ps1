@@ -2378,7 +2378,10 @@ function GetFirewallLogs {
         $Global:destination = $destination
     }
 }
-GetFirewallLogs
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+    GetFirewallLogs
+}
+
 
 function GetSupportSubmissionInstructions {
     Write-Host "`n========== Support Submission Instructions ==========" -ForegroundColor Cyan
@@ -2401,12 +2404,15 @@ function GetSupportSubmissionInstructions {
     Add-Content $FullLogFilePath (
         "<tr><td><strong>Diagnostic report</strong></td><td>{0}</td></tr>" -f $FullLogFilePath
     )
-    Add-Content $FullLogFilePath (
-        "<tr><td><strong>Firewall log</strong></td><td>{0}</td></tr>" -f $Global:destination
-    )
+    
+    if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+        Add-Content $FullLogFilePath (
+            "<tr><td><strong>Windows Firewall log</strong></td><td>{0}</td></tr>" -f ($Global:destination -or 'Not collected')
+        )
+    }
 
     Add-Content $FullLogFilePath '</table>'
-    Add-Content $FullLogFilePath '<p>Please attach listed files above when contacting the support team so they can review the collected data.</p>'
+    Add-Content $FullLogFilePath '<p>Please attach listed file(s) above when contacting the support team so they can review the collected data.</p>'
     Add-Content $FullLogFilePath '</div>'
 }
 GetSupportSubmissionInstructions
