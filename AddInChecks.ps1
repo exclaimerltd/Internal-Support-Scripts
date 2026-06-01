@@ -227,6 +227,8 @@ function Get-ExclaimerUserInput {
             Email           = $null
             UsersAffected   = $null
             OutlookAffected = $null
+            OSVersion       = $null
+            OutlookVersion  = $null
             Network         = $null
         }
 
@@ -286,18 +288,64 @@ function Get-ExclaimerUserInput {
                 Write-Host "  1) Classic Outlook (Windows)"
                 Write-Host "  2) New Outlook (Windows)"
                 Write-Host "  3) Outlook on Web (OWA)"
-                Write-Host "  4) Outlook Mobile"
-                Write-Host "  5) Multiple / All"
-                $oChoice = Read-Host "`nEnter choice (1-5)"
-            } while ($oChoice -notmatch '^[1-5]$')
+                Write-Host "  4) Outlook iOS"
+                Write-Host "  5) Outlook Android"
+                Write-Host "  6) New Outlook on MacOS"
+                Write-Host "  7) Multiple / All"
+                $oChoice = Read-Host "`nEnter choice (1-7)"
+            } while ($oChoice -notmatch '^[1-7]$')
 
             switch ($oChoice) {
                 1 { $Global:userInput.OutlookAffected = 'Classic Outlook' }
                 2 { $Global:userInput.OutlookAffected = 'New Outlook' }
                 3 { $Global:userInput.OutlookAffected = 'Outlook Web' }
-                4 { $Global:userInput.OutlookAffected = 'Outlook Mobile' }
-                5 { $Global:userInput.OutlookAffected = 'Multiple / All' }
+                4 { $Global:userInput.OutlookAffected = 'Outlook iOS' }
+                5 { $Global:userInput.OutlookAffected = 'Outlook Android' }
+                6 { $Global:userInput.OutlookAffected = 'New Outlook on MacOS' }
+                7 { $Global:userInput.OutlookAffected = 'Multiple / All' }
             }
+
+            # --- Version capture for non-Windows platforms ---
+            Clear-Host
+            switch ($oChoice) {
+                3 {
+                    # OWA — browser name/version
+                    Write-Host "`nOWA — Browser details" -ForegroundColor Cyan
+                    Write-Host "  Open the affected browser and go to its About page to find the version."
+                    Write-Host "  e.g. Chrome: Menu > Help > About Google Chrome"
+                    $Global:userInput.OSVersion     = Read-Host "`nBrowser name and version (e.g. Chrome 125.0.6422.112)"
+                    $Global:userInput.OutlookVersion = Read-Host "Outlook Web build shown in OWA (top-right ? > About, or press Enter to skip)"
+                }
+                4 {
+                    # iOS
+                    Write-Host "`nOutlook iOS — device details" -ForegroundColor Cyan
+                    Write-Host "  iOS version:     Settings > General > About > iOS Version"
+                    Write-Host "  Outlook version: Settings > General > About (within Outlook app)"
+                    $Global:userInput.OSVersion      = Read-Host "`niOS version (e.g. 18.4.1)"
+                    $Global:userInput.OutlookVersion = Read-Host "Outlook for iOS version (e.g. 4.2559.0)"
+                }
+                5 {
+                    # Android
+                    Write-Host "`nOutlook Android — device details" -ForegroundColor Cyan
+                    Write-Host "  Android version: Settings > About phone > Software information > Android version"
+                    Write-Host "  Outlook version: Outlook app > Settings > Help & Feedback > About"
+                    $Global:userInput.OSVersion      = Read-Host "`nAndroid version (e.g. 14)"
+                    $Global:userInput.OutlookVersion = Read-Host "Outlook for Android version (e.g. 4.2559.0)"
+                }
+                6 {
+                    # macOS
+                    Write-Host "`nOutlook on macOS — device details" -ForegroundColor Cyan
+                    Write-Host "  macOS version:   Apple menu > About This Mac"
+                    Write-Host "  Outlook version: Outlook menu > About Microsoft Outlook"
+                    $Global:userInput.OSVersion      = Read-Host "`nmacOS version (e.g. Sequoia 15.4.1)"
+                    $Global:userInput.OutlookVersion = Read-Host "Outlook for Mac version (e.g. 16.96.2)"
+                }
+            }
+
+            if ($Global:userInput.OSVersion)      { $Global:userInput.OSVersion      = $Global:userInput.OSVersion.Trim() }
+            if ($Global:userInput.OutlookVersion) { $Global:userInput.OutlookVersion = $Global:userInput.OutlookVersion.Trim() }
+            if ([string]::IsNullOrWhiteSpace($Global:userInput.OSVersion))      { $Global:userInput.OSVersion      = 'Not provided' }
+            if ([string]::IsNullOrWhiteSpace($Global:userInput.OutlookVersion)) { $Global:userInput.OutlookVersion = 'Not provided' }
 
             # Network scope
             do {
@@ -329,6 +377,10 @@ function Get-ExclaimerUserInput {
         if ($Global:userInput.Purpose -eq 'Troubleshooting') {
             Write-Host ("Users Affected:   {0}" -f $Global:userInput.UsersAffected) -ForegroundColor White
             Write-Host ("Outlook Affected: {0}" -f $Global:userInput.OutlookAffected) -ForegroundColor White
+            if ($oChoice -in @('3','4','5','6')) {
+                Write-Host ("OS / Browser:     {0}" -f $Global:userInput.OSVersion) -ForegroundColor White
+                Write-Host ("Outlook Version:  {0}" -f $Global:userInput.OutlookVersion) -ForegroundColor White
+            }
             Write-Host ("Network Scope:    {0}" -f $Global:userInput.Network) -ForegroundColor White
         }
 
@@ -340,7 +392,7 @@ function Get-ExclaimerUserInput {
         } while ($confirm -notin @('Y','N'))
 
         if ($confirm -eq 'Y') {
-            # ✅ Write to HTML log *only once, after confirmation*
+            # Write to HTML log only once, after confirmation
             Add-Content $FullLogFilePath "<div class='section'>"
             Add-Content $FullLogFilePath "<h2>🧾 User Input Summary</h2>"
             Add-Content $FullLogFilePath "<table>"
@@ -350,6 +402,10 @@ function Get-ExclaimerUserInput {
             if ($Global:userInput.Purpose -eq 'Troubleshooting') {
                 Add-Content $FullLogFilePath "<tr><td><strong>Users Affected:</strong></td><td>$($Global:userInput.UsersAffected)</td></tr>"
                 Add-Content $FullLogFilePath "<tr><td><strong>Outlook Affected:</strong></td><td>$($Global:userInput.OutlookAffected)</td></tr>"
+                if ($oChoice -in @('3','4','5','6')) {
+                    Add-Content $FullLogFilePath "<tr><td><strong>OS / Browser Version:</strong></td><td>$($Global:userInput.OSVersion)</td></tr>"
+                    Add-Content $FullLogFilePath "<tr><td><strong>Outlook Version:</strong></td><td>$($Global:userInput.OutlookVersion)</td></tr>"
+                }
                 Add-Content $FullLogFilePath "<tr><td><strong>Network Scope:</strong></td><td>$($Global:userInput.Network)</td></tr>"
             }
 
@@ -587,7 +643,10 @@ function GetWindowsVersion {
     Add-Content $FullLogFilePath '</table>'
     Add-Content $FullLogFilePath '</div>'
 }
-GetWindowsVersion
+# Only run Windows-specific checks if affected platform is Classic or New Outlook
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+    GetWindowsVersion
+}
 
 function GetWindowsNetworkDetails {
     Write-Host "`n========== Network Connection Details ==========" -ForegroundColor Cyan
@@ -680,7 +739,9 @@ function GetWindowsNetworkDetails {
     Add-Content $FullLogFilePath '</table>'
     Add-Content $FullLogFilePath '</div>'
 }
-GetWindowsNetworkDetails
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+    GetWindowsNetworkDetails
+}
 
 function InspectOutlookConfiguration {
     # -------------------------------
@@ -1120,7 +1181,9 @@ While 32-bit applications can work with add-ins, they can use up a system's avai
     }
     
 }
-InspectOutlookConfiguration
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+    InspectOutlookConfiguration
+}
 
 # --- Check Classic Outlook Encoding Configuration ---
 # Build function to search user hives
@@ -1261,8 +1324,11 @@ function InspectClassicOutlookEncoding {
         Add-Content $FullLogFilePath "<p class='warning'>⚠️ User hive selection was skipped. Encoding configuration could not be retrieved.</p>"
     }
 }
-# Call the function with the user's email
-InspectClassicOutlookEncoding -userEmail $Global:userInput.Email
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+    # Call the function with the user's email
+    InspectClassicOutlookEncoding -userEmail $Global:userInput.Email
+}
+
 
 function InspectWordFileBlocking {
     Write-Host "`n--- Word File Block Settings Check (Web Pages) ---" -ForegroundColor Yellow
@@ -1361,7 +1427,9 @@ else {
 $webSection += '</div>'
 Add-Content -Path $FullLogFilePath -Value $webSection
 }
-InspectWordFileBlocking
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+    InspectWordFileBlocking
+}
 
 function InspectExclaimerCloudSignatureAgent {
     # Define registry paths to search
@@ -1487,7 +1555,10 @@ function InspectExclaimerCloudSignatureAgent {
             }
         }
     }
-InspectExclaimerCloudSignatureAgent
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+    InspectExclaimerCloudSignatureAgent
+}
+
 
 function InspectWebView2Runtime {
 Write-Host "`n========== Microsoft Edge WebView2 Runtime ==========" -ForegroundColor Cyan
@@ -1541,7 +1612,9 @@ Write-Host "`n========== Microsoft Edge WebView2 Runtime ==========" -Foreground
         Add-Content $FullLogFilePath "<p class='warning'>Microsoft Edge WebView2 Runtime is not installed.</p>"
     }
 }
-InspectWebView2Runtime
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+    InspectWebView2Runtime
+}
 
 # -------------------------------------------------------------------
 # 📨 EXCLAIMER ADD-IN DETAILS COLLECTION (User or Admin)
