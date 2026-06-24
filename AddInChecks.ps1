@@ -160,6 +160,13 @@ function ConfirmElevationStatus {
     $currentUser = ($fullUser -split '\\')[-1]
     Write-Host "Current script runner: $currentUser`n" -ForegroundColor Cyan
 
+    # Get installed ExchangeOnlineManagement module version
+    $exchangeModule = Get-Module -ListAvailable -Name ExchangeOnlineManagement |
+                      Sort-Object Version -Descending |
+                      Select-Object -First 1
+    $exchangeModuleVersion = if ($exchangeModule) { $exchangeModule.Version.ToString() } else { "Not installed" }
+    Write-Host "ExchangeOnlineManagement module version: $exchangeModuleVersion`n" -ForegroundColor Cyan
+
     $isAdmin = ([Security.Principal.WindowsPrincipal] `
         [Security.Principal.WindowsIdentity]::GetCurrent()
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -181,6 +188,7 @@ function ConfirmElevationStatus {
             Add-Content $FullLogFilePath '<div class="section">'
             Add-Content $FullLogFilePath '<h2>🔐 Script Permission Check</h2>'
             Add-Content $FullLogFilePath "<p title=`"The user running the script in PowerShell.`"><strong>User:</strong> $currentUser</p>"
+            Add-Content $FullLogFilePath "<p><strong>ExchangeOnlineManagement Version:</strong> $exchangeModuleVersion</p>"
             Add-Content $FullLogFilePath '<p><strong>Status:</strong> Script stopped. User chose not to continue without Administrator privileges.</p>'
             Add-Content $FullLogFilePath '</div>'
 
@@ -199,11 +207,13 @@ function ConfirmElevationStatus {
     if ($isAdmin) {
         Add-Content $FullLogFilePath "<tr><td><strong>Windows User</strong></td><td title=`"The user that running the script in PowerShell.`">$currentUser</td></tr>"
         Add-Content $FullLogFilePath '<tr><td><strong>Administrator privileges</strong></td><td>Yes</td></tr>'
+        Add-Content $FullLogFilePath "<tr><td><strong>ExchangeOnlineManagement Version</strong></td><td title=`"The version of the ExchangeOnlineManagement module available on this machine.`">$exchangeModuleVersion</td></tr>"
         Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>All diagnostics can be collected.</td></tr>'
     }
     else {
         Add-Content $FullLogFilePath "<tr><td><strong>Windows User</strong></td><td title=`"The user that running the script in PowerShell.`">$currentUser</td></tr>"
         Add-Content $FullLogFilePath '<tr><td><strong>Administrator privileges</strong></td><td style="color:#F5A627;font-weight:bold;">No</td></tr>'
+        Add-Content $FullLogFilePath "<tr><td><strong>ExchangeOnlineManagement Version</strong></td><td title=`"The version of the ExchangeOnlineManagement module available on this machine.`">$exchangeModuleVersion</td></tr>"
         Add-Content $FullLogFilePath '<tr><td><strong>Impact</strong></td><td>Some diagnostics (firewall, networking, system-level logs) were skipped or limited.</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>User decision</strong></td><td>User chose to continue without elevation.</td></tr>'
         Add-Content $FullLogFilePath '<tr><td><strong>Recommendation</strong></td><td>Re-run the script using Run as administrator if requested by support.</td></tr>'
@@ -1707,7 +1717,7 @@ function ConnectExchangeOnlineSession {
         Write-Host "`n🔗 Connecting to Exchange Online..." -ForegroundColor Cyan
         Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
         Import-Module ExchangeOnlineManagement -Force -ErrorAction Stop
-        Start-Sleep -Seconds 5
+        Start-Sleep -Seconds 3
         Connect-ExchangeOnline -ErrorAction Stop
         Write-Host "✅ Connected successfully!" -ForegroundColor Green
         return $true
