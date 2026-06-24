@@ -1640,77 +1640,53 @@ if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Ou
 
 # --- Function: Check for Exchange Online Module ---
 function CheckExchangeOnlineModule {
-    $allowedVersions = @([Version]"3.6.0", [Version]"3.9.0")
-    $installVersion  = "3.9.0"
+    if (Get-Module -ListAvailable -Name ExchangeOnlineManagement) {
+        Write-Host "✅ Exchange Online Management module is already installed." -ForegroundColor Green
+        return $true
+    } else {
+        Write-Host "⚙️  Exchange Online Management module not found." -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "ℹ️  The installation requires the NuGet provider and PowerShell Gallery access." -ForegroundColor Cyan
+        Write-Host "    You may see prompts asking to install NuGet or trust the PowerShell Gallery — please answer 'Y' when prompted." -ForegroundColor Cyan
+        Write-Host ""
 
-    $installedModule = Get-Module -ListAvailable -Name ExchangeOnlineManagement |
-                       Sort-Object Version -Descending |
-                       Select-Object -First 1
+        $installChoice = Read-Host "Would you like to install it now? (Y/N)"
+        if ($installChoice.ToUpper() -eq "Y") {
+            try {
+                Write-Host "`n📦 Preparing to install prerequisites..." -ForegroundColor Cyan
 
-    if ($installedModule) {
-        if ($installedModule.Version -in $allowedVersions) {
-            Write-Host "✅ Exchange Online Management module v$($installedModule.Version) is already installed." -ForegroundColor Green
-            return $true
-        } elseif ($installedModule.Version -gt ($allowedVersions | Sort-Object -Descending | Select-Object -First 1)) {
-            Write-Host "⚠️  Exchange Online Management module v$($installedModule.Version) is installed, but a supported version (3.6.0 or 3.9.0) is required due to a known sign-in issue on later versions." -ForegroundColor Yellow
-            Write-Host ""
+                # --- Ensure NuGet provider is installed ---
+                if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+                    Write-Host "🔧 Installing NuGet provider..." -ForegroundColor Cyan
+                    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false | Out-Null
+                }
 
-            $downgradeChoice = Read-Host "Would you like to install v$installVersion alongside it now? (Y/N)"
-            if ($downgradeChoice.ToUpper() -ne "Y") {
-                Write-Host "⚠️ Skipping. The script may fail to authenticate with the installed version." -ForegroundColor Yellow
-                Add-Content $FullLogFilePath "<p class='warning'>User skipped ExchangeOnlineManagement version fix. Installed: v$($installedModule.Version). Supported: 3.6.0 or 3.9.0. Authentication may fail.</p>"
+                # --- Ensure PowerShell Gallery is trusted ---
+                $galleryTrusted = (Get-PSRepository -Name 'PSGallery' -ErrorAction SilentlyContinue).InstallationPolicy
+                if ($galleryTrusted -ne 'Trusted') {
+                    Write-Host "🔒 Trusting PowerShell Gallery repository..." -ForegroundColor Cyan
+                    Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+                }
+
+                # --- Install pinned version to avoid known sign-in issue on later versions ---
+                Write-Host "📦 Installing Exchange Online Management module v3.6.0..." -ForegroundColor Cyan
+                Install-Module ExchangeOnlineManagement -RequiredVersion 3.6.0 -Force -Scope CurrentUser -AllowClobber
+
+                Write-Host "✅ Installation completed successfully!" -ForegroundColor Green
+                return $true
+
+            } catch {
+                Write-Host "❌ Failed to install the module: $($_.Exception.Message)" -ForegroundColor Red
+                Add-Content $FullLogFilePath "<p class='warning'>Exchange Online Management module installation failed: $([System.Web.HttpUtility]::HtmlEncode($_.Exception.Message))</p>"
                 return $false
             }
         } else {
-            # Older than both allowed versions — fall through to install
-            Write-Host "⚠️  Exchange Online Management module v$($installedModule.Version) is installed, but a supported version (3.6.0 or 3.9.0) is required." -ForegroundColor Yellow
-        }
-    } else {
-        Write-Host "⚙️  Exchange Online Management module not found." -ForegroundColor Yellow
-    }
-
-    Write-Host ""
-    Write-Host "ℹ️  The installation requires the NuGet provider and PowerShell Gallery access." -ForegroundColor Cyan
-    Write-Host "    You may see prompts asking to install NuGet or trust the PowerShell Gallery — please answer 'Y' when prompted." -ForegroundColor Cyan
-    Write-Host ""
-
-    $installChoice = Read-Host "Would you like to install v$installVersion now? (Y/N)"
-    if ($installChoice.ToUpper() -eq "Y") {
-        try {
-            Write-Host "`n📦 Preparing to install prerequisites..." -ForegroundColor Cyan
-
-            # --- Ensure NuGet provider is installed ---
-            if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-                Write-Host "🔧 Installing NuGet provider..." -ForegroundColor Cyan
-                Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false | Out-Null
-            }
-
-            # --- Ensure PowerShell Gallery is trusted ---
-            $galleryTrusted = (Get-PSRepository -Name 'PSGallery' -ErrorAction SilentlyContinue).InstallationPolicy
-            if ($galleryTrusted -ne 'Trusted') {
-                Write-Host "🔒 Trusting PowerShell Gallery repository..." -ForegroundColor Cyan
-                Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
-            }
-
-            # --- Install the supported version ---
-            Write-Host "📦 Installing Exchange Online Management module v$installVersion..." -ForegroundColor Cyan
-            Install-Module ExchangeOnlineManagement -RequiredVersion $installVersion -Force -Scope CurrentUser -AllowClobber
-
-            Write-Host "✅ Installation completed successfully!" -ForegroundColor Green
-            return $true
-
-        } catch {
-            Write-Host "❌ Failed to install the module: $($_.Exception.Message)" -ForegroundColor Red
-            Add-Content $FullLogFilePath "<p class='warning'>Exchange Online Management module installation failed: $([System.Web.HttpUtility]::HtmlEncode($_.Exception.Message))</p>"
+            Write-Host "⚠️ Skipping module installation. Admin access required for automated mailbox queries." -ForegroundColor Yellow
+            Add-Content $FullLogFilePath "<p class='warning'>User skipped Exchange Online module installation. Manual Add-in version collection required.</p>"
             return $false
         }
-    } else {
-        Write-Host "⚠️ Skipping module installation. Admin access required for automated mailbox queries." -ForegroundColor Yellow
-        Add-Content $FullLogFilePath "<p class='warning'>User skipped Exchange Online module installation. Manual Add-in version collection required.</p>"
-        return $false
     }
 }
-
 # --- Function: Connect to Exchange Online ---
 function ConnectExchangeOnlineSession {
     try {
