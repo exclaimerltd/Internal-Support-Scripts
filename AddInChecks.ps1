@@ -1689,16 +1689,46 @@ function CheckExchangeOnlineModule {
 }
 # --- Function: Connect to Exchange Online ---
 function ConnectExchangeOnlineSession {
+    Write-Host "`n🔗 Connecting to Exchange Online..." -ForegroundColor Cyan
+    Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
+
+    Add-Content $FullLogFilePath '<div class="section">'
+    Add-Content $FullLogFilePath '<h2>🔗 Exchange Online Connection</h2>'
+    Add-Content $FullLogFilePath '<table>'
+    Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
+
     try {
-        Write-Host "`n🔗 Connecting to Exchange Online..." -ForegroundColor Cyan
-        Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
         Import-Module ExchangeOnlineManagement -Force -ErrorAction Stop
         Start-Sleep -Seconds 3
         Connect-ExchangeOnline -ErrorAction Stop
+
         Write-Host "✅ Connected successfully!" -ForegroundColor Green
+
+        Add-Content $FullLogFilePath '<tr><td><strong>Status</strong></td><td><span class="success">✅ Connected successfully</span></td></tr>'
+        Add-Content $FullLogFilePath '</table>'
+        Add-Content $FullLogFilePath '</div>'
+
         return $true
+
     } catch {
-        Write-Host "❌ Connection failed: $($_.Exception.Message)" -ForegroundColor Red
+        $errorMessage = $_.Exception.Message
+        $errorType    = $_.Exception.GetType().FullName
+        $errorStack   = $_.ScriptStackTrace
+
+        Write-Host "❌ Connection failed: $errorMessage" -ForegroundColor Red
+
+        Add-Content $FullLogFilePath '<tr><td><strong>Status</strong></td><td><span class="fail">❌ Connection failed</span></td></tr>'
+        Add-Content $FullLogFilePath "<tr><td><strong>Error Type</strong></td><td>$([System.Web.HttpUtility]::HtmlEncode($errorType))</td></tr>"
+        Add-Content $FullLogFilePath '</table>'
+        Add-Content $FullLogFilePath '<div class="info-after-error"><strong>❌ Exchange Online connection failed.</strong> The error details are below:</div>'        
+        Add-Content $FullLogFilePath '</div>'
+        Add-Content $FullLogFilePath '<pre style="background-color:#f1f1f1; padding:12px; border-radius:4px; border-left:4px solid #c7254e; overflow-x:auto; font-size:13px;">'
+        Add-Content $FullLogFilePath "$([System.Web.HttpUtility]::HtmlEncode($errorMessage))"
+        Add-Content $FullLogFilePath ""
+        Add-Content $FullLogFilePath "Stack Trace:"
+        Add-Content $FullLogFilePath "$([System.Web.HttpUtility]::HtmlEncode($errorStack))"
+        Add-Content $FullLogFilePath '</pre>'
+
         return $false
     }
 }
@@ -1908,13 +1938,45 @@ try {
             }
 
         }
-        catch {
-            Write-Host "⚠️ Could not retrieve OrganizationConfig values." -ForegroundColor Yellow
-            Add-Content $FullLogFilePath '<div class="section">'
-            Add-Content $FullLogFilePath '<h3>⚙️ Organization Configuration - Add-in Compatibility</h3>'
-            Add-Content $FullLogFilePath '<p class="warning">Unable to retrieve organization configuration. Ensure proper Exchange Online connection and permissions.</p>'
-            Add-Content $FullLogFilePath '</div>'
+    catch {
+        $errorMessage = $_.Exception.Message
+        $errorType    = $_.Exception.GetType().FullName
+
+        Write-Host "⚠️ Could not retrieve OrganizationConfig values." -ForegroundColor Yellow
+        Write-Host "   Error: $errorMessage" -ForegroundColor Red
+
+        # Determine likely cause for a more actionable message
+        $likelyCause = ''
+        $remediation = ''
+
+        if ($errorMessage -match 'Access is denied|Unauthorized|insufficient access|not authorized|permissions') {
+            $likelyCause = 'The signed-in account does not have sufficient permissions to retrieve organization configuration. Global Administrator or Exchange Administrator role is required.'
+            $remediation = 'Sign in with a Global Administrator or Exchange Administrator account and re-run the script.'
+        } elseif ($errorMessage -match 'sign.?in|authentication|token|credential|AADSTS|MFA|multi.?factor') {
+            $likelyCause = 'Authentication failed or was cancelled. The session may have timed out or MFA was not completed.'
+            $remediation = 'Re-run the script and complete the sign-in prompt fully, including any MFA challenge.'
+        } elseif ($errorMessage -match 'not connected|pipeline|Connect-ExchangeOnline|no active session') {
+            $likelyCause = 'No active Exchange Online session was found. The connection may have dropped or was never established.'
+            $remediation = 'Re-run the script to establish a new Exchange Online session.'
+        } else {
+            $likelyCause = 'An unexpected error occurred while retrieving organization configuration.'
+            $remediation = 'Check the error details below and ensure the account has the correct permissions and an active Exchange Online session.'
         }
+
+        Add-Content $FullLogFilePath '<div class="section">'
+        Add-Content $FullLogFilePath '<h3>⚙️ Organization Configuration - Add-in Compatibility</h3>'
+        Add-Content $FullLogFilePath '<table>'
+        Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
+        Add-Content $FullLogFilePath '<tr><td><strong>Status</strong></td><td><span class="fail">❌ Failed to retrieve organization configuration</span></td></tr>'
+        Add-Content $FullLogFilePath "<tr><td><strong>Likely Cause</strong></td><td>$([System.Web.HttpUtility]::HtmlEncode($likelyCause))</td></tr>"
+        Add-Content $FullLogFilePath "<tr><td><strong>Error Type</strong></td><td>$([System.Web.HttpUtility]::HtmlEncode($errorType))</td></tr>"
+        Add-Content $FullLogFilePath '</table>'
+        Add-Content $FullLogFilePath "<div class='info-after-error'><strong>Recommended action:</strong> $([System.Web.HttpUtility]::HtmlEncode($remediation))</div>"
+        Add-Content $FullLogFilePath '<pre style="background-color:#f1f1f1; padding:12px; border-radius:4px; border-left:4px solid #c7254e; overflow-x:auto; font-size:13px;">'
+        Add-Content $FullLogFilePath "$([System.Web.HttpUtility]::HtmlEncode($errorMessage))"
+        Add-Content $FullLogFilePath '</pre>'
+        Add-Content $FullLogFilePath '</div>'
+    }
 
         Write-Host "`n🎯 Querying Exclaimer Add-in deployment..." -ForegroundColor Cyan
         $ProdID = "efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
