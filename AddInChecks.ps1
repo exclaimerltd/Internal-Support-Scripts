@@ -291,18 +291,20 @@ function Get-ExclaimerUserInput {
                 Write-Host "  4) Outlook iOS"
                 Write-Host "  5) Outlook Android"
                 Write-Host "  6) New Outlook on MacOS"
-                Write-Host "  7) Multiple / All"
-                $oChoice = Read-Host "`nEnter choice (1-7)"
-            } while ($oChoice -notmatch '^[1-7]$')
+                Write-Host "  7) Outlook Web (MacOS)"
+                Write-Host "  8) Multiple / All"
+                $oChoice = Read-Host "`nEnter choice (1-8)"
+            } while ($oChoice -notmatch '^[1-8]$')
 
             switch ($oChoice) {
                 1 { $Global:userInput.OutlookAffected = 'Classic Outlook' }
-                2 { $Global:userInput.OutlookAffected = 'New Outlook' }
-                3 { $Global:userInput.OutlookAffected = 'Outlook Web' }
+                2 { $Global:userInput.OutlookAffected = 'New Outlook (Windows)' }
+                3 { $Global:userInput.OutlookAffected = 'Outlook Web (Windows)' }
                 4 { $Global:userInput.OutlookAffected = 'Outlook iOS' }
                 5 { $Global:userInput.OutlookAffected = 'Outlook Android' }
                 6 { $Global:userInput.OutlookAffected = 'New Outlook on MacOS' }
-                7 { $Global:userInput.OutlookAffected = 'Multiple / All' }
+                7 { $Global:userInput.OutlookAffected = 'Outlook Web (MacOS)' }
+                8 { $Global:userInput.OutlookAffected = 'Multiple / All' }
             }
 
             # --- Version capture for non-Windows platforms ---
@@ -377,7 +379,7 @@ function Get-ExclaimerUserInput {
         if ($Global:userInput.Purpose -eq 'Troubleshooting') {
             Write-Host ("Users Affected:   {0}" -f $Global:userInput.UsersAffected) -ForegroundColor White
             Write-Host ("Outlook Affected: {0}" -f $Global:userInput.OutlookAffected) -ForegroundColor White
-            if ($oChoice -in @('3','4','5','6')) {
+            if ($oChoice -in @('3','4','5','6','7','8')) {
                 Write-Host ("OS / Browser:     {0}" -f $Global:userInput.OSVersion) -ForegroundColor White
                 Write-Host ("Outlook Version:  {0}" -f $Global:userInput.OutlookVersion) -ForegroundColor White
             }
@@ -402,7 +404,7 @@ function Get-ExclaimerUserInput {
             if ($Global:userInput.Purpose -eq 'Troubleshooting') {
                 Add-Content $FullLogFilePath "<tr><td><strong>Users Affected:</strong></td><td>$($Global:userInput.UsersAffected)</td></tr>"
                 Add-Content $FullLogFilePath "<tr><td><strong>Outlook Affected:</strong></td><td>$($Global:userInput.OutlookAffected)</td></tr>"
-                if ($oChoice -in @('3','4','5','6')) {
+                if ($oChoice -in @('3','4','5','6','7','8')) {
                     Add-Content $FullLogFilePath "<tr><td><strong>OS / Browser Version:</strong></td><td>$($Global:userInput.OSVersion)</td></tr>"
                     Add-Content $FullLogFilePath "<tr><td><strong>Outlook Version:</strong></td><td>$($Global:userInput.OutlookVersion)</td></tr>"
                 }
@@ -644,7 +646,7 @@ function GetWindowsVersion {
     Add-Content $FullLogFilePath '</div>'
 }
 # Only run Windows-specific checks if affected platform is Classic or New Outlook
-if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)','Outlook Web (Windows)','Multiple / All')) {
     GetWindowsVersion
 }
 
@@ -739,7 +741,7 @@ function GetWindowsNetworkDetails {
     Add-Content $FullLogFilePath '</table>'
     Add-Content $FullLogFilePath '</div>'
 }
-if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)','Outlook Web (Windows)','Multiple / All')) {
     GetWindowsNetworkDetails
 }
 
@@ -1181,7 +1183,7 @@ While 32-bit applications can work with add-ins, they can use up a system's avai
     }
     
 }
-if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)','Outlook Web (Windows)','Multiple / All')) {
     InspectOutlookConfiguration
 }
 
@@ -1324,7 +1326,7 @@ function InspectClassicOutlookEncoding {
         Add-Content $FullLogFilePath "<p class='warning'>⚠️ User hive selection was skipped. Encoding configuration could not be retrieved.</p>"
     }
 }
-if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)','Outlook Web (Windows)','Multiple / All')) {
     # Call the function with the user's email
     InspectClassicOutlookEncoding -userEmail $Global:userInput.Email
 }
@@ -1427,7 +1429,7 @@ else {
 $webSection += '</div>'
 Add-Content -Path $FullLogFilePath -Value $webSection
 }
-if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)','Outlook Web (Windows)','Multiple / All')) {
     InspectWordFileBlocking
 }
 
@@ -1555,7 +1557,7 @@ function InspectExclaimerCloudSignatureAgent {
             }
         }
     }
-if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)','Outlook Web (Windows)','Multiple / All')) {
     InspectExclaimerCloudSignatureAgent
 }
 
@@ -1612,7 +1614,7 @@ Write-Host "`n========== Microsoft Edge WebView2 Runtime ==========" -Foreground
         Add-Content $FullLogFilePath "<p class='warning'>Microsoft Edge WebView2 Runtime is not installed.</p>"
     }
 }
-if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)','Outlook Web (Windows)','Multiple / All')) {
     InspectWebView2Runtime
 }
 
@@ -2378,7 +2380,7 @@ function GetFirewallLogs {
         $Global:destination = $destination
     }
 }
-if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)','Outlook Web (Windows)','Multiple / All')) {
     GetFirewallLogs
 }
 
@@ -2405,7 +2407,7 @@ function GetSupportSubmissionInstructions {
         "<tr><td><strong>Diagnostic report</strong></td><td>{0}</td></tr>" -f $FullLogFilePath
     )
     
-    if ($Global:userInput.OutlookAffected -in @('Classic Outlook', 'New Outlook','Outlook Web')) {
+    if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)','Outlook Web (Windows)','Multiple / All')) {
         Add-Content $FullLogFilePath (
             "<tr><td><strong>Windows Firewall log</strong></td><td>{0}</td></tr>" -f ($Global:destination -or 'Not collected')
         )
