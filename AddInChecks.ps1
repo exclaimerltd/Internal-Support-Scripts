@@ -21,7 +21,7 @@
 #     - Network ability to test endpoints on port 443
 #
 # .VERSION
-#     1.1.0
+#     1.1.5
 #         - Collects Windows version details
 #         - Collects Outlook installation and version details
 #         - Checks for Exclaimer Cloud Add-in presence and version
