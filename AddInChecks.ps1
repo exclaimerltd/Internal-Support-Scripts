@@ -1511,58 +1511,143 @@ function InspectExclaimerCloudSignatureAgent {
     # Remove the extra </div> since we now close properly
     # Add-Content $FullLogFilePath "</div>"
 
-            # Checking for existing local signatures
-        $baseSignaturePath = [System.IO.Path]::Combine($env:APPDATA, "Microsoft")
-        $possibleFolders = @("Signatures", "Handtekeningen")
-        $signaturePath = $null
+        # Checking for existing local signatures
+        $emailUser = $Global:userInput.Email.Split('@')[0]
+        $resolvedProfilePath = $null
+        $resolvedProfileName = $null
 
-        foreach ($folder in $possibleFolders) {
-            $fullPath = Join-Path $baseSignaturePath $folder
-            if (Test-Path $fullPath) {
-                $signaturePath = $fullPath
+        # Strategy 1: direct folder name match under C:\Users
+        foreach ($profileFolder in (Get-ChildItem -Path "C:\Users" -Directory -ErrorAction SilentlyContinue)) {
+            if ($profileFolder.Name -ieq $emailUser) {
+                $resolvedProfilePath = Join-Path $profileFolder.FullName "AppData\Roaming\Microsoft"
+                $resolvedProfileName = $profileFolder.Name
                 break
             }
         }
 
-        if ($signaturePath) {
-            $htmFiles = Get-ChildItem -Path $signaturePath -Filter *.htm -File -ErrorAction SilentlyContinue
-
-            if ($htmFiles.Count -gt 0) {
-                # Console output
-                Write-Host "`n--- Local Outlook Signatures Found ---" -ForegroundColor Yellow
-                $signatureData = $htmFiles | ForEach-Object {
-                    $content = Get-Content -Path $_.FullName -Raw -ErrorAction SilentlyContinue
-                    $hasRemialSans = ($content -match "remialcxesans")
-                    $exclaimerUsed = if ($hasRemialSans) { "Yes" } else { "No" }
-
-                    # Output to console
-                    [PSCustomObject]@{
-                        Name         = $_.BaseName
-                        DateModified = $_.LastWriteTime
-                        Exclaimer    = $exclaimerUsed
+        # Strategy 2: WMI SID resolution if no direct match
+        if (-not $resolvedProfilePath) {
+            foreach ($userProfile in (Get-CimInstance Win32_UserProfile -ErrorAction SilentlyContinue)) {
+                try {
+                    $localUser = (New-Object System.Security.Principal.SecurityIdentifier($userProfile.SID))
+                        .Translate([System.Security.Principal.NTAccount]).Value.Split('\')[-1]
+                    if ($localUser -ieq $emailUser) {
+                        $resolvedProfilePath = Join-Path $userProfile.LocalPath "AppData\Roaming\Microsoft"
+                        $resolvedProfileName = $localUser
+                        break
                     }
-                }
+                } catch { }
+            }
+        }
 
-                $signatureData | Format-Table -AutoSize
+        # Strategy 3: no match — list all profiles and ask the technician to pick
+        if (-not $resolvedProfilePath) {
+            $allProfiles = Get-ChildItem -Path "C:\Users" -Directory -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -notin @('Public', 'Default', 'Default User', 'All Users') }
 
-                # HTML output
+            if ($allProfiles.Count -eq 0) {
+                Write-Host "No local user profiles found." -ForegroundColor Yellow
                 Add-Content $FullLogFilePath '<div class="section">'
                 Add-Content $FullLogFilePath "<h3>Local Outlook Signatures</h3>"
-                Add-Content $FullLogFilePath "<table><tr><th>Name</th><th>Date Modified</th><th>Exclaimer Signature</th></tr>"
-
-                foreach ($sig in $signatureData) {
-                    $sigRow = "<tr><td>$($sig.Name)</td><td>$($sig.DateModified)</td><td>$($sig.Exclaimer)</td></tr>"
-                    Add-Content $FullLogFilePath $sigRow
-                }
-
-                Add-Content $FullLogFilePath "</table>"
+                Add-Content $FullLogFilePath "<table><tr><th>Status</th><th>Details</th></tr><tr><td class='warning'>No Profiles Found</td><td>⚠️ No local user profiles found on this machine.</td></tr></table>"
                 Add-Content $FullLogFilePath "</div>"
+            }
+            else {
+                Write-Host "`nCould not automatically match '$emailUser' to a local profile." -ForegroundColor Yellow
+                Write-Host "Available profiles:" -ForegroundColor Cyan
+                $i = 1
+                foreach ($p in $allProfiles) {
+                    Write-Host "  $i) $($p.Name)" -ForegroundColor Cyan
+                    $i++
+                }
+                Write-Host "  0) Skip signature check" -ForegroundColor Cyan
 
+                $validRange = 0..($allProfiles.Count)
+                do {
+                    $selection = Read-Host "`nWhich profile belongs to $($Global:userInput.Email)? Enter number"
+                } while ($selection -notmatch '^\d+$' -or [int]$selection -notin $validRange)
+
+                if ([int]$selection -eq 0) {
+                    Write-Host "Signature check skipped." -ForegroundColor DarkGray
+                    Add-Content $FullLogFilePath '<div class="section">'
+                    Add-Content $FullLogFilePath "<h3>Local Outlook Signatures</h3>"
+                    Add-Content $FullLogFilePath "<table><tr><th>Status</th><th>Details</th></tr><tr><td class='warning'>Skipped</td><td>⚠️ Technician skipped signature check — could not match '$emailUser' to a local profile.</td></tr></table>"
+                    Add-Content $FullLogFilePath "</div>"
+                } else {
+                    $chosen = $allProfiles[[int]$selection - 1]
+                    $resolvedProfilePath = Join-Path $chosen.FullName "AppData\Roaming\Microsoft"
+                    $resolvedProfileName = $chosen.Name
+                    Write-Host "Using profile: $($chosen.Name)" -ForegroundColor Green
+                }
+            }
+        }
+
+        if ($resolvedProfilePath) {
+            Write-Host "Checking signatures for profile: $resolvedProfileName" -ForegroundColor Cyan
+
+            $possibleFolders = @("Signatures", "Handtekeningen")
+            $signaturePath = $null
+
+            foreach ($folder in $possibleFolders) {
+                $fullPath = Join-Path $resolvedProfilePath $folder
+                if (Test-Path $fullPath) {
+                    $signaturePath = $fullPath
+                    break
+                }
+            }
+
+            if ($signaturePath) {
+                $htmFiles = Get-ChildItem -Path $signaturePath -Filter *.htm -File -ErrorAction SilentlyContinue
+
+                if ($htmFiles.Count -gt 0) {
+                    # Console output
+                    Write-Host "`n--- Local Outlook Signatures Found ---" -ForegroundColor Yellow
+                    $signatureData = $htmFiles | ForEach-Object {
+                        $content = Get-Content -Path $_.FullName -Raw -ErrorAction SilentlyContinue
+                        $hasRemialSans = ($content -match "remialcxesans")
+                        $exclaimerUsed = if ($hasRemialSans) { "Yes" } else { "No" }
+
+                        [PSCustomObject]@{
+                            Name         = $_.BaseName
+                            DateModified = $_.LastWriteTime
+                            Exclaimer    = $exclaimerUsed
+                        }
+                    }
+
+                    $signatureData | Format-Table -AutoSize
+
+                    # HTML output
+                    Add-Content $FullLogFilePath '<div class="section">'
+                    Add-Content $FullLogFilePath "<h3>Local Outlook Signatures</h3>"
+                    Add-Content $FullLogFilePath "<table><tr><th>Name</th><th>Date Modified</th><th>Exclaimer Signature</th></tr>"
+                    Add-Content $FullLogFilePath "<tr><td colspan='3'><strong>Profile:</strong> $resolvedProfileName</td></tr>"
+
+                    foreach ($sig in $signatureData) {
+                        $sigRow = "<tr><td>$($sig.Name)</td><td>$($sig.DateModified)</td><td>$($sig.Exclaimer)</td></tr>"
+                        Add-Content $FullLogFilePath $sigRow
+                    }
+
+                    Add-Content $FullLogFilePath "</table>"
+                    Add-Content $FullLogFilePath "</div>"
+
+                } else {
+                    Write-Host "`nNo .htm signature files found in $signaturePath" -ForegroundColor DarkGray
+                    Add-Content $FullLogFilePath '<div class="section">'
+                    Add-Content $FullLogFilePath "<h3>Local Outlook Signatures</h3>"
+                    Add-Content $FullLogFilePath "<table><tr><th>Status</th><th>Details</th></tr>"
+                    Add-Content $FullLogFilePath "<tr><td class='warning'>Profile Checked</td><td>$resolvedProfileName</td></tr>"
+                    Add-Content $FullLogFilePath "<tr><td class='success'>No Signatures Found</td><td>✅ No local signature files found in $signaturePath</td></tr>"
+                    Add-Content $FullLogFilePath "</table>"
+                    Add-Content $FullLogFilePath "</div>"
+                }
             } else {
-                Write-Host "`nNo .htm signature files found in $signaturePath" -ForegroundColor DarkGray
+                Write-Host "`nNo Signatures folder found under $resolvedProfilePath" -ForegroundColor DarkGray
                 Add-Content $FullLogFilePath '<div class="section">'
                 Add-Content $FullLogFilePath "<h3>Local Outlook Signatures</h3>"
-                Add-Content $FullLogFilePath "<table><tr><th>Status</th><th>Details</th></tr><tr><td class='success'>No Signatures Found</td><td>✅ No local signature files found in $signaturePath</td></tr></table>"
+                Add-Content $FullLogFilePath "<table><tr><th>Status</th><th>Details</th></tr>"
+                Add-Content $FullLogFilePath "<tr><td class='warning'>Profile Checked</td><td>$resolvedProfileName</td></tr>"
+                Add-Content $FullLogFilePath "<tr><td class='success'>No Signatures Folder</td><td>✅ No local Signatures folder found for this profile.</td></tr>"
+                Add-Content $FullLogFilePath "</table>"
                 Add-Content $FullLogFilePath "</div>"
             }
         }
@@ -1689,46 +1774,16 @@ function CheckExchangeOnlineModule {
 }
 # --- Function: Connect to Exchange Online ---
 function ConnectExchangeOnlineSession {
-    Write-Host "`n🔗 Connecting to Exchange Online..." -ForegroundColor Cyan
-    Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
-
-    Add-Content $FullLogFilePath '<div class="section">'
-    Add-Content $FullLogFilePath '<h2>🔗 Exchange Online Connection</h2>'
-    Add-Content $FullLogFilePath '<table>'
-    Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
-
     try {
+        Write-Host "`n🔗 Connecting to Exchange Online..." -ForegroundColor Cyan
+        Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
         Import-Module ExchangeOnlineManagement -Force -ErrorAction Stop
         Start-Sleep -Seconds 3
         Connect-ExchangeOnline -ErrorAction Stop
-
         Write-Host "✅ Connected successfully!" -ForegroundColor Green
-
-        Add-Content $FullLogFilePath '<tr><td><strong>Status</strong></td><td><span class="success">✅ Connected successfully</span></td></tr>'
-        Add-Content $FullLogFilePath '</table>'
-        Add-Content $FullLogFilePath '</div>'
-
         return $true
-
     } catch {
-        $errorMessage = $_.Exception.Message
-        $errorType    = $_.Exception.GetType().FullName
-        $errorStack   = $_.ScriptStackTrace
-
-        Write-Host "❌ Connection failed: $errorMessage" -ForegroundColor Red
-
-        Add-Content $FullLogFilePath '<tr><td><strong>Status</strong></td><td><span class="fail">❌ Connection failed</span></td></tr>'
-        Add-Content $FullLogFilePath "<tr><td><strong>Error Type</strong></td><td>$([System.Web.HttpUtility]::HtmlEncode($errorType))</td></tr>"
-        Add-Content $FullLogFilePath '</table>'
-        Add-Content $FullLogFilePath '<div class="info-after-error"><strong>❌ Exchange Online connection failed.</strong> The error details are below:</div>'        
-        Add-Content $FullLogFilePath '</div>'
-        Add-Content $FullLogFilePath '<pre style="background-color:#f1f1f1; padding:12px; border-radius:4px; border-left:4px solid #c7254e; overflow-x:auto; font-size:13px;">'
-        Add-Content $FullLogFilePath "$([System.Web.HttpUtility]::HtmlEncode($errorMessage))"
-        Add-Content $FullLogFilePath ""
-        Add-Content $FullLogFilePath "Stack Trace:"
-        Add-Content $FullLogFilePath "$([System.Web.HttpUtility]::HtmlEncode($errorStack))"
-        Add-Content $FullLogFilePath '</pre>'
-
+        Write-Host "❌ Connection failed: $($_.Exception.Message)" -ForegroundColor Red
         return $false
     }
 }
@@ -1938,45 +1993,13 @@ try {
             }
 
         }
-    catch {
-        $errorMessage = $_.Exception.Message
-        $errorType    = $_.Exception.GetType().FullName
-
-        Write-Host "⚠️ Could not retrieve OrganizationConfig values." -ForegroundColor Yellow
-        Write-Host "   Error: $errorMessage" -ForegroundColor Red
-
-        # Determine likely cause for a more actionable message
-        $likelyCause = ''
-        $remediation = ''
-
-        if ($errorMessage -match 'Access is denied|Unauthorized|insufficient access|not authorized|permissions') {
-            $likelyCause = 'The signed-in account does not have sufficient permissions to retrieve organization configuration. Global Administrator or Exchange Administrator role is required.'
-            $remediation = 'Sign in with a Global Administrator or Exchange Administrator account and re-run the script.'
-        } elseif ($errorMessage -match 'sign.?in|authentication|token|credential|AADSTS|MFA|multi.?factor') {
-            $likelyCause = 'Authentication failed or was cancelled. The session may have timed out or MFA was not completed.'
-            $remediation = 'Re-run the script and complete the sign-in prompt fully, including any MFA challenge.'
-        } elseif ($errorMessage -match 'not connected|pipeline|Connect-ExchangeOnline|no active session') {
-            $likelyCause = 'No active Exchange Online session was found. The connection may have dropped or was never established.'
-            $remediation = 'Re-run the script to establish a new Exchange Online session.'
-        } else {
-            $likelyCause = 'An unexpected error occurred while retrieving organization configuration.'
-            $remediation = 'Check the error details below and ensure the account has the correct permissions and an active Exchange Online session.'
+        catch {
+            Write-Host "⚠️ Could not retrieve OrganizationConfig values." -ForegroundColor Yellow
+            Add-Content $FullLogFilePath '<div class="section">'
+            Add-Content $FullLogFilePath '<h3>⚙️ Organization Configuration - Add-in Compatibility</h3>'
+            Add-Content $FullLogFilePath '<p class="warning">Unable to retrieve organization configuration. Ensure proper Exchange Online connection and permissions.</p>'
+            Add-Content $FullLogFilePath '</div>'
         }
-
-        Add-Content $FullLogFilePath '<div class="section">'
-        Add-Content $FullLogFilePath '<h3>⚙️ Organization Configuration - Add-in Compatibility</h3>'
-        Add-Content $FullLogFilePath '<table>'
-        Add-Content $FullLogFilePath '<tr><th>Property</th><th>Value</th></tr>'
-        Add-Content $FullLogFilePath '<tr><td><strong>Status</strong></td><td><span class="fail">❌ Failed to retrieve organization configuration</span></td></tr>'
-        Add-Content $FullLogFilePath "<tr><td><strong>Likely Cause</strong></td><td>$([System.Web.HttpUtility]::HtmlEncode($likelyCause))</td></tr>"
-        Add-Content $FullLogFilePath "<tr><td><strong>Error Type</strong></td><td>$([System.Web.HttpUtility]::HtmlEncode($errorType))</td></tr>"
-        Add-Content $FullLogFilePath '</table>'
-        Add-Content $FullLogFilePath "<div class='info-after-error'><strong>Recommended action:</strong> $([System.Web.HttpUtility]::HtmlEncode($remediation))</div>"
-        Add-Content $FullLogFilePath '<pre style="background-color:#f1f1f1; padding:12px; border-radius:4px; border-left:4px solid #c7254e; overflow-x:auto; font-size:13px;">'
-        Add-Content $FullLogFilePath "$([System.Web.HttpUtility]::HtmlEncode($errorMessage))"
-        Add-Content $FullLogFilePath '</pre>'
-        Add-Content $FullLogFilePath '</div>'
-    }
 
         Write-Host "`n🎯 Querying Exclaimer Add-in deployment..." -ForegroundColor Cyan
         $ProdID = "efc30400-2ac5-48b7-8c9b-c0fd5f266be2"
