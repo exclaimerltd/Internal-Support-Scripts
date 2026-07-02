@@ -46,7 +46,7 @@ if ($VerboseLogging) {
 }
 
 # Function to check and install required module
-function Ensure-ModuleInstalled {
+function Ensure_ModuleInstalled {
     if (-not (Get-Module -ListAvailable -Name ExchangeOnlineManagement)) {
         Write-Host "`nThe required 'ExchangeOnlineManagement' Module is NOT installed" -ForegroundColor Red
         $installMsModule = Read-Host "Do you want to install the required 'ExchangeOnlineManagement' Module? Y/n"
@@ -68,7 +68,7 @@ function Ensure-ModuleInstalled {
 }
 
 # Function to connect to Exchange Online
-function Connect-ExchangeSession {
+function Connect_ExchangeSession {
     try {
         $getsessions = Get-PSSession | Select-Object -Property State, Name
         $session = (@($getsessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*').Count -gt 0
@@ -86,38 +86,80 @@ function Connect-ExchangeSession {
 }
 
 # Function to gather mailbox add-in versions
-function Get-MailboxAddInVersions {
+function Get_MailboxAddInVersions {
     $results = @()
-    try {
-        $mailboxes = Get-Mailbox -ResultSize Unlimited | Where-Object { $_.AccountDisabled -eq $false }
+    $errors  = @()
 
-        Write-Host "`nGathering information, please wait..........." -ForegroundColor Green
-        Write-Host "`nNote:" -ForegroundColor Red
-        Write-Host "Some mailboxes may not list an Add-in, you should try again after the specific mailbox has logged on to 'https://outlook.office.com/'...`n" -ForegroundColor Yellow
+    try {
+        $mailboxes = Get-Mailbox -ResultSize Unlimited |
+                     Where-Object { $_.AccountDisabled -eq $false }
+
+        $total   = $mailboxes.Count
+        $counter = 0
+
+        Write-Host "`nProcessing $total mailboxes..." -ForegroundColor Green
 
         foreach ($mailbox in $mailboxes) {
-            $appIdentity = ($mailbox.UserPrincipalName -split "@")[0] + "\" + $AddInID
-            $appVersion = Get-App -Identity $appIdentity -ErrorAction SilentlyContinue
+            $counter++
+            Write-Progress -Activity "Checking Add-in versions" `
+                           -Status "$counter of $total : $($mailbox.UserPrincipalName)" `
+                           -PercentComplete (($counter / $total) * 100)
+
+            # Use full UPN, not just the local-part
+            $appIdentity = "$($mailbox.UserPrincipalName)\$AddInID"
+            $appVersion  = $null
+            $errorMsg    = $null
+
+            try {
+                $appVersion = Get-App -Identity $appIdentity -ErrorAction Stop
+            } catch {
+                $errorMsg = $_.Exception.Message
+                $errors  += [pscustomobject]@{
+                    Mailbox = $mailbox.DisplayName
+                    UPN     = $mailbox.UserPrincipalName
+                    Error   = $errorMsg
+                }
+            }
 
             $results += [pscustomobject]@{
-                Mailbox            = $mailbox.DisplayName
-                AppVersion         = $appVersion.AppVersion
-                Enabled            = $appVersion.Enabled
-                Deployment_Method  = $appVersion.Type
+                Mailbox           = $mailbox.DisplayName
+                UPN               = $mailbox.UserPrincipalName  # added for traceability
+                AppVersion        = $appVersion.AppVersion
+                Enabled           = $appVersion.Enabled
+                Deployment_Method = $appVersion.Type
+                Error             = $errorMsg                   # visible in CSV
             }
         }
 
-        # Export results
+        Write-Progress -Activity "Checking Add-in versions" -Completed
+
         $results | Export-Csv -Path $CsvFilePath -NoTypeInformation
-        Write-Host "Output saved to $CsvFilePath" -ForegroundColor Green
+        Write-Host "Output saved to: $CsvFilePath" -ForegroundColor Green
+
+        # Summary
+        $successCount = ($results | Where-Object { $null -ne $_.AppVersion }).Count
+        $emptyCount   = ($results | Where-Object { $null -eq $_.AppVersion -and $null -eq $_.Error }).Count
+        $errorCount   = $errors.Count
+
+        Write-Host "`n--- Summary ---" -ForegroundColor Cyan
+        Write-Host "Total mailboxes : $total"
+        Write-Host "With add-in     : $successCount" -ForegroundColor Green
+        Write-Host "No add-in found : $emptyCount"   -ForegroundColor Yellow
+        Write-Host "Errors          : $errorCount"   -ForegroundColor Red
+
+        if ($errors.Count -gt 0) {
+            $errorCsvPath = $CsvFilePath -replace '\.csv$', '_errors.csv'
+            $errors | Export-Csv -Path $errorCsvPath -NoTypeInformation
+            Write-Host "Error details   : $errorCsvPath" -ForegroundColor Red
+        }
 
     } catch {
-        Write-Host "Failed to retrieve mailbox information. Error: $_" -ForegroundColor Red
+        Write-Host "Fatal error retrieving mailbox list. Error: $_" -ForegroundColor Red
     }
 }
 
 # Function to end the session
-function End-ExchangeSession {
+function End_ExchangeSession {
     try {
         Disconnect-ExchangeOnline -Confirm:$false
         Write-Host "Disconnected from Exchange Online." -ForegroundColor Green
@@ -127,16 +169,16 @@ function End-ExchangeSession {
 }
 
 # Open output directory
-function Open-OutputDir {
+function Open_OutputDir {
     Start-Process $OutputPath
 }
 
 # Main execution
-Ensure-ModuleInstalled
-Connect-ExchangeSession
-Get-MailboxAddInVersions
-End-ExchangeSession
-Open-OutputDir
+Ensure_ModuleInstalled
+Connect_ExchangeSession
+Get_MailboxAddInVersions
+End_ExchangeSession
+Open_OutputDir
 
 if ($VerboseLogging) {
     Stop-Transcript
