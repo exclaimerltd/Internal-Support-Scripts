@@ -20,8 +20,7 @@
     1.2 - Added allowed ip list update
     2.0 - Removal of previous configuration
 #>
-$Global:scriptVersion = "'1.25.1209'"
-Add-Type -AssemblyName PresentationFramework
+$Global:scriptVersion = "'1.26.1407'"
 #Getting Exchange Online Module
 function confirmExclaimerSupportApproval {
     Write-Host ""
