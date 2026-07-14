@@ -1669,8 +1669,11 @@ function CheckExchangeOnlineModule {
                 }
 
                 # --- Install pinned version to avoid known sign-in issue on later versions ---
-                Write-Host "📦 Installing Exchange Online Management module v3.6.0..." -ForegroundColor Cyan
-                Install-Module ExchangeOnlineManagement -RequiredVersion 3.6.0 -Force -Scope CurrentUser -AllowClobber
+                Write-Host "📦 Installing Exchange Online Management module v3.9.0..." -ForegroundColor Cyan
+                Install-Module ExchangeOnlineManagement -RequiredVersion 3.9.0 -Force -Scope CurrentUser -AllowClobber
+
+                Write-Host "📥 Importing Exchange Online Management module..." -ForegroundColor Cyan
+                Import-Module ExchangeOnlineManagement -RequiredVersion 3.9.0 -Force
 
                 Write-Host "✅ Installation completed successfully!" -ForegroundColor Green
                 return $true
