@@ -79,11 +79,67 @@ function confirmExclaimerSupportApproval {
         }
     }
 
-function modernAuthConnect {    
-    Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
-    Start-Sleep -Seconds 3
+function modernAuthConnect {
     Import-Module ExchangeOnlineManagement
-    Connect-ExchangeOnline
+    $connections = Get-ConnectionInformation
+    if ($connections.Count -gt 1) {
+        Write-Host "⚠️  Multiple Exchange sessions detected. Disconnecting..." -ForegroundColor Yellow
+        Disconnect-ExchangeOnline -Confirm:$false
+        $connections = $null
+    }
+    if (-not $connections) {
+        Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
+        Start-Sleep -Seconds 3
+        Connect-ExchangeOnline
+    } else {
+        $connectedAs = [string]($connections | Select-Object -First 1 -ExpandProperty UserPrincipalName)
+        Write-Host ""
+        Write-Host "✅ Already connected as: $connectedAs" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "   Y: Continue with this session." -ForegroundColor Cyan
+        Write-Host "   N: Disconnect and sign in as a different account." -ForegroundColor Cyan
+        Write-Host ""
+        $confirm = Read-Host "Is this the correct account? (Y/N)"
+        if ($confirm.ToUpper() -ne "Y") {
+            Write-Host "   Disconnecting current session..." -ForegroundColor Yellow
+            Disconnect-ExchangeOnline -Confirm:$false
+            Write-Host "   You will be prompted to Sign in with Microsoft in order to continue." -ForegroundColor Yellow
+            Start-Sleep -Seconds 3
+            Connect-ExchangeOnline
+        } else {
+            Write-Host "✅ Continuing with existing session." -ForegroundColor Green
+        }
+    }
+}
+
+function checkExchangePermissions {
+    Write-Host "`nChecking Exchange permissions..." -ForegroundColor Cyan
+    $requiredRoles = @("Transport Rules", "Organization Configuration", "Transport Hygiene", "View-Only Recipients")
+    $me = [string](Get-ConnectionInformation | Select-Object -First 1 -ExpandProperty UserPrincipalName)
+    $myGuid = [string](Get-User -Identity $me -ErrorAction SilentlyContinue).ExternalDirectoryObjectId
+    Write-Host "   Connected as: $me" -ForegroundColor Cyan
+    if (-not (Get-Command Get-ManagementRoleAssignment -ErrorAction SilentlyContinue)) {
+        Write-Host "⚠️ Exchange cmdlets unavailable. Attempting to reimport module..." -ForegroundColor Yellow
+        Import-Module ExchangeOnlineManagement -Force -ErrorAction SilentlyContinue
+        if (-not (Get-Command Get-ManagementRoleAssignment -ErrorAction SilentlyContinue)) {
+            Write-Host "❌ Exchange permissions check failed." -ForegroundColor Red
+            $requiredRoles | ForEach-Object { Write-Host "   Missing role: $_" -ForegroundColor Red }
+            Write-Host "   Please ensure the account holds the Organization Management role group or equivalent." -ForegroundColor Yellow
+            Start-Sleep -Seconds 3
+            exit
+        }
+    }
+    $allRoles = (Get-ManagementRoleAssignment -GetEffectiveUsers -Delegating $false -ErrorAction SilentlyContinue 2>$null | Where-Object { $_.EffectiveUserName -eq $myGuid -or $_.EffectiveUserName -eq $me }).Role | Select-Object -Unique
+    $missing = $requiredRoles | Where-Object { $_ -notin $allRoles }
+    if ($missing) {
+        Write-Host "❌ Exchange permissions check failed." -ForegroundColor Red
+        $missing | ForEach-Object { Write-Host "   Missing role: $_" -ForegroundColor Red }
+        Write-Host "   Please ensure the account holds the Organization Management role group or equivalent." -ForegroundColor Yellow
+        Start-Sleep -Seconds 3
+        exit
+    }
+    Write-Host "✅ Exchange permissions check passed." -ForegroundColor Green
+    Start-Sleep -Seconds 3
 }
 
 function remove_previous {
@@ -412,9 +468,31 @@ function showExclaimerCompletionNotice {
     }
 }
 
+function confirmExchangeOnPremisesEnabled {
+    Write-Host ""
+    Write-Host "MANUAL STEP REQUIRED" -ForegroundColor Yellow
+    Write-Host "   This script bypasses the Exclaimer Portal Mail Flow configuration." -ForegroundColor Cyan
+    Write-Host "   To enable Server-Side signatures, Exchange On-Premises must be manually enabled:" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "   1. Log into the Exclaimer Portal and launch your subscription." -ForegroundColor White
+    Write-Host "   2. Select the cogwheel icon in the header bar." -ForegroundColor White
+    Write-Host "   3. Select 'Exchange On-Premises'." -ForegroundColor White
+    Write-Host "   4. Confirm the Exchange On-Premises toggle is enabled." -ForegroundColor White
+    Write-Host ""
+    Write-Host "   Reference: https://support.exclaimer.com/hc/en-gb/articles/360019876838" -ForegroundColor White
+    Write-Host ""
+    $confirm = Read-Host "Confirm Exchange On-Premises is enabled in the Exclaimer Portal (Y/N)"
+    if ($confirm.ToUpper() -ne "Y") {
+        Write-Host "⚠️  Server-Side signatures will not function until Exchange On-Premises is enabled in the Exclaimer Portal." -ForegroundColor Yellow
+    } else {
+        Write-Host "✅ Exchange On-Premises confirmed enabled. Server-Side signatures are ready." -ForegroundColor Green
+    }
+}
+
 confirmExclaimerSupportApproval
 checkExchangeOnlineModule
 modernAuthConnect
+checkExchangePermissions
 $details = getConfigDetails
 if (-not $details) {
     Write-Host "Script stopped. No changes made." -ForegroundColor Yellow
@@ -424,4 +502,5 @@ remove_previous
 configure_exclaimer_connectors -Details $details
 transport_rules_create -Details $details
 allowed_ips -Details $details
+confirmExchangeOnPremisesEnabled
 showExclaimerCompletionNotice
