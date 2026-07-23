@@ -1126,6 +1126,7 @@ Add-Content $FullLogFilePath $installedSummary
             $minimumSupportedMapBuild = "17928.00000"
             # Build 16.0.19725 is the first build with baseline security mode support.
             # Below this build, the add-in requires EWS to be enabled.
+            # Below this build, the add-in requires EWS to be enabled.
             # At or above this build, the add-in uses baseline security mode, and EWS is no longer required.
             # Source: https://learn.microsoft.com/en-us/microsoft-365/baseline-security-mode/baseline-security-mode-settings
             $ewsBaselineBuild = "19725.20000"
