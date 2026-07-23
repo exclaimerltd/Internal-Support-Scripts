@@ -46,7 +46,7 @@
         C:\Temp\Exclaimer\CSUACleanupScript.log
  
 .NOTES
-    Version:  3.1
+    Version:  2.1
     Date:     2026-07-21
     Based on: ecsm-CSUA-MSI-Reg-Cleanup.ps1 (v1, last updated 17/10/2022)
  
