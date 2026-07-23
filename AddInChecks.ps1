@@ -1902,9 +1902,9 @@ try {
                             if ([string]::IsNullOrEmpty($rawValue) -or $rawValue -eq 'EnforceNone') {
                                 $impact = '✅ No EWS restrictions detected.'
                             } elseif ($rawValue -eq 'EnforceAllowList') {
-                                $impact = '⚠️ Only specific apps can use EWS. Verify Exclaimer is in the allow list.'
+                                $impact = '⚠️ Only specific apps can use EWS.'
                             } elseif ($rawValue -eq 'EnforceBlockList') {
-                                $impact = '⚠️ Some apps are blocked from EWS. Verify Exclaimer is not in the block list.'
+                                $impact = '⚠️ Some apps are blocked from EWS.'
                             } else {
                                 $impact = "⚠️ Unrecognized policy value ($value). Review manually."
                             }
@@ -1921,7 +1921,7 @@ try {
                                 '✅ "EwsEnabled" is enabled. Required for this Outlook build.'
                             } elseif ($null -eq $rawValue) {
                                 $addEwsSideNoteWarning = $true
-                                '⚠️ "EwsEnabled" state is NULL (not explicitly set). This build requires EWS — recommend setting to TRUE.'
+                                '⚠️ "EwsEnabled" state is NULL (not explicitly set).'
                             } else {
                                 $addEwsSideNote = $true
                                 '⚠️ Unable to determine "EwsEnabled" state. Review manually.'
@@ -1939,7 +1939,7 @@ try {
                                 '✅ "EwsAllowOutlook" is enabled. Required for this Outlook build.'
                             } elseif ($null -eq $rawValue) {
                                 $addEwsAllowOutlookSideNoteWarning = $true
-                                '⚠️ "EwsAllowOutlook" state is NULL (not explicitly set). This build requires EWS — recommend setting to TRUE.'
+                                '⚠️ "EwsAllowOutlook" state is NULL (not explicitly set).'
                             } else {
                                 $addEwsAllowOutlookSideNote = $true
                                 '⚠️ Unable to determine "EwsAllowOutlook" state. Review manually.'
@@ -1978,31 +1978,11 @@ try {
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
-            if ($addEwsSideNoteWarning) {
-                $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsEnabled'' is not explicitly set to TRUE:</b><br>' +
-                    'This Outlook build requires EWS for add-in functionality. EwsEnabled is not explicitly set at org level — behaviour depends on mailbox-level configuration.<br><br>' +
-                    'Recommended action:<br>' +
-                    '<code>Set-OrganizationConfig -EwsEnabled $true</code><br><br>' +
-                    'Note: Mailbox-level EWS settings can still override this organization setting.' +
-                    '</span></div>'
-                Add-Content -Path $FullLogFilePath -Value $sideNote
-            }
-
             if ($addEwsSideNote) {
                 $sideNote = '<div class="info-after-error"><span><b>❌ ''EwsEnabled'' is disabled:</b><br>' +
                     'This Outlook build requires EWS for add-in functionality. EWS is disabled at org level — add-ins will fail to initialise.<br><br>' +
                     'Run this command in PowerShell to enable EWS at the organization level:<br>' +
                     '<code>Set-OrganizationConfig -EwsEnabled $true</code><br><br>' +
-                    'Note: Mailbox-level EWS settings can still override this organization setting.' +
-                    '</span></div>'
-                Add-Content -Path $FullLogFilePath -Value $sideNote
-            }
-
-            if ($addEwsAllowOutlookSideNoteWarning) {
-                $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsAllowOutlook'' is not explicitly set to TRUE:</b><br>' +
-                    'This Outlook build requires EWS for add-in functionality. EwsAllowOutlook is not explicitly set at org level — Outlook EWS access depends on mailbox-level configuration.<br><br>' +
-                    'Recommended action:<br>' +
-                    '<code>Set-OrganizationConfig -EwsAllowOutlook $true</code><br><br>' +
                     'Note: Mailbox-level EWS settings can still override this organization setting.' +
                     '</span></div>'
                 Add-Content -Path $FullLogFilePath -Value $sideNote
@@ -2552,10 +2532,18 @@ function GetSupportSubmissionInstructions {
     Write-Host "1. Diagnostic report file:" -ForegroundColor Yellow
     Write-Host "   $FullLogFilePath" -ForegroundColor White
     Write-Host ""
-    Write-Host "2. Windows Firewall log file:" -ForegroundColor Yellow
-    Write-Host "   $Global:destination" -ForegroundColor White
-    Write-Host ""
-    Write-Host "Attach both files to your support ticket for review." -ForegroundColor Green
+
+    if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)', 'Outlook Web (Windows)', 'Multiple / All')) {
+        Write-Host "2. Windows Firewall log file:" -ForegroundColor Yellow
+        if ($Global:destination) {
+            Write-Host "   $Global:destination" -ForegroundColor White
+        } else {
+            Write-Host "   Not collected." -ForegroundColor Yellow
+        }
+        Write-Host ""
+    }
+
+    Write-Host "Attach the file(s) listed above to your support ticket for review." -ForegroundColor Green
 
     # --- HTML Logging ---
     Add-Content $FullLogFilePath '<div class="section">'
@@ -2566,15 +2554,16 @@ function GetSupportSubmissionInstructions {
     Add-Content $FullLogFilePath (
         "<tr><td><strong>Diagnostic report</strong></td><td>{0}</td></tr>" -f $FullLogFilePath
     )
-    
-    if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)','Outlook Web (Windows)','Multiple / All')) {
+
+    if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)', 'Outlook Web (Windows)', 'Multiple / All')) {
+        $firewallLogValue = if ($Global:destination) { $Global:destination } else { 'Not collected' }
         Add-Content $FullLogFilePath (
-            "<tr><td><strong>Windows Firewall log</strong></td><td>{0}</td></tr>" -f ($Global:destination -or 'Not collected')
+            "<tr><td><strong>Windows Firewall log</strong></td><td>{0}</td></tr>" -f $firewallLogValue
         )
     }
 
     Add-Content $FullLogFilePath '</table>'
-    Add-Content $FullLogFilePath '<p>Please attach listed file(s) above when contacting the support team so they can review the collected data.</p>'
+    Add-Content $FullLogFilePath '<p>Please attach the file(s) listed above when contacting the support team so they can review the collected data.</p>'
     Add-Content $FullLogFilePath '</div>'
 }
 GetSupportSubmissionInstructions
