@@ -1131,7 +1131,7 @@ Add-Content $FullLogFilePath $installedSummary
             $ewsBaselineBuild = "19725.20000"
             $buildRequiresEws = -not (Compare-Build -current $officeBuild -minimum $ewsBaselineBuild)
             $outlookVersionNote = $null
-            Write-Host "Build requries EWS: $buildRequiresEws"
+            Write-Host "Build requires EWS: $buildRequiresEws"
             if ($officeBuild) {
                 $outlookVersion = $map[$officeBuild]
 
