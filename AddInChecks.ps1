@@ -1040,17 +1040,30 @@ Add-Content $FullLogFilePath $installedSummary
             $outlookBitness = "Unknown"
             $outlookVersion = "Unknown"
 
+            # Build-to-Version mapping. Minimum supported: Version 2408 (Build 17928.x).
+            # Builds below Version 2408 are treated as Not Supported regardless of build number.
+            # Note: per-license minimum thresholds are enforced separately via $minimumSupportedBuilds.
+            #   - Subscription (M365):       Version 2409 (18025.20000)
+            #   - Retail (Perpetual/Sub):     Version 2501 (18429.20132)
+            #   - Volume Licensed (Perpetual): Version 2408 (17932.20222)
+            # Source: https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date
+            # Last updated: July 2026. If the detected build is newer than the highest entry here,
+            # the output table will flag this so the script can be refreshed against the MS article.
             $map = @{
-                # Current Channel
-                "20026.20076"="2605";
-                "19929.20172"="2604";"19929.20136"="2604";"19929.20106"="2604";"19929.20090"="2604";"19929.20012"="2604";
-                "19822.20254"="2603";"19822.20182"="2603";"19822.20168"="2603";"19822.20142"="2603";"19822.20114"="2603";
-                "19725.20346"="2602";"19725.20190"="2602";"19725.20152"="2602";"19725.20126"="2602";
+                # M365 channel builds (Current Channel, Monthly Enterprise, Semi-Annual Enterprise).
+                # Builds shared across channels appear once; the version label is channel-agnostic.
+                # Source: https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date
+                "20131.20154"="2606";"20131.20126"="2606";"20131.20112"="2606";"20131.20090"="2606";
+                "20131.20152"="2606";"20131.20150"="2606";
+                "20026.20254"="2605";"20026.20236"="2605";"20026.20182"="2605";"20026.20168"="2605";
+                "20026.20140"="2605";"20026.20112"="2605";"20026.20076"="2605";"20026.20166"="2605";
+                "19929.20264"="2604";"19929.20220"="2604";"19929.20172"="2604";"19929.20164"="2604";
+                "19929.20162"="2604";"19929.20136"="2604";"19929.20106"="2604";"19929.20090"="2604";
+                "19822.20288"="2603";"19822.20254"="2603";"19822.20240"="2603";"19822.20182"="2603";
+                "19822.20168"="2603";"19822.20142"="2603";"19822.20114"="2603";"19822.20180"="2603";
+                "19725.20346"="2602";"19725.20320"="2602";"19725.20190"="2602";"19725.20172"="2602";
+                "19725.20152"="2602";"19725.20126"="2602";"19725.20244"="2602";"19725.20170"="2602";
                 "19628.20214"="2601";"19628.20204"="2601";"19628.20166"="2601";"19628.20150"="2601";
-                # Monthly Enterprise Channel
-                "19822.20180"="2603";"19822.20104"="2603";"19822.20086"="2603";"19822.20050"="2603";
-                "19822.20044"="2603";"19822.20012"="2603";
-                "19725.20244"="2602";"19725.20172"="2602";"19725.20170"="2602";"19725.20078"="2602";
                 "19530.20282"="2512";"19530.20260"="2512";"19530.20226"="2512";"19530.20184"="2512";
                 "19530.20144"="2512";"19530.20138"="2512";
                 "19426.20314"="2511";"19426.20294"="2511";"19426.20260"="2511";"19426.20218"="2511";
@@ -1059,57 +1072,96 @@ Add-Content $FullLogFilePath $installedSummary
                 "19328.20232"="2510";"19328.20190"="2510";"19328.20178"="2510";"19328.20158"="2510";
                 "19231.20300"="2509";"19231.20274"="2509";"19231.20246"="2509";"19231.20216"="2509";
                 "19231.20194"="2509";"19231.20172"="2509";"19231.20156"="2509";
-                # Semi-Annual Enterprise Channel
-                "19127.20648"="2508";"19127.20622"="2508";"19127.20570"="2508";"19127.20532"="2508";
-                "19127.20484"="2508";"19127.20402"="2508";"19127.20384"="2508";"19127.20358"="2508";
-                "19127.20314"="2508";"19127.20302"="2508";"19127.20264"="2508";"19127.20240"="2508";
-                "19127.20222"="2508";
-                "19029.20300"="2507";"19029.20274"="2507";"19029.20208"="2507";"19029.20184"="2507";
-                "18925.20268"="2506";"18925.20242"="2506";"18925.20184"="2506";
-                "18827.20244"="2505";"18827.20230"="2505";"18827.20176"="2505";
-                "18730.20260"="2504";"18730.20240"="2504";
-                "18623.20316"="2503";"18623.20208"="2503";"18623.20178"="2503";"18623.20156"="2503";
+                "19127.20730"="2508";"19127.20678"="2508";"19127.20648"="2508";"19127.20646"="2508";
+                "19127.20622"="2508";"19127.20570"="2508";"19127.20532"="2508";"19127.20484"="2508";
+                "19127.20402"="2508";"19127.20384"="2508";"19127.20358"="2508";"19127.20314"="2508";
+                "19127.20302"="2508";"19127.20264"="2508";"19127.20240"="2508";"19127.20222"="2508";
+                "19029.20300"="2507";"19029.20274"="2507";"19029.20244"="2507";"19029.20208"="2507";
+                "19029.20184"="2507";"19029.20156"="2507";"19029.20136"="2507";
+                "18925.20268"="2506";"18925.20242"="2506";"18925.20216"="2506";"18925.20184"="2506";
+                "18925.20168"="2506";"18925.20158"="2506";"18925.20138"="2506";
+                "18827.20244"="2505";"18827.20230"="2505";"18827.20202"="2505";"18827.20176"="2505";
+                "18827.20164"="2505";"18827.20150"="2505";"18827.20140"="2505";"18827.20128"="2505";
+                "18730.20260"="2504";"18730.20240"="2504";"18730.20226"="2504";"18730.20220"="2504";
+                "18730.20186"="2504";"18730.20168"="2504";"18730.20142"="2504";
+                "18623.20316"="2503";"18623.20302"="2503";"18623.20298"="2503";"18623.20266"="2503";
+                "18623.20208"="2503";"18623.20178"="2503";"18623.20156"="2503";
                 "18526.20714"="2502";"18526.20696"="2502";"18526.20672"="2502";"18526.20660"="2502";
-                "18526.20634"="2502";"18526.20546"="2502";"18526.20472"="2502";"18526.20438"="2502";
-                "18526.20416"="2502";"18526.20336"="2502";"18526.20264"="2502";"18526.20168"="2502";
-                "18526.20144"="2502";
-                # Early Semi-Annual Enterprise / Channels
-                "18429.20240"="2501";"18429.20158"="2501";"18429.20132"="2501";
-                "18324.20272"="2412";"18324.20194"="2412";"18324.20190"="2412";"18324.20168"="2412";
-                "18227.20240"="2411";"18227.20162"="2411";"18227.20152"="2411";
+                "18526.20634"="2502";"18526.20604"="2502";"18526.20546"="2502";"18526.20472"="2502";
+                "18526.20438"="2502";"18526.20416"="2502";"18526.20336"="2502";"18526.20286"="2502";
+                "18526.20264"="2502";"18526.20168"="2502";"18526.20144"="2502";
+                "18429.20240"="2501";"18429.20216"="2501";"18429.20200"="2501";"18429.20158"="2501";
+                "18429.20132"="2501";
+                "18324.20272"="2412";"18324.20240"="2412";"18324.20194"="2412";"18324.20190"="2412";
+                "18324.20168"="2412";
+                "18227.20240"="2411";"18227.20222"="2411";"18227.20162"="2411";"18227.20152"="2411";
                 "18129.20242"="2410";"18129.20200"="2410";"18129.20158"="2410";
                 "18025.20242"="2409";"18025.20214"="2409";"18025.20160"="2409";"18025.20140"="2409";
                 "18025.20104"="2409";"18025.20096"="2409";
                 "17928.20776"="2408";"17928.20762"="2408";"17928.20742"="2408";"17928.20730"="2408";
-                "17928.20708"="2408";"17928.20588"="2408";"17928.20572"="2408";"17928.20538"="2408";
-                "17928.20512"="2408";"17928.20392"="2408";"17928.20336"="2408";"17928.20286"="2408";
-                "17928.20156"="2408";"17928.20114"="2408";
-                # Older versions through 2202
-                "17726.20222"="2406";"17726.20160"="2406";"17726.20126"="2406";
-                "17628.20206"="2405";"17628.20188"="2405";"17628.20164"="2405";"17628.20152"="2405";
-                "17628.20144"="2405";"17628.20110"="2405";
-                "17531.20210"="2404";"17531.20190"="2404";"17531.20152"="2404";"17531.20140"="2404";
-                "17531.20128"="2404";"17531.20120"="2404";
-                "17425.20258"="2403";"17425.20176"="2403";"17425.20146"="2403";"17425.20138"="2403";
-                "17328.20414"="2402";"17328.20346"="2402";"17328.20336"="2402";"17328.20282"="2402";
-                "17328.20184"="2402";"17328.20162"="2402";"17328.20142"="2402";
-                # Versions around 2202 (older)
-                "16130.20990"="2302";"16130.20964"="2302";"16130.20928"="2302";"16130.20888"="2302";
-                "16130.20858"="2302";"16130.20848"="2302";"16130.20772"="2302";"16130.20766"="2302";
-                "16130.20738"="2302";"16130.20724"="2302";"16130.20580"="2302";"16130.20500"="2302";
-                "16130.20394"="2302";"16130.20346"="2302";"16130.20282"="2302";"16130.20184"="2302";
-                "15601.20870"="2208";"15601.20848"="2208";"15601.20832"="2208";"15601.20796"="2208";
-                "15601.20772"="2208";"15601.20680"="2208";"15601.20660"="2208";"15601.20578"="2208";
-                "15601.20456"="2208";"15601.20378"="2208";"15601.20286"="2208";"15601.20088"="2208";
-                "15225.20422"="2205";"15225.20394"="2205";"15225.20288"="2205";"15225.20204"="2205";
-                "15128.20312"="2204";"15128.20280"="2204";"15128.20248"="2204";"15128.20178"="2204";
-                "15028.20204"="2203";"15028.20160"="2203";
-                "14931.20724"="2202";"14931.20660"="2202";"14931.20494"="2202";"14931.20392"="2202";
-                "14931.20274"="2202";"14931.20132"="2202";"14931.20120"="2202";
+                "17928.20708"="2408";"17928.20700"="2408";"17928.20654"="2408";"17928.20604"="2408";
+                "17928.20588"="2408";"17928.20572"="2408";"17928.20538"="2408";"17928.20512"="2408";
+                "17928.20468"="2408";"17928.20440"="2408";"17928.20392"="2408";"17928.20336"="2408";
+                "17928.20286"="2408";"17928.20216"="2408";"17928.20156"="2408";"17928.20114"="2408";
+                # Office LTSC 2024 / Office 2024 Volume Licensed builds (all Version 2408).
+                # Source: https://learn.microsoft.com/en-us/officeupdates/update-history-office-2024
+                # Minimum supported for VL perpetual is 17932.20222 (Jan 14 2025), enforced via $minimumSupportedBuilds.
+                "17932.20790"="2408";"17932.20776"="2408";"17932.20742"="2408";"17932.20700"="2408";
+                "17932.20670"="2408";"17932.20638"="2408";"17932.20620"="2408";"17932.20602"="2408";
+                "17932.20574"="2408";"17932.20540"="2408";"17932.20496"="2408";"17932.20428"="2408";
+                "17932.20408"="2408";"17932.20396"="2408";"17932.20360"="2408";"17932.20328"="2408";
+                "17932.20286"="2408";"17932.20252"="2408";"17932.20222"="2408";"17932.20190"="2408";
+                "17932.20162"="2408";"17932.20130"="2408";
             }
+            # Highest build in map - used to detect builds newer than this script's mapping.
+            # Update this value whenever the $map is refreshed.
+            # For VL/LTSC 2024, the highest known build is 17932.20790 (May 2026).
+            # For M365 channels, the highest known build is 20131.20154 (Version 2606, July 2026).
+            $mapHighestBuild = "20131.20154"  # Version 2606, July 14 2026
+            $mapHighestBuildVL = "17932.20790"  # Office LTSC 2024 VL, May 14 2026
 
+            # Minimum supported build for version map display (Version 2408).
+            # Anything below Build 17928.x is shown as Not Supported in the Outlook Version column.
+            # Per-license thresholds (e.g. VL requires 17932.20222) are enforced separately via $minimumSupportedBuilds.
+            $minimumSupportedMapBuild = "17928.00000"
+            # Build 16.0.19725 is the first build with baseline security mode support.
+            # Below this build, the add-in requires EWS to be enabled.
+            # At or above this build, the add-in uses baseline security mode and EWS is no longer required.
+            # Source: https://learn.microsoft.com/en-us/microsoft-365/baseline-security-mode/baseline-security-mode-settings
+            $ewsBaselineBuild = "19725.20000"
+            $buildRequiresEws = -not (Compare-Build -current $officeBuild -minimum $ewsBaselineBuild)
+            $outlookVersionNote = $null
+            Write-Host "Build requries EWS: $buildRequiresEws"
             if ($officeBuild) {
                 $outlookVersion = $map[$officeBuild]
+
+                # Determine whether this is a VL/LTSC build (17932.x range) or a standard channel build
+                $isVLBuild = $officeBuild -match "^17932\."
+
+                if (-not $outlookVersion) {
+                    # Build not in map - determine why
+                    if ($isVLBuild -and (Compare-Build -current $officeBuild -minimum $mapHighestBuildVL)) {
+                        # VL build is newer than the highest VL entry in $map
+                        $outlookVersion = "Unknown (VL build newer than script mapping)"
+                        $outlookVersionNote = "newer"
+                    } elseif (-not $isVLBuild -and (Compare-Build -current $officeBuild -minimum $mapHighestBuild)) {
+                        # Standard channel build is newer than the highest entry in $map
+                        $outlookVersion = "Unknown (build newer than script mapping)"
+                        $outlookVersionNote = "newer"
+                    } elseif (-not (Compare-Build -current $officeBuild -minimum $minimumSupportedMapBuild)) {
+                        # Build is below the minimum supported threshold
+                        $outlookVersion = "Not Supported"
+                        $outlookVersionNote = "unsupported"
+                    } else {
+                        # Build falls within the supported range but is not in the map (intermediate patch)
+                        $outlookVersion = "Unknown (build not in mapping table)"
+                        $outlookVersionNote = "unknown"
+                    }
+                } elseif (-not (Compare-Build -current $officeBuild -minimum $minimumSupportedMapBuild)) {
+                    # Build is in map but is below minimum supported threshold (should not normally happen
+                    # after the map cleanup, but guard against it)
+                    $outlookVersionNote = "unsupported"
+                }
             }
 
             $ctrPath = "HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration"
@@ -1141,6 +1193,14 @@ Add-Content $FullLogFilePath $installedSummary
                 $buildSupport = "<span class='warning'>Build not detected $requirementsKB</span>"
             }
 
+            # Build the Outlook Version cell - annotate when the build is newer than the map
+            $outlookVersionCell = switch ($outlookVersionNote) {
+                "newer"       { "<span class='warning' title='This build was released after the script mapping was last updated. The version shown is an estimate - check the Microsoft update history page to confirm.'>$outlookVersion ⚠️</span>" }
+                "unsupported" { "<span class='fail'>$outlookVersion</span>" }
+                "unknown"     { "<span class='warning'>$outlookVersion</span>" }
+                default       { $outlookVersion }
+            }
+
             # Write HTML table with version info
             $classicOutlookTable = @"
 <table>
@@ -1155,7 +1215,7 @@ Add-Content $FullLogFilePath $installedSummary
     <tr>
         <td>$officeVersion</td>
         <td>$officeBuild</td>
-        <td>$outlookVersion</td>
+        <td>$outlookVersionCell</td>
         <td>$outlookBitness</td>
         <td>$licenseType</td>
         <td>$buildSupport</td>
@@ -1163,6 +1223,38 @@ Add-Content $FullLogFilePath $installedSummary
 </table>
 "@
         Add-Content $FullLogFilePath $classicOutlookTable
+
+            # Show a banner when the build is newer than the script's mapping table
+            if ($outlookVersionNote -eq "newer") {
+                Write-Host "`n========== ℹ️  BUILD NEWER THAN SCRIPT MAPPING ==========" -ForegroundColor Yellow
+                Write-Host "Build $officeBuild is newer than the highest build in this script's version mapping ($mapHighestBuild)." -ForegroundColor Yellow
+                Write-Host "The Outlook version shown may be inaccurate. Verify at:" -ForegroundColor Yellow
+                Write-Host "https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date" -ForegroundColor Cyan
+
+                Add-Content $FullLogFilePath @"
+<div class="info-after-warning">
+    <strong>ℹ️ Build newer than script version mapping</strong><br>
+    Build <code>$officeBuild</code> is newer than the highest build recorded in this script (<code>$mapHighestBuild</code>). The Outlook version displayed above may be inaccurate.<br>
+    Verify the exact version at: <a href="https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date" target="_blank">Microsoft 365 Apps update history</a>
+</div>
+"@
+            }
+
+            # Show a banner when the build is below the minimum supported threshold
+            if ($outlookVersionNote -eq "unsupported") {
+                Write-Host "`n========== ❌  OUTLOOK VERSION NOT SUPPORTED ==========" -ForegroundColor Red
+                Write-Host "Build $officeBuild is below the minimum supported Build 17928.x." -ForegroundColor Red
+                Write-Host "Exclaimer Add-In is not supported on this version of Outlook." -ForegroundColor Red
+
+                Add-Content $FullLogFilePath @"
+<div class="info-after-error">
+    <strong>❌ Outlook version not supported</strong><br>
+    Build <code>$officeBuild</code> is below the minimum supported Build 17928.x.<br>
+    The Exclaimer Add-In requires at least Version 2408 (Volume Licensed) or higher depending on license type. Please update Microsoft 365 Apps to a supported release.<br>
+    See: <a href="https://support.exclaimer.com/hc/en-gb/articles/4406058988945" target="_blank">Exclaimer System Requirements</a>
+</div>
+"@
+            }
             $officeBitnessDocUrl = 'https://support.microsoft.com/en-gb/office/choose-between-the-64-bit-or-32-bit-version-of-office-2dee7807-8f95-4d0c-b5fe-6c6f49b8d261?blocks+of+information+or+graphics.=&utm_source=chatgpt.com#:~:text=You%27re%20using%20add%2Dins%20with%20Outlook%2C%20Excel%2C%20or%20other%20Office%20or%20Microsoft%20365%20apps'
             if ($outlookBitness -eq '32-bit') {
                 Add-Content $FullLogFilePath @"
@@ -1806,42 +1898,54 @@ try {
                         }
                     }
                     'EwsApplicationAccessPolicy' {
-                        if ([string]::IsNullOrEmpty($rawValue) -or $rawValue -eq 'EnforceNone') {
-                            $impact = '✅ No EWS restrictions detected.'
-                        } elseif ($rawValue -eq 'EnforceAllowList') {
-                            $impact = '⚠️ Only specific apps can use EWS. Verify Exclaimer is in the allow list.'
-                        } elseif ($rawValue -eq 'EnforceBlockList') {
-                            $impact = '⚠️ Some apps are blocked from EWS. Verify Exclaimer is not in the block list.'
+                        if ($buildRequiresEws) {
+                            if ([string]::IsNullOrEmpty($rawValue) -or $rawValue -eq 'EnforceNone') {
+                                $impact = '✅ No EWS restrictions detected.'
+                            } elseif ($rawValue -eq 'EnforceAllowList') {
+                                $impact = '⚠️ Only specific apps can use EWS. Verify Exclaimer is in the allow list.'
+                            } elseif ($rawValue -eq 'EnforceBlockList') {
+                                $impact = '⚠️ Some apps are blocked from EWS. Verify Exclaimer is not in the block list.'
+                            } else {
+                                $impact = "⚠️ Unrecognized policy value ($value). Review manually."
+                            }
                         } else {
-                            $impact = "⚠️ Unrecognized policy value ($value). Review manually."
+                            $impact = 'ℹ️ Not required. This Outlook build uses baseline security mode and does not depend on EWS.'
                         }
                     }
                     'EwsEnabled' {
-                        $impact = if ($rawValue -eq $false) {
-                            $addEwsSideNote = $true
-                            '❌ "EwsEnabled" is disabled at org level. Classic Outlook services relying on Classic Outlook will fail.'
-                        } elseif ($rawValue -eq $true) {
-                            '✅ "EwsEnabled" is enabled.'
-                        } elseif ($null -eq $rawValue) {
-                            $addEwsSideNoteWarning = $true
-                            '⚠️ "EwsEnabled" state is "NULL" (not explicitly set). Recommend setting to "TRUE" to ensure Classic Outlook functionality.'
+                        if ($buildRequiresEws) {
+                            $impact = if ($rawValue -eq $false) {
+                                $addEwsSideNote = $true
+                                '❌ "EwsEnabled" is disabled at org level. This build requires EWS — add-ins will fail.'
+                            } elseif ($rawValue -eq $true) {
+                                '✅ "EwsEnabled" is enabled. Required for this Outlook build.'
+                            } elseif ($null -eq $rawValue) {
+                                $addEwsSideNoteWarning = $true
+                                '⚠️ "EwsEnabled" state is NULL (not explicitly set). This build requires EWS — recommend setting to TRUE.'
+                            } else {
+                                $addEwsSideNote = $true
+                                '⚠️ Unable to determine "EwsEnabled" state. Review manually.'
+                            }
                         } else {
-                            $addEwsSideNote = $true
-                            '⚠️ Unable to determine "EwsEnabled" state. Review manually.'
+                            $impact = 'ℹ️ Not required. This Outlook build uses baseline security mode and does not depend on EWS.'
                         }
                     }
                     'EwsAllowOutlook' {
-                        $impact = if ($rawValue -eq $false) {
-                            $addEwsAllowOutlookSideNote = $true
-                            '❌ "EwsAllowOutlook" is disabled at org level. Classic Outlook services relying on "EwsAllowOutlook" will fail.'
-                        } elseif ($rawValue -eq $true) {
-                            '✅ "EwsAllowOutlook" is enabled.'
-                        } elseif ($null -eq $rawValue) {
-                            $addEwsAllowOutlookSideNoteWarning = $true
-                            '⚠️ "EwsAllowOutlook" state is "NULL" (not explicitly set). Recommend setting to "TRUE" to ensure Classic Outlook functionality.'
+                        if ($buildRequiresEws) {
+                            $impact = if ($rawValue -eq $false) {
+                                $addEwsAllowOutlookSideNote = $true
+                                '❌ "EwsAllowOutlook" is disabled at org level. This build requires EWS — Outlook add-ins will fail.'
+                            } elseif ($rawValue -eq $true) {
+                                '✅ "EwsAllowOutlook" is enabled. Required for this Outlook build.'
+                            } elseif ($null -eq $rawValue) {
+                                $addEwsAllowOutlookSideNoteWarning = $true
+                                '⚠️ "EwsAllowOutlook" state is NULL (not explicitly set). This build requires EWS — recommend setting to TRUE.'
+                            } else {
+                                $addEwsAllowOutlookSideNote = $true
+                                '⚠️ Unable to determine "EwsAllowOutlook" state. Review manually.'
+                            }
                         } else {
-                            $addEwsAllowOutlookSideNote = $true
-                            '⚠️ Unable to determine "EwsAllowOutlook" state. Review manually.'
+                            $impact = 'ℹ️ Not required. This Outlook build uses baseline security mode and does not depend on EWS.'
                         }
                     }
                     Default {
@@ -1876,8 +1980,7 @@ try {
 
             if ($addEwsSideNoteWarning) {
                 $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsEnabled'' is not explicitly set to TRUE:</b><br>' +
-                    'EWS is used by Outlook Classic (Windows) for certain add-in scenarios.<br><br>' +
-                    'When not explicitly enabled, behaviour may vary depending on mailbox configuration and could impact add-in functionality.<br><br>' +
+                    'This Outlook build requires EWS for add-in functionality. EwsEnabled is not explicitly set at org level — behaviour depends on mailbox-level configuration.<br><br>' +
                     'Recommended action:<br>' +
                     '<code>Set-OrganizationConfig -EwsEnabled $true</code><br><br>' +
                     'Note: Mailbox-level EWS settings can still override this organization setting.' +
@@ -1886,9 +1989,8 @@ try {
             }
 
             if ($addEwsSideNote) {
-                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''EwsEnabled'' is disabled:</b><br>' +
-                    'EWS is required for certain Outlook add-in functionality, particularly in <b>Outlook Classic (Windows)</b>.<br><br>' +
-                    'When disabled, add-ins may fail to initialise.<br><br>' +
+                $sideNote = '<div class="info-after-error"><span><b>❌ ''EwsEnabled'' is disabled:</b><br>' +
+                    'This Outlook build requires EWS for add-in functionality. EWS is disabled at org level — add-ins will fail to initialise.<br><br>' +
                     'Run this command in PowerShell to enable EWS at the organization level:<br>' +
                     '<code>Set-OrganizationConfig -EwsEnabled $true</code><br><br>' +
                     'Note: Mailbox-level EWS settings can still override this organization setting.' +
@@ -1898,8 +2000,7 @@ try {
 
             if ($addEwsAllowOutlookSideNoteWarning) {
                 $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsAllowOutlook'' is not explicitly set to TRUE:</b><br>' +
-                    'This setting controls whether Outlook clients can access EWS, particularly in <b>Outlook Classic (Windows)</b>.<br><br>' +
-                    'When not explicitly set, behaviour may depend on mailbox-level configuration and could impact add-in functionality.<br><br>' +
+                    'This Outlook build requires EWS for add-in functionality. EwsAllowOutlook is not explicitly set at org level — Outlook EWS access depends on mailbox-level configuration.<br><br>' +
                     'Recommended action:<br>' +
                     '<code>Set-OrganizationConfig -EwsAllowOutlook $true</code><br><br>' +
                     'Note: Mailbox-level EWS settings can still override this organization setting.' +
@@ -1908,10 +2009,9 @@ try {
             }
 
             if ($addEwsAllowOutlookSideNote) {
-                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''EwsAllowOutlook'' is disabled:</b><br>' +
-                    'This setting controls whether Outlook clients can access EWS, particularly in <b>Outlook Classic (Windows)</b>.<br><br>' +
-                    'When disabled, add-ins may fail to initialise.<br><br>' +
-                    'Run this command to explicitly allow Outlook access at the organization level:<br>' +
+                $sideNote = '<div class="info-after-error"><span><b>❌ ''EwsAllowOutlook'' is disabled:</b><br>' +
+                    'This Outlook build requires EWS for add-in functionality. EwsAllowOutlook is disabled at org level — Outlook is blocked from using EWS and add-ins will fail.<br><br>' +
+                    'Run this command to explicitly allow Outlook EWS access at the organization level:<br>' +
                     '<code>Set-OrganizationConfig -EwsAllowOutlook $true</code><br><br>' +
                     'Note: Mailbox-level EWS settings can still override this organization setting.' +
                     '</span></div>'
@@ -2157,25 +2257,33 @@ try {
                         }
                     }
                     'EwsEnabled' {
-                        $notes = if ($raw -eq $false) {
-                            '❌ "EwsEnabled" is disabled for this mailbox. Services relying on "EWS" may not function.'
-                        } elseif ($raw -eq $true) {
-                            '✅ "EwsEnabled" is enabled for this mailbox.'
-                        } elseif ($null -eq $raw) {
-                            '⚠️ "EwsEnabled" state is NULL (inheriting org setting).'
+                        if ($buildRequiresEws) {
+                            $notes = if ($raw -eq $false) {
+                                '❌ "EwsEnabled" is disabled for this mailbox. This build requires EWS — add-ins will not function.'
+                            } elseif ($raw -eq $true) {
+                                '✅ "EwsEnabled" is enabled for this mailbox. Required for this Outlook build.'
+                            } elseif ($null -eq $raw) {
+                                '⚠️ "EwsEnabled" is NULL (inheriting org setting). This build requires EWS — verify org setting is enabled.'
+                            } else {
+                                '⚠️ Unable to determine "EwsEnabled" mailbox state. Review manually.'
+                            }
                         } else {
-                            '⚠️ Unable to determine "EwsEnabled" mailbox state. Review manually.'
+                            $notes = 'ℹ️ Not required. This Outlook build uses baseline security mode and does not depend on EWS.'
                         }
                     }
                     'EwsAllowOutlook' {
-                        $notes = if ($raw -eq $false) {
-                            '❌ "EwsAllowOutlook" is disabled for this mailbox. Services relying on "EWS" may not function.'
-                        } elseif ($raw -eq $true) {
-                            '✅ "EwsAllowOutlook" is enabled for this mailbox.'
-                        } elseif ($null -eq $raw) {
-                            '⚠️ "EwsAllowOutlook" state is NULL (inheriting org setting).'
+                        if ($buildRequiresEws) {
+                            $notes = if ($raw -eq $false) {
+                                '❌ "EwsAllowOutlook" is disabled for this mailbox. This build requires EWS — Outlook add-ins will not function.'
+                            } elseif ($raw -eq $true) {
+                                '✅ "EwsAllowOutlook" is enabled for this mailbox. Required for this Outlook build.'
+                            } elseif ($null -eq $raw) {
+                                '⚠️ "EwsAllowOutlook" is NULL (inheriting org setting). This build requires EWS — verify org setting is enabled.'
+                            } else {
+                                '⚠️ Unable to determine "EwsAllowOutlook" mailbox state. Review manually.'
+                            }
                         } else {
-                            '⚠️ Unable to determine "EwsAllowOutlook" mailbox state. Review manually.'
+                            $notes = 'ℹ️ Not required. This Outlook build uses baseline security mode and does not depend on EWS.'
                         }
                     }
                     Default {
@@ -2194,7 +2302,7 @@ try {
             Add-Content $FullLogFilePath '</table>'
 
             # EWS mailbox-level error notices
-            if ($mailbox.EwsEnabled -eq $false) {
+            if ($buildRequiresEws -and $mailbox.EwsEnabled -eq $false) {
                 $sideNote = '<div class="info-after-error"><span><b>❌ ''EwsEnabled'' is disabled on this mailbox:</b><br>' +
                     'Services relying on EWS (including certain Outlook Classic add-in scenarios) may not function for this mailbox.<br><br>' +
                     'Recommended action:<br>' +
@@ -2208,7 +2316,7 @@ try {
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
-            if ($mailbox.EwsAllowOutlook -eq $false) {
+            if ($buildRequiresEws -and $mailbox.EwsAllowOutlook -eq $false) {
                 $sideNote = '<div class="info-after-error"><span><b>❌ ''EwsAllowOutlook'' is disabled on this mailbox:</b><br>' +
                     'Outlook is blocked from using EWS against this mailbox, which can break add-in scenarios that depend on EWS.<br><br>' +
                     'Recommended action:<br>' +
@@ -2222,7 +2330,7 @@ try {
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
-            if ($null -eq $mailbox.EwsEnabled) {
+            if ($buildRequiresEws -and $null -eq $mailbox.EwsEnabled) {
                 $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsEnabled'' is not explicitly set on this mailbox:</b><br>' +
                     'EWS is used by <b>Outlook Classic (Windows)</b> for certain add-in scenarios.<br><br>' +
                     'When not explicitly set at mailbox level, behaviour falls back to the organization-level setting and could impact add-in functionality.<br><br>' +
@@ -2237,7 +2345,7 @@ try {
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
-            if ($null -eq $mailbox.EwsAllowOutlook) {
+            if ($buildRequiresEws -and $null -eq $mailbox.EwsAllowOutlook) {
                 $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsAllowOutlook'' is not explicitly set on this mailbox:</b><br>' +
                     'This setting controls whether Outlook clients can access EWS, particularly in <b>Outlook Classic (Windows)</b>.<br><br>' +
                     'When not explicitly set at mailbox level, behaviour falls back to the organization-level setting and could impact add-in functionality.<br><br>' +
@@ -2252,8 +2360,8 @@ try {
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
-            # Bulk remediation suggestion if either EWS setting is not explicitly TRUE
-            if ($mailbox.EwsEnabled -ne $true -or $mailbox.EwsAllowOutlook -ne $true) {
+            # Bulk remediation suggestion if either EWS setting is not explicitly TRUE (only relevant for builds that require EWS)
+            if ($buildRequiresEws -and ($mailbox.EwsEnabled -ne $true -or $mailbox.EwsAllowOutlook -ne $true)) {
                 $sideNote = '<div class="info-after-warning"><span><b>ℹ️ Bulk remediation across all mailboxes:</b><br>' +
                     'To ensure both <code>EwsEnabled</code> and <code>EwsAllowOutlook</code> are explicitly set to <b>TRUE</b> for every mailbox in the tenant, the Admin can run:<br><br>' +
                     '<code>Get-Mailbox -ResultSize Unlimited | Set-CASMailbox -EwsEnabled $true -EwsAllowOutlook $true</code><br><br>' +
