@@ -2358,16 +2358,12 @@ try {
             }
 
             # Bulk remediation suggestion if either EWS setting is not explicitly TRUE (only relevant for builds that require EWS)
-            if ($Global:buildRequiresEws -and ($mailbox.EwsEnabled -ne $true -or $mailbox.EwsAllowOutlook -ne $true)) {
+            if ($Global:buildRequiresEws -and ($mailbox.EwsEnabled -eq $false -or $mailbox.EwsAllowOutlook -eq $false)) {
                 $sideNote = '<div class="info-after-warning"><span><b>ℹ️ Bulk remediation across all mailboxes:</b><br>' +
                     'To ensure both <code>EwsEnabled</code> and <code>EwsAllowOutlook</code> are explicitly set to <b>TRUE</b> for every mailbox in the tenant, the Admin can run:<br><br>' +
                     '<code>Get-Mailbox -ResultSize Unlimited | Set-CASMailbox -EwsEnabled $true -EwsAllowOutlook $true</code><br><br>' +
                     'Note: This applies the change to all mailboxes — review scope before running in production.' +
-                    '</span></div>' +
-                    '<div class="info-after-note">' +
-                        '<span>If you have reopened PowerShell, you may need to run first: <code>Connect-ExchangeOnline</code></span><br><br>' +
-                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
-                    '</div>'
+                    '</span></div>'
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
