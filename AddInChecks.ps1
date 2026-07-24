@@ -1129,9 +1129,9 @@ Add-Content $FullLogFilePath $installedSummary
             # At or above this build, the add-in uses baseline security mode and EWS is no longer required.
             # Source: https://learn.microsoft.com/en-us/microsoft-365/baseline-security-mode/baseline-security-mode-settings
             $ewsBaselineBuild = "19725.20000"
-            $buildRequiresEws = -not (Compare-Build -current $officeBuild -minimum $ewsBaselineBuild)
+            $Global:buildRequiresEws = -not (Compare-Build -current $officeBuild -minimum $ewsBaselineBuild)
+            $buildRequiresEws = $Global:buildRequiresEws
             $outlookVersionNote = $null
-            Write-Host "Build requires EWS: $buildRequiresEws"
             if ($officeBuild) {
                 $outlookVersion = $map[$officeBuild]
 
@@ -1224,6 +1224,23 @@ Add-Content $FullLogFilePath $installedSummary
 "@
         Add-Content $FullLogFilePath $classicOutlookTable
 
+# Show an EWS deprecation warning when the build is below the baseline security mode threshold
+if ($Global:buildRequiresEws) {
+    Add-Content $FullLogFilePath @"
+<div class="info-after-warning">
+    <strong>⚠️ EWS Deprecation Warning — Action Required</strong><br>
+    This Outlook build (<code>$officeBuild</code>) is below Build 16.0.19725 and depends on
+    <a href="https://learn.microsoft.com/en-us/exchange/clients-and-mobile-in-exchange-online/deprecation-of-ews-exchange-online" target="_blank">Exchange Web Services (EWS)</a>
+    for Cloud Add-in functionality.<br><br>
+    Microsoft is retiring EWS in Exchange Online — phased disablement begins <strong>October 1, 2026</strong>,
+    with permanent retirement on <strong>April 1, 2027</strong>. Once EWS is disabled or retired,
+    Cloud Add-ins will stop functioning on this build.<br><br>
+    Outlook builds at Build 19725.20000 or above use
+    <a href="https://learn.microsoft.com/en-us/microsoft-365/baseline-security-mode/baseline-security-mode-settings?view=o365-worldwide#exchange-web-services-requirements" target="_blank">baseline security mode</a>
+    and no longer depend on EWS. We recommend updating Outlook ahead of October 2026.
+</div>
+"@
+}
             # Show a banner when the build is newer than the script's mapping table
             if ($outlookVersionNote -eq "newer") {
                 Write-Host "`n========== ℹ️  BUILD NEWER THAN SCRIPT MAPPING ==========" -ForegroundColor Yellow
@@ -1898,7 +1915,7 @@ try {
                         }
                     }
                     'EwsApplicationAccessPolicy' {
-                        if ($buildRequiresEws) {
+                        if ($Global:buildRequiresEws) {
                             if ([string]::IsNullOrEmpty($rawValue) -or $rawValue -eq 'EnforceNone') {
                                 $impact = '✅ No EWS restrictions detected.'
                             } elseif ($rawValue -eq 'EnforceAllowList') {
@@ -1913,7 +1930,7 @@ try {
                         }
                     }
                     'EwsEnabled' {
-                        if ($buildRequiresEws) {
+                        if ($Global:buildRequiresEws) {
                             $impact = if ($rawValue -eq $false) {
                                 $addEwsSideNote = $true
                                 '❌ "EwsEnabled" is disabled at org level. This build requires EWS — add-ins will fail.'
@@ -1931,7 +1948,7 @@ try {
                         }
                     }
                     'EwsAllowOutlook' {
-                        if ($buildRequiresEws) {
+                        if ($Global:buildRequiresEws) {
                             $impact = if ($rawValue -eq $false) {
                                 $addEwsAllowOutlookSideNote = $true
                                 '❌ "EwsAllowOutlook" is disabled at org level. This build requires EWS — Outlook add-ins will fail.'
@@ -2237,7 +2254,7 @@ try {
                         }
                     }
                     'EwsEnabled' {
-                        if ($buildRequiresEws) {
+                        if ($Global:buildRequiresEws) {
                             $notes = if ($raw -eq $false) {
                                 '❌ "EwsEnabled" is disabled for this mailbox. This build requires EWS — add-ins will not function.'
                             } elseif ($raw -eq $true) {
@@ -2252,7 +2269,7 @@ try {
                         }
                     }
                     'EwsAllowOutlook' {
-                        if ($buildRequiresEws) {
+                        if ($Global:buildRequiresEws) {
                             $notes = if ($raw -eq $false) {
                                 '❌ "EwsAllowOutlook" is disabled for this mailbox. This build requires EWS — Outlook add-ins will not function.'
                             } elseif ($raw -eq $true) {
@@ -2282,7 +2299,7 @@ try {
             Add-Content $FullLogFilePath '</table>'
 
             # EWS mailbox-level error notices
-            if ($buildRequiresEws -and $mailbox.EwsEnabled -eq $false) {
+            if ($Global:buildRequiresEws -and $mailbox.EwsEnabled -eq $false) {
                 $sideNote = '<div class="info-after-error"><span><b>❌ ''EwsEnabled'' is disabled on this mailbox:</b><br>' +
                     'Services relying on EWS (including certain Outlook Classic add-in scenarios) may not function for this mailbox.<br><br>' +
                     'Recommended action:<br>' +
@@ -2296,7 +2313,7 @@ try {
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
-            if ($buildRequiresEws -and $mailbox.EwsAllowOutlook -eq $false) {
+            if ($Global:buildRequiresEws -and $mailbox.EwsAllowOutlook -eq $false) {
                 $sideNote = '<div class="info-after-error"><span><b>❌ ''EwsAllowOutlook'' is disabled on this mailbox:</b><br>' +
                     'Outlook is blocked from using EWS against this mailbox, which can break add-in scenarios that depend on EWS.<br><br>' +
                     'Recommended action:<br>' +
@@ -2310,7 +2327,7 @@ try {
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
-            if ($buildRequiresEws -and $null -eq $mailbox.EwsEnabled) {
+            if ($Global:buildRequiresEws -and $null -eq $mailbox.EwsEnabled) {
                 $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsEnabled'' is not explicitly set on this mailbox:</b><br>' +
                     'EWS is used by <b>Outlook Classic (Windows)</b> for certain add-in scenarios.<br><br>' +
                     'When not explicitly set at mailbox level, behaviour falls back to the organization-level setting and could impact add-in functionality.<br><br>' +
@@ -2325,7 +2342,7 @@ try {
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
-            if ($buildRequiresEws -and $null -eq $mailbox.EwsAllowOutlook) {
+            if ($Global:buildRequiresEws -and $null -eq $mailbox.EwsAllowOutlook) {
                 $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsAllowOutlook'' is not explicitly set on this mailbox:</b><br>' +
                     'This setting controls whether Outlook clients can access EWS, particularly in <b>Outlook Classic (Windows)</b>.<br><br>' +
                     'When not explicitly set at mailbox level, behaviour falls back to the organization-level setting and could impact add-in functionality.<br><br>' +
@@ -2341,7 +2358,7 @@ try {
             }
 
             # Bulk remediation suggestion if either EWS setting is not explicitly TRUE (only relevant for builds that require EWS)
-            if ($buildRequiresEws -and ($mailbox.EwsEnabled -ne $true -or $mailbox.EwsAllowOutlook -ne $true)) {
+            if ($Global:buildRequiresEws -and ($mailbox.EwsEnabled -ne $true -or $mailbox.EwsAllowOutlook -ne $true)) {
                 $sideNote = '<div class="info-after-warning"><span><b>ℹ️ Bulk remediation across all mailboxes:</b><br>' +
                     'To ensure both <code>EwsEnabled</code> and <code>EwsAllowOutlook</code> are explicitly set to <b>TRUE</b> for every mailbox in the tenant, the Admin can run:<br><br>' +
                     '<code>Get-Mailbox -ResultSize Unlimited | Set-CASMailbox -EwsEnabled $true -EwsAllowOutlook $true</code><br><br>' +
