@@ -1128,7 +1128,7 @@ Add-Content $FullLogFilePath $installedSummary
             # Below this build, the add-in requires EWS to be enabled.
             # At or above this build, the add-in uses baseline security mode and EWS is no longer required.
             # Source: https://learn.microsoft.com/en-us/microsoft-365/baseline-security-mode/baseline-security-mode-settings
-            $ewsBaselineBuild = "29725.20000"
+            $ewsBaselineBuild = "19725.20000"
             $Global:buildRequiresEws = -not (Compare-Build -current $officeBuild -minimum $ewsBaselineBuild)
             $buildRequiresEws = $Global:buildRequiresEws
             $outlookVersionNote = $null
