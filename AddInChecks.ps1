@@ -1128,7 +1128,7 @@ Add-Content $FullLogFilePath $installedSummary
             # Below this build, the add-in requires EWS to be enabled.
             # At or above this build, the add-in uses baseline security mode and EWS is no longer required.
             # Source: https://learn.microsoft.com/en-us/microsoft-365/baseline-security-mode/baseline-security-mode-settings
-            $ewsBaselineBuild = "19725.20000"
+            $ewsBaselineBuild = "29725.20000"
             $Global:buildRequiresEws = -not (Compare-Build -current $officeBuild -minimum $ewsBaselineBuild)
             $buildRequiresEws = $Global:buildRequiresEws
             $outlookVersionNote = $null
@@ -2358,16 +2358,12 @@ try {
             }
 
             # Bulk remediation suggestion if either EWS setting is not explicitly TRUE (only relevant for builds that require EWS)
-            if ($Global:buildRequiresEws -and ($mailbox.EwsEnabled -ne $true -or $mailbox.EwsAllowOutlook -ne $true)) {
+            if ($Global:buildRequiresEws -and ($mailbox.EwsEnabled -eq $false -or $mailbox.EwsAllowOutlook -eq $false)) {
                 $sideNote = '<div class="info-after-warning"><span><b>ℹ️ Bulk remediation across all mailboxes:</b><br>' +
                     'To ensure both <code>EwsEnabled</code> and <code>EwsAllowOutlook</code> are explicitly set to <b>TRUE</b> for every mailbox in the tenant, the Admin can run:<br><br>' +
                     '<code>Get-Mailbox -ResultSize Unlimited | Set-CASMailbox -EwsEnabled $true -EwsAllowOutlook $true</code><br><br>' +
                     'Note: This applies the change to all mailboxes — review scope before running in production.' +
-                    '</span></div>' +
-                    '<div class="info-after-note">' +
-                        '<span>If you have reopened PowerShell, you may need to run first: <code>Connect-ExchangeOnline</code></span><br><br>' +
-                        '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
-                    '</div>'
+                    '</span></div>'
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
