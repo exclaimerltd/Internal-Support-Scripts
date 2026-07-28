@@ -1053,7 +1053,7 @@ Add-Content $FullLogFilePath $installedSummary
                 # M365 channel builds (Current Channel, Monthly Enterprise, Semi-Annual Enterprise).
                 # Builds shared across channels appear once; the version label is channel-agnostic.
                 # Source: https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date
-                "20131.20154"="2606";"20131.20126"="2606";"20131.20112"="2606";"20131.20090"="2606";
+                "20228.20110"="2607";"20131.20154"="2606";"20131.20126"="2606";"20131.20112"="2606";"20131.20090"="2606";
                 "20131.20152"="2606";"20131.20150"="2606";
                 "20026.20254"="2605";"20026.20236"="2605";"20026.20182"="2605";"20026.20168"="2605";
                 "20026.20140"="2605";"20026.20112"="2605";"20026.20076"="2605";"20026.20166"="2605";
@@ -1116,8 +1116,8 @@ Add-Content $FullLogFilePath $installedSummary
             # Highest build in map - used to detect builds newer than this script's mapping.
             # Update this value whenever the $map is refreshed.
             # For VL/LTSC 2024, the highest known build is 17932.20790 (May 2026).
-            # For M365 channels, the highest known build is 20131.20154 (Version 2606, July 2026).
-            $mapHighestBuild = "20131.20154"  # Version 2606, July 14 2026
+            # For M365 channels, the highest known build is 20228.20110 (Version 2607, July 2026).
+            $mapHighestBuild = "20228.20110"  # Version 2607, July 14 2026
             $mapHighestBuildVL = "17932.20790"  # Office LTSC 2024 VL, May 14 2026
 
             # Minimum supported build for version map display (Version 2408).
@@ -1142,11 +1142,11 @@ Add-Content $FullLogFilePath $installedSummary
                     # Build not in map - determine why
                     if ($isVLBuild -and (Compare-Build -current $officeBuild -minimum $mapHighestBuildVL)) {
                         # VL build is newer than the highest VL entry in $map
-                        $outlookVersion = "Unknown (VL build newer than script mapping)"
+                        $outlookVersion = "VL build newer than script mapping"
                         $outlookVersionNote = "newer"
                     } elseif (-not $isVLBuild -and (Compare-Build -current $officeBuild -minimum $mapHighestBuild)) {
                         # Standard channel build is newer than the highest entry in $map
-                        $outlookVersion = "Unknown (build newer than script mapping)"
+                        $outlookVersion = "Build newer than script mapping"
                         $outlookVersionNote = "newer"
                     } elseif (-not (Compare-Build -current $officeBuild -minimum $minimumSupportedMapBuild)) {
                         # Build is below the minimum supported threshold
@@ -1154,7 +1154,7 @@ Add-Content $FullLogFilePath $installedSummary
                         $outlookVersionNote = "unsupported"
                     } else {
                         # Build falls within the supported range but is not in the map (intermediate patch)
-                        $outlookVersion = "Unknown (build not in mapping table)"
+                        $outlookVersion = "Build not in mapping table"
                         $outlookVersionNote = "unknown"
                     }
                 } elseif (-not (Compare-Build -current $officeBuild -minimum $minimumSupportedMapBuild)) {
@@ -1248,11 +1248,15 @@ if ($Global:buildRequiresEws) {
                 Write-Host "The Outlook version shown may be inaccurate. Verify at:" -ForegroundColor Yellow
                 Write-Host "https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date" -ForegroundColor Cyan
 
+                $mapHighestVersion = $map[$mapHighestBuild]
                 Add-Content $FullLogFilePath @"
 <div class="info-after-warning">
-    <strong>ℹ️ Build newer than script version mapping</strong><br>
-    Build <code>$officeBuild</code> is newer than the highest build recorded in this script (<code>$mapHighestBuild</code>). The Outlook version displayed above may be inaccurate.<br>
-    Verify the exact version at: <a href="https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date" target="_blank">Microsoft 365 Apps update history</a>
+    <strong>ℹ️ Build not yet in script mapping</strong><br>
+    Build <code>$officeBuild</code> is newer than the highest build this script knows about (<code>$mapHighestBuild</code>, Version $mapHighestVersion).
+    This is expected when Microsoft has released a new update since this script was last refreshed — the build is NOT invalid.<br><br>
+    The Outlook Version shown above is therefore unknown. To confirm the exact version for this build, check the
+    <a href="https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date" target="_blank">Microsoft 365 Apps update history</a>.
+    The script mapping should then be updated to include the new build.
 </div>
 "@
             }
