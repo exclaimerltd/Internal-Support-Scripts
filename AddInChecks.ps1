@@ -1053,10 +1053,11 @@ Add-Content $FullLogFilePath $installedSummary
                 # M365 channel builds (Current Channel, Monthly Enterprise, Semi-Annual Enterprise).
                 # Builds shared across channels appear once; the version label is channel-agnostic.
                 # Source: https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date
-                "20228.20110"="2607";"20131.20154"="2606";"20131.20126"="2606";"20131.20112"="2606";"20131.20090"="2606";
-                "20131.20152"="2606";"20131.20150"="2606";
+                "20326.20100"="2608";"20228.20124"="2607";"20228.20158"="2607";"20228.20190"="2607";
+                "20228.20110"="2607";"20228.20188"="2607";"20228.20186"="2607";"20131.20154"="2606";"20131.20126"="2606";"20131.20112"="2606";
+                "20131.20090"="2606";"20131.20152"="2606";"20131.20150"="2606";"20131.20206"="2606";
                 "20026.20254"="2605";"20026.20236"="2605";"20026.20182"="2605";"20026.20168"="2605";
-                "20026.20140"="2605";"20026.20112"="2605";"20026.20076"="2605";"20026.20166"="2605";
+                "20026.20140"="2605";"20026.20112"="2605";"20026.20076"="2605";"20026.20166"="2605";"20026.20266"="2605";
                 "19929.20264"="2604";"19929.20220"="2604";"19929.20172"="2604";"19929.20164"="2604";
                 "19929.20162"="2604";"19929.20136"="2604";"19929.20106"="2604";"19929.20090"="2604";
                 "19822.20288"="2603";"19822.20254"="2603";"19822.20240"="2603";"19822.20182"="2603";
@@ -1075,7 +1076,7 @@ Add-Content $FullLogFilePath $installedSummary
                 "19127.20730"="2508";"19127.20678"="2508";"19127.20648"="2508";"19127.20646"="2508";
                 "19127.20622"="2508";"19127.20570"="2508";"19127.20532"="2508";"19127.20484"="2508";
                 "19127.20402"="2508";"19127.20384"="2508";"19127.20358"="2508";"19127.20314"="2508";
-                "19127.20302"="2508";"19127.20264"="2508";"19127.20240"="2508";"19127.20222"="2508";
+                "19127.20302"="2508";"19127.20264"="2508";"19127.20240"="2508";"19127.20222"="2508";"19127.20752"="2508";"19127.20192"="2508";"19127.20154"="2508";
                 "19029.20300"="2507";"19029.20274"="2507";"19029.20244"="2507";"19029.20208"="2507";
                 "19029.20184"="2507";"19029.20156"="2507";"19029.20136"="2507";
                 "18925.20268"="2506";"18925.20242"="2506";"18925.20216"="2506";"18925.20184"="2506";
@@ -1083,7 +1084,7 @@ Add-Content $FullLogFilePath $installedSummary
                 "18827.20244"="2505";"18827.20230"="2505";"18827.20202"="2505";"18827.20176"="2505";
                 "18827.20164"="2505";"18827.20150"="2505";"18827.20140"="2505";"18827.20128"="2505";
                 "18730.20260"="2504";"18730.20240"="2504";"18730.20226"="2504";"18730.20220"="2504";
-                "18730.20186"="2504";"18730.20168"="2504";"18730.20142"="2504";
+                "18730.20186"="2504";"18730.20168"="2504";"18730.20142"="2504";"18730.20122"="2504";
                 "18623.20316"="2503";"18623.20302"="2503";"18623.20298"="2503";"18623.20266"="2503";
                 "18623.20208"="2503";"18623.20178"="2503";"18623.20156"="2503";
                 "18526.20714"="2502";"18526.20696"="2502";"18526.20672"="2502";"18526.20660"="2502";
@@ -1095,7 +1096,7 @@ Add-Content $FullLogFilePath $installedSummary
                 "18324.20272"="2412";"18324.20240"="2412";"18324.20194"="2412";"18324.20190"="2412";
                 "18324.20168"="2412";
                 "18227.20240"="2411";"18227.20222"="2411";"18227.20162"="2411";"18227.20152"="2411";
-                "18129.20242"="2410";"18129.20200"="2410";"18129.20158"="2410";
+                "18129.20242"="2410";"18129.20200"="2410";"18129.20158"="2410";"18129.20116"="2410";
                 "18025.20242"="2409";"18025.20214"="2409";"18025.20160"="2409";"18025.20140"="2409";
                 "18025.20104"="2409";"18025.20096"="2409";
                 "17928.20776"="2408";"17928.20762"="2408";"17928.20742"="2408";"17928.20730"="2408";
@@ -1106,6 +1107,7 @@ Add-Content $FullLogFilePath $installedSummary
                 # Office LTSC 2024 / Office 2024 Volume Licensed builds (all Version 2408).
                 # Source: https://learn.microsoft.com/en-us/officeupdates/update-history-office-2024
                 # Minimum supported for VL perpetual is 17932.20222 (Jan 14 2025), enforced via $minimumSupportedBuilds.
+                "17932.20910"="2408";"17932.20884"="2408";"17932.20842"="2408";
                 "17932.20790"="2408";"17932.20776"="2408";"17932.20742"="2408";"17932.20700"="2408";
                 "17932.20670"="2408";"17932.20638"="2408";"17932.20620"="2408";"17932.20602"="2408";
                 "17932.20574"="2408";"17932.20540"="2408";"17932.20496"="2408";"17932.20428"="2408";
@@ -1235,7 +1237,7 @@ if ($Global:buildRequiresEws) {
     Microsoft is retiring EWS in Exchange Online — phased disablement begins <strong>October 1, 2026</strong>,
     with permanent retirement on <strong>April 1, 2027</strong>. Once EWS is disabled or retired,
     Cloud Add-ins will stop functioning on this build.<br><br>
-    Outlook builds at Build 19725.20000 or above use
+    Outlook builds at Build <code>19725.20000</code> or above use
     <a href="https://learn.microsoft.com/en-us/microsoft-365/baseline-security-mode/baseline-security-mode-settings?view=o365-worldwide#exchange-web-services-requirements" target="_blank">baseline security mode</a>
     and no longer depend on EWS. We recommend updating Outlook ahead of October 2026.
 </div>
@@ -1248,11 +1250,10 @@ if ($Global:buildRequiresEws) {
                 Write-Host "The Outlook version shown may be inaccurate. Verify at:" -ForegroundColor Yellow
                 Write-Host "https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date" -ForegroundColor Cyan
 
-                $mapHighestVersion = $map[$mapHighestBuild]
                 Add-Content $FullLogFilePath @"
 <div class="info-after-warning">
     <strong>ℹ️ Build not yet in script mapping</strong><br>
-    Build <code>$officeBuild</code> is newer than the highest build this script knows about (<code>$mapHighestBuild</code>, Version $mapHighestVersion).
+    Build <code>$officeBuild</code> is newer than the highest build this script knows about.
     This is expected when Microsoft has released a new update since this script was last refreshed — the build is NOT invalid.<br><br>
     The Outlook Version shown above is therefore unknown. To confirm the exact version for this build, check the
     <a href="https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date" target="_blank">Microsoft 365 Apps update history</a>.
