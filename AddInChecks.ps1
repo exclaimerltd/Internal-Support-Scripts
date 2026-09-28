@@ -1053,6 +1053,9 @@ Add-Content $FullLogFilePath $installedSummary
                 # M365 channel builds (Current Channel, Monthly Enterprise, Semi-Annual Enterprise).
                 # Builds shared across channels appear once; the version label is channel-agnostic.
                 # Source: https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date
+                "20430.20092"="2609";"20326.20158"="2608";"20326.20144"="2608";"20326.20142"="2608";
+                "20326.20140"="2608";"20326.20132"="2608";"20326.20112"="2608";"20228.20226"="2607";
+                "20131.20260"="2606";"20131.20258"="2606";
                 "20326.20100"="2608";"20228.20124"="2607";"20228.20158"="2607";"20228.20190"="2607";
                 "20228.20110"="2607";"20228.20188"="2607";"20228.20186"="2607";"20131.20154"="2606";"20131.20126"="2606";"20131.20112"="2606";
                 "20131.20090"="2606";"20131.20152"="2606";"20131.20150"="2606";"20131.20206"="2606";
