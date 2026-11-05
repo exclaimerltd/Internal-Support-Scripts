@@ -2154,10 +2154,10 @@ try {
                 $types = $unexpectedTypes | Select-Object -Unique
                 $removalItems = ''
                 if ($types -contains 'Marketplace') {
-                    $removalItems += '<li>This Add-in was installed by a user. They remove it in Outlook (Get Add-ins &gt; My add-ins &gt; "..." &gt; Remove). See <a href="https://support.microsoft.com/en-au/office/manage-apps-or-add-ins-in-outlook-02ec93fd-528b-44a0-af43-d02e64def27e" target="_blank" rel="noopener">Microsoft: Manage add-ins in Outlook</a>.</li>'
+                    $removalItems += '<li>This Add-in was installed by a user. To remove it, open Outlook, go to Get Add-ins &gt; My add-ins, select "..." next to the Add-in, and then select Remove. See <a href="https://support.microsoft.com/en-au/office/manage-apps-or-add-ins-in-outlook-02ec93fd-528b-44a0-af43-d02e64def27e" target="_blank" rel="noopener">Microsoft: Manage add-ins in Outlook</a>.</li>'
                 }
                 if ($types -contains 'PrivateCatalog') {
-                    $removalItems += '<li>This Add-in was uploaded using an XML manifest. A Microsoft 365 Global Administrator removes it in the admin center. See <a href="https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-addins-in-the-admin-center" target="_blank" rel="noopener">Microsoft: Manage add-ins in the admin center</a>.</li>'
+                    $removalItems += '<li>This Add-in was deployed using an XML manifest. To remove it, a Microsoft 365 Global Administrator needs to use the admin center. See <a href="https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-addins-in-the-admin-center" target="_blank" rel="noopener">Microsoft: Manage add-ins in the admin center</a>.</li>'
                 }
 
                 Add-Content $FullLogFilePath @"
@@ -2167,7 +2167,7 @@ try {
 <ul>
 $removalItems
 </ul></li>
-<li>Ask a Microsoft 365 Global Administrator to deploy it from Integrated apps (search "Exclaimer for Outlook"). See <a href="https://support.exclaimer.com/hc/en-gb/articles/360020741398-Install-Exclaimer-Outlook-Add-in" target="_blank" rel="noopener">Install the Exclaimer Outlook Add-in</a>.</li>
+<li>A Microsoft 365 Global Administrator needs to deploy the Add-in from Integrated apps (search "Exclaimer for Outlook"). See <a href="https://support.exclaimer.com/hc/en-gb/articles/360020741398-Install-Exclaimer-Outlook-Add-in" target="_blank" rel="noopener">Install the Exclaimer Outlook Add-in</a>.</li>
 </ol></div>
 "@
             }
