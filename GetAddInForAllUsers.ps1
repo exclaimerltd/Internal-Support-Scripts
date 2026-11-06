@@ -1,22 +1,45 @@
 # .SYNOPSIS
-#     Script to check what version of the Exclaimer Cloud Add-in is on each mailbox.
-# 
+#     Reports the deployment state of the Exclaimer Cloud Add-in for every active mailbox
+#     in a Microsoft 365 tenant, including the installed add-in version, whether it is
+#     enabled, and how it was deployed. Read-only; makes no changes to any mailbox.
+#
 # .DESCRIPTION
-#     Will first check for required Module and prompt to install them if not present.
-#     It will then prompt the user to Sign in with Microsoft.
-# 
+#     Checks that the ExchangeOnlineManagement module is installed and offers to install it
+#     (current user scope) if it is missing. Prompts for a Microsoft sign-in with
+#     Connect-ExchangeOnline, or reuses an existing Exchange Online session.
+#
+#     Retrieves all mailboxes where the account is not disabled, then runs Get-App against
+#     each one for the Exclaimer Cloud Add-in ID (default: efc30400-2ac5-48b7-8c9b-c0fd5f266be2;
+#     override with -AddInID). For every mailbox it records the add-in version (AppVersion),
+#     enabled state (Enabled), and the deployment type returned by Get-App (Deployment_Method).
+#
+#     Output:
+#       - Main CSV with one row per mailbox: GetAddInForAllUsers_<timestamp>.csv
+#       - Error CSV, created only if errors occur: GetAddInForAllUsers_<timestamp>_errors.csv
+#       - Console summary: total mailboxes, mailboxes with the add-in, mailboxes with no
+#         add-in found, and error count
+#     Files are saved to the Downloads folder, falling back to C:\Temp if Downloads does not
+#     exist. The output folder opens when the script finishes.
+#
+#     Use -VerboseLogging to also write a full session transcript to the same folder.
+#
+#     Note: Get-App throws when the add-in is not present for a mailbox, so a mailbox without
+#     the add-in is expected to appear in the Errors count and error CSV rather than under
+#     "No add-in found" (inferred from the script logic, not confirmed against output).
+#     Review the Error column to tell "add-in not deployed" apart from other failures.
+#
 # .NOTES
 #     Created: 25th January 2024
 #     Updated: 7th October 2024
-# 
+#
 # .PRODUCTS
 #     Exclaimer Signature Management - Microsoft 365
-# 
+#
 # .REQUIREMENTS
 #     - Global Administrator access to the Microsoft Tenant
 #     - ExchangeOnlineManagement module
-# 
-# .VERSION 
+#
+# .VERSION
 #     1.1.0
 
 param(
