@@ -1053,6 +1053,10 @@ Add-Content $FullLogFilePath $installedSummary
                 # M365 channel builds (Current Channel, Monthly Enterprise, Semi-Annual Enterprise).
                 # Builds shared across channels appear once; the version label is channel-agnostic.
                 # Source: https://learn.microsoft.com/en-us/officeupdates/update-history-microsoft365-apps-by-date
+                "20527.20150"="2610";"20527.20112"="2610";"20527.20088"="2610";
+                "20430.20182"="2609";"20430.20180"="2609";"20430.20178"="2609";"20430.20146"="2609";"20430.20118"="2609";
+                "20326.20232"="2608";"20326.20230"="2608";
+                "20228.20276"="2607";"20228.20274"="2607";
                 "20430.20092"="2609";"20326.20158"="2608";"20326.20144"="2608";"20326.20142"="2608";
                 "20326.20140"="2608";"20326.20132"="2608";"20326.20112"="2608";"20228.20226"="2607";
                 "20131.20260"="2606";"20131.20258"="2606";
@@ -1110,6 +1114,7 @@ Add-Content $FullLogFilePath $installedSummary
                 # Office LTSC 2024 / Office 2024 Volume Licensed builds (all Version 2408).
                 # Source: https://learn.microsoft.com/en-us/officeupdates/update-history-office-2024
                 # Minimum supported for VL perpetual is 17932.20222 (Jan 14 2025), enforced via $minimumSupportedBuilds.
+                "17932.21056"="2408";"17932.21000"="2408";"17932.20996"="2408";"17932.20976"="2408";
                 "17932.20910"="2408";"17932.20884"="2408";"17932.20842"="2408";
                 "17932.20790"="2408";"17932.20776"="2408";"17932.20742"="2408";"17932.20700"="2408";
                 "17932.20670"="2408";"17932.20638"="2408";"17932.20620"="2408";"17932.20602"="2408";
