@@ -1825,11 +1825,31 @@ function ConnectExchangeOnlineSession {
     try {
         Import-Module ExchangeOnlineManagement -Force -ErrorAction Stop
         Start-Sleep -Seconds 3
-        Connect-ExchangeOnline -ErrorAction Stop
 
-        Write-Host "✅ Connected successfully!" -ForegroundColor Green
+        # Pick the auth path based on what the installed module actually supports
+        $connectParams = (Get-Command Connect-ExchangeOnline -ErrorAction Stop).Parameters
+        $moduleVersion = (Get-Module ExchangeOnlineManagement).Version.ToString()
+        $authMethod    = $null
+
+        if ($connectParams.ContainsKey('DisableWAM')) {
+            $authMethod = 'Interactive (WAM disabled)'
+            Connect-ExchangeOnline -DisableWAM -ShowBanner:$false -ErrorAction Stop
+        }
+        elseif ($connectParams.ContainsKey('Device')) {
+            $authMethod = 'Device code (DisableWAM not available)'
+            Write-Host "   DisableWAM not supported by this module; using device code sign-in." -ForegroundColor Yellow
+            Connect-ExchangeOnline -Device -ShowBanner:$false -ErrorAction Stop
+        }
+        else {
+            $authMethod = 'Default interactive (no WAM override available)'
+            Connect-ExchangeOnline -ShowBanner:$false -ErrorAction Stop
+        }
+
+        Write-Host "✅ Connected successfully! ($authMethod)" -ForegroundColor Green
 
         Add-Content $FullLogFilePath '<tr><td><strong>Status</strong></td><td><span class="success">✅ Connected successfully</span></td></tr>'
+        Add-Content $FullLogFilePath "<tr><td><strong>Auth Method</strong></td><td>$([System.Web.HttpUtility]::HtmlEncode($authMethod))</td></tr>"
+        Add-Content $FullLogFilePath "<tr><td><strong>EXO Module Version</strong></td><td>$([System.Web.HttpUtility]::HtmlEncode($moduleVersion))</td></tr>"
         Add-Content $FullLogFilePath '</table>'
         Add-Content $FullLogFilePath '</div>'
 
@@ -1844,8 +1864,9 @@ function ConnectExchangeOnlineSession {
 
         Add-Content $FullLogFilePath '<tr><td><strong>Status</strong></td><td><span class="fail">❌ Connection failed</span></td></tr>'
         Add-Content $FullLogFilePath "<tr><td><strong>Error Type</strong></td><td>$([System.Web.HttpUtility]::HtmlEncode($errorType))</td></tr>"
+        Add-Content $FullLogFilePath "<tr><td><strong>Auth Method Attempted</strong></td><td>$([System.Web.HttpUtility]::HtmlEncode($authMethod))</td></tr>"
         Add-Content $FullLogFilePath '</table>'
-        Add-Content $FullLogFilePath '<div class="info-after-error"><strong>❌ Exchange Online connection failed.</strong> The error details are below:</div>'        
+        Add-Content $FullLogFilePath '<div class="info-after-error"><strong>❌ Exchange Online connection failed.</strong> The error details are below:</div>'
         Add-Content $FullLogFilePath '</div>'
         Add-Content $FullLogFilePath '<pre style="background-color:#f1f1f1; padding:12px; border-radius:4px; border-left:4px solid #c7254e; overflow-x:auto; font-size:13px;">'
         Add-Content $FullLogFilePath "$([System.Web.HttpUtility]::HtmlEncode($errorMessage))"
