@@ -1,18 +1,20 @@
-
 <#
 .SYNOPSIS
     Removes all registry and file system entries for the MSI installation of the
     Exclaimer Cloud Signature Update Agent (CSUA) from all user profiles on the
     machine. Designed to run under SYSTEM or a local administrator account, such
     as an SCCM or Intune deployment. Signature folder handling is configurable
-    via the $SignatureMode variable on line 79.
+    via the $SignatureMode variable near the top of the script.
  
 .DESCRIPTION
     Designed for system-wide deployment via Intune, SCCM, or GPO, running as
     SYSTEM or a local administrator.
  
     Product codes, product IDs, and component IDs are discovered dynamically
-    from the live registry at runtime. No hardcoded GUID lists are maintained.
+    from the live registry at runtime. No hardcoded product or component GUID
+    lists are maintained (the CSUA UpgradeCode is the one fixed value).
+    Component registrations are only touched where they reference a CSUA
+    product ID; components shared with other products keep their other entries.
     The script searches the following sources:
       - HKLM\...\Installer\UserData\* (all SIDs)
       - HKCR\Installer\Products
@@ -31,9 +33,9 @@
       - Removes all per-user MSI installer keys, Run entries, AppData folders,
         Outlook signature folders, and Group Policy AppMgmt entries.
       - Handles Outlook signature folders according to $SignatureMode:
-            0 = Back up to C:\Temp\Exclaimer\<username>\ then delete (default)
+            0 = Back up to C:\Temp\Exclaimer\<username>\ then delete
             1 = Delete only
-            2 = No changes
+            2 = No changes (default)
         Backup only runs if the folder contains files. The delete is retried up
         to 3 times with a 5-second delay to handle transient file locks.
  
@@ -46,8 +48,13 @@
         C:\Temp\Exclaimer\CSUACleanupScript.log
  
 .NOTES
-    Version:  2.1
-    Date:     2026-07-21
+    Version:  2.3
+    Date:     2026-11-18
+    Changes:  2.3 taskkill now covers Exclaimer.CloudSignatureUpdateAgent.exe as well as
+              Exclaimer.CloudSignatureAgent.exe.
+              2.2 component cleanup limited to CSUA references; SignatureMode default
+              changed to 2; non-empty Exclaimer Ltd vendor folder left in place;
+              exit code 1 when any error was logged.
     Based on: ecsm-CSUA-MSI-Reg-Cleanup.ps1 (v1, last updated 17/10/2022)
  
     Requires: Run as SYSTEM or local administrator.
@@ -71,12 +78,12 @@ if (-not (Test-Path 'C:\Temp\Exclaimer')) { New-Item -Path 'C:\Temp\Exclaimer' -
 $ScriptErrors = [System.Collections.Generic.List[string]]::new()
 
 # ---------------------------------------------------------------------------
-# Signature folder behaviour  (set before deploying)
+# Signature folder behaviour  (set before deploying; default 2 = untouched)
 #   0 = Backup to C:\Temp\Exclaimer\<username>\ then delete
 #   1 = Delete only (no backup)
 #   2 = No changes
 # ---------------------------------------------------------------------------
-[int]$SignatureMode = 0
+[int]$SignatureMode = 2
 
 function Write-Log {
     param([string]$Message, [string]$Colour = 'Cyan')
@@ -111,15 +118,21 @@ function ConvertTo-PackedGuid {
 # at the system level across all sessions regardless of who owns the process.
 # ---------------------------------------------------------------------------
 Write-Log "Stopping the Cloud Signature Update Agent process across all sessions..."
-$tkResult = & taskkill.exe /F /IM 'Exclaimer.CloudSignatureAgent.exe' 2>&1
-if ($LASTEXITCODE -eq 0) {
-    Write-Log "Process terminated via taskkill." 'Green'
-    Start-Sleep -Seconds 3  # allow file locks to release before filesystem cleanup
-} elseif ($LASTEXITCODE -eq 128) {
-    Write-Log "Process was not running." 'Green'
-} else {
-    Write-Log "taskkill returned exit code $LASTEXITCODE -- $tkResult" 'Yellow'
+# Both executables live in the install folder; either one locks the folder delete.
+$AgentImages = @('Exclaimer.CloudSignatureAgent.exe', 'Exclaimer.CloudSignatureUpdateAgent.exe')
+$AnyKilled   = $false
+foreach ($Image in $AgentImages) {
+    $tkResult = & taskkill.exe /F /IM $Image 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Write-Log "Terminated $Image via taskkill." 'Green'
+        $AnyKilled = $true
+    } elseif ($LASTEXITCODE -eq 128) {
+        Write-Log "$Image was not running." 'Green'
+    } else {
+        Write-Log "taskkill returned exit code $LASTEXITCODE for $Image -- $tkResult" 'Yellow'
+    }
 }
+if ($AnyKilled) { Start-Sleep -Seconds 3 }  # allow file locks to release before filesystem cleanup
 
 # ---------------------------------------------------------------------------
 # Map HKCR / HKU PSDrives
@@ -141,7 +154,8 @@ Write-Log "PSDrives mapped." 'Green'
 #
 # For each product code found, the packed ID is derived mathematically so
 # both forms are available without a second registry lookup.
-# Component IDs are enumerated from the Components subkey of each product.
+# Component IDs are recorded only where a component registration references a
+# CSUA product ID (Source 5).
 # ---------------------------------------------------------------------------
 Write-Log "Discovering CSUA product artefacts from registry..."
 
@@ -164,7 +178,7 @@ function Register-ProductCode {
     if ($packed) { Add-IfNew $CSUAProdID $packed }
 }
 
-# Source 1: UserData (all SIDs) - most complete; also harvests component IDs
+# Source 1: UserData (all SIDs) - most complete
 $UserDataBase = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData'
 if (Test-Path $UserDataBase) {
     Get-ChildItem -Path $UserDataBase -ErrorAction SilentlyContinue | ForEach-Object {
@@ -177,22 +191,6 @@ if (Test-Path $UserDataBase) {
                 if ($Props -and $Props.DisplayName -clike $MatchPattern) {
                     $PackedID = $ProdKey.PSChildName
                     Add-IfNew $CSUAProdID $PackedID
-                    # Component IDs are not under Products; they live at
-                    # UserData\<SID>\Components\<CompID> and are harvested separately below
-                }
-            }
-            # Harvest component IDs: any component key whose parent SID has a known product
-            $CompPath = "$SIDPath\Components"
-            if (Test-Path $CompPath) {
-                Get-ChildItem -Path $CompPath -ErrorAction SilentlyContinue | ForEach-Object {
-                    # Only add if this SID also has a matching product (avoid unrelated components)
-                    $CompID = $_.PSChildName
-                    # Check if any product under this SID matched
-                    $HasCSUA = Get-ChildItem -Path $ProdBase -ErrorAction SilentlyContinue |
-                        ForEach-Object { Get-ItemProperty -Path "$($_.PSPath)\InstallProperties" -ErrorAction SilentlyContinue } |
-                        Where-Object { $_.DisplayName -clike $MatchPattern } |
-                        Select-Object -First 1
-                    if ($HasCSUA) { Add-IfNew $ComponentID $CompID }
                 }
             }
         }
@@ -228,6 +226,28 @@ Get-ChildItem 'HKU:\' -ErrorAction SilentlyContinue | ForEach-Object {
             $Props = Get-ItemProperty -Path $_.PSPath -ErrorAction SilentlyContinue
             if ($Props -and $Props.ProductName -clike $MatchPattern) {
                 Add-IfNew $CSUAProdID $_.PSChildName
+            }
+        }
+    }
+}
+
+# Source 5: component registrations that reference a CSUA product ID.
+# UserData\<SID>\Components\<CompID> is shared by every product using that
+# component; each value name is the packed ID of a product that uses it. Only
+# components with at least one CSUA value name are recorded. Removal is handled
+# by Remove-CSUAComponentRef, which never touches other products' values.
+if ($CSUAProdID.Count -gt 0 -and (Test-Path $UserDataBase)) {
+    Get-ChildItem -Path $UserDataBase -ErrorAction SilentlyContinue | ForEach-Object {
+        $CompPath = "$($_.PSPath)\Components"
+        if (Test-Path $CompPath) {
+            Get-ChildItem -Path $CompPath -ErrorAction SilentlyContinue | ForEach-Object {
+                $CompKey = $_
+                foreach ($N in @($CompKey.GetValueNames())) {
+                    if ($N -and ($CSUAProdID -contains $N)) {
+                        Add-IfNew $ComponentID $CompKey.PSChildName
+                        break
+                    }
+                }
             }
         }
     }
@@ -305,6 +325,42 @@ function Remove-FSPath {
 }
 
 # ---------------------------------------------------------------------------
+# Helper: remove a CSUA reference from a Windows Installer component key
+# Deletes the whole key only when every value name is a CSUA product ID;
+# otherwise removes just the CSUA values and leaves other products intact.
+# ---------------------------------------------------------------------------
+function Remove-CSUAComponentRef {
+    param([string]$SID, [string]$CompID)
+    $Key  = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\$SID\Components\$CompID"
+    $Item = Get-Item -Path $Key -ErrorAction SilentlyContinue
+    if (-not $Item) { return }
+    $Names  = @($Item.GetValueNames() | Where-Object { $_ })
+    $Mine   = @($Names | Where-Object { $CSUAProdID -contains $_ })
+    $Others = @($Names | Where-Object { $CSUAProdID -notcontains $_ })
+    if ($Mine.Count -eq 0) { return }
+    if ($Others.Count -eq 0) {
+        Remove-RegKey $Key
+    } else {
+        foreach ($N in $Mine) { Remove-RegValue $Key $N }
+        Write-Log "  Component $CompID is shared with other products; removed CSUA value(s) only."
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Helper: remove a folder only if it is empty (used for the shared vendor folder)
+# ---------------------------------------------------------------------------
+function Remove-FSPathIfEmpty {
+    param([string]$FSPath)
+    if (-not (Test-Path $FSPath)) { return }
+    $Any = Get-ChildItem -Path $FSPath -Force -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($Any) {
+        Write-Log "  Left in place (not empty): $FSPath" 'Yellow'
+        return
+    }
+    Remove-FSPath $FSPath
+}
+
+# ---------------------------------------------------------------------------
 # Per-user cleanup function
 # Accepts the user SID and the resolved AppData / LocalAppData paths directly
 # so it can be called regardless of whether a hive was loaded.
@@ -351,7 +407,7 @@ function Invoke-UserCleanup {
 
     # -- Per-user component ID keys --
     foreach ($CompID in $ComponentID) {
-        Remove-RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\$SID\Components\$CompID"
+        Remove-CSUAComponentRef -SID $SID -CompID $CompID
     }
 
     # -- Per-user generic keys --
@@ -391,7 +447,7 @@ function Invoke-UserCleanup {
 
     # -- Per-user file system paths --
     Remove-FSPath "$LocalAppData\Programs\Exclaimer Ltd\Cloud Signature Update Agent"
-    Remove-FSPath "$LocalAppData\Programs\Exclaimer Ltd"
+    Remove-FSPathIfEmpty "$LocalAppData\Programs\Exclaimer Ltd"
     Remove-FSPath "$LocalAppData\Exclaimer"
     Remove-FSPath "$AppData\Microsoft\Windows\Start Menu\Programs\Exclaimer Ltd"
     Remove-FSPath "$AppData\Microsoft\Windows\Start Menu\Programs\Exclaimer"
@@ -556,7 +612,7 @@ foreach ($ProdCode in $CSUAProdCode) {
 
 # Component ID keys (S-1-5-18)
 foreach ($CompID in $ComponentID) {
-    Remove-RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Components\$CompID"
+    Remove-CSUAComponentRef -SID 'S-1-5-18' -CompID $CompID
 }
 
 # Generic machine-wide keys
@@ -597,6 +653,8 @@ Remove-PSDrive -Name HKU  -ErrorAction SilentlyContinue
 # ---------------------------------------------------------------------------
 if ($ScriptErrors.Count -gt 0) {
     Write-Log "Script completed with $($ScriptErrors.Count) error(s). Review log at $LogPath" 'Yellow'
+    exit 1
 } else {
     Write-Log "Script completed successfully. Log saved to $LogPath" 'Green'
+    exit 0
 }
