@@ -7,8 +7,7 @@
 #     It prompts for a user's email to determine their domain, fetches relevant endpoints, tests connectivity, inspects Outlook installations, and produces an HTML report "AddInChecks.html" in the user’s Downloads folder.
 #
 # .NOTES
-#     Date: 23rd September 2025
-#     Version: 4.26.24
+#     Date: 20th November 2026
 #
 # .PRODUCTS
 #     Exclaimer Signature Management - Microsoft 365
