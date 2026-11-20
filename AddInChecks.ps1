@@ -1879,6 +1879,74 @@ function ConnectExchangeOnlineSession {
     }
 }
 
+# -------------------------------------------------------------------
+# Signature Tamper Detection add-in (separate add-in from the signature Prod/Preview add-ins)
+# -------------------------------------------------------------------
+function InspectTamperDetectionAddIn {
+    param([Parameter(Mandatory)][string]$user)
+
+    $TamperID = "2e64b227-0786-41c0-9dfc-0ddcfd7bc7b9"
+    $identity = "$user\$TamperID"
+
+    Write-Host "`n🎯 Querying Signature Tamper Detection add-in deployment..." -ForegroundColor Cyan
+
+    $TamperResult = $null
+    $TamperError  = $null
+
+    try {
+        # ErrorAction Stop (not SilentlyContinue) so the real error is reported rather than hidden
+        $TamperResult = Get-App -Identity $identity -ErrorAction Stop |
+            Select-Object DisplayName, Enabled, AppVersion, Scope, Type, DefaultStateForUser
+    } catch {
+        $TamperError = $_.Exception.Message
+    }
+
+    Add-Content $FullLogFilePath '<h3>🛡️ Signature Tamper Detection Add-in Information (Admin)</h3>'
+
+    if ($TamperResult) {
+        Write-Host "`n✅ Signature Tamper Detection add-in found:" -ForegroundColor Green
+        $TamperResult | Format-Table -AutoSize
+
+        $enabledColor = if ($TamperResult.Enabled -ne $true) { ' style="color:red;font-weight:bold;"' } else { '' }
+        $typeColor = switch ($TamperResult.Type) {
+            'PrivateCatalog' { ' style="color:orange;font-weight:bold;"' }
+            'Marketplace'    { ' style="color:red;font-weight:bold;"' }
+            default          { '' }
+        }
+
+        Add-Content $FullLogFilePath '<table><tr><th>Add-in</th><th>Display Name</th><th>Version</th><th>Enabled</th><th>Scope</th><th title="Deployment method, see Deployment Method Reference table">Type</th><th title="Default state for the user">Default State</th></tr>'
+        Add-Content $FullLogFilePath ('<tr><td>Tamper Detection</td><td>{0}</td><td>{1}</td><td{5}>{2}</td><td>{3}</td><td{6}>{4}</td><td>{7}</td></tr>' -f `
+                [System.Web.HttpUtility]::HtmlEncode($TamperResult.DisplayName),
+                [System.Web.HttpUtility]::HtmlEncode($TamperResult.AppVersion),
+                [System.Web.HttpUtility]::HtmlEncode($TamperResult.Enabled),
+                [System.Web.HttpUtility]::HtmlEncode($TamperResult.Scope),
+                [System.Web.HttpUtility]::HtmlEncode($TamperResult.Type),
+                $enabledColor,
+                $typeColor,
+                [System.Web.HttpUtility]::HtmlEncode($TamperResult.DefaultStateForUser))
+        Add-Content $FullLogFilePath '</table>'
+
+        if ($TamperResult.Type -in 'Marketplace','PrivateCatalog') {
+            Add-Content $FullLogFilePath '<div class="info-after-error"><strong>Warning: Unexpected deployment type detected.</strong> This add-in should be deployed from Integrated apps. Please check the deployment "Version" and Add-in "Type".</div>'
+        }
+
+        if ($TamperResult.Enabled -ne $true) {
+            $enableCommand = "Enable-App -Identity `"$identity`""
+            Add-Content $FullLogFilePath ('<div class="info-after-error"><span><b>ℹ️ Signature Tamper Detection Add-in is Disabled:</b><br>Run this command in PowerShell to re-enable it:</span> <code>{0}</code></div>' -f [System.Web.HttpUtility]::HtmlEncode($enableCommand))
+        }
+    }
+    else {
+        Write-Host "`n⚠️ Signature Tamper Detection add-in not found for this user." -ForegroundColor Yellow
+        if ($TamperError) { Write-Host "   Error: $TamperError" -ForegroundColor DarkGray }
+
+        $detail = if ($TamperError) { [System.Web.HttpUtility]::HtmlEncode($TamperError) } else { 'No result returned.' }
+        Add-Content $FullLogFilePath '<table><tr><th>Status</th><th>Details</th></tr>'
+        Add-Content $FullLogFilePath ('<tr><td class="warning">Not found</td><td>The Signature Tamper Detection add-in was not found for {0}. This is expected for Shared Mailboxes and for tenants not using Tamper Detection, but not for User Mailboxes where it should be deployed.</td></tr>' -f ` [System.Web.HttpUtility]::HtmlEncode($user))
+        Add-Content $FullLogFilePath '</table>'
+        Add-Content $FullLogFilePath '<div class="info-after-warning">If the add-in is deployed in Integrated apps, check the "Who has access" assignment includes this user, and allow time for a recent deployment to propagate.</div>'
+    }
+}
+
 function InpectEXOconfiguration { 
 # --- Proceed only if module available ---
 if (CheckExchangeOnlineModule) {
@@ -2121,7 +2189,7 @@ try {
             }
 
             # --- HTML Logging (safe formatting) ---
-            Add-Content $FullLogFilePath '<h3>🧩 Exclaimer Add-in Information (Admin)</h3>'
+            Add-Content $FullLogFilePath '<h3>🧩 Exclaimer Cloud for Outlook Add-in Information (Admin)</h3>'
             Add-Content $FullLogFilePath '<table><tr><th>Type</th><th>Display Name</th><th>Version</th><th>Enabled</th><th>Scope</th><th title="Deployment method, see table below">Type</th></tr>'
 
             if ($ProdResult) {
@@ -2220,33 +2288,34 @@ $removalItems
                 $sideNote = '<p class="side-note">If you have both Production and Preview versions deployed, only one needs to enabled.</p><p class="side-note">If you have reopened PowerShell, then you may need to run the command below before enabling the Add-in.</p><code>Connect-ExchangeOnline</code><p class="side-note">When an Add-in is disabled for a user, it should not appear or function in Outlook. We have observed cases where it may still load in Outlook on the web, but this is not expected behaviour. If this occurs, it may need to be raised with Microsoft for further review.</p>'
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
-
-            # --- Add explanatory table for deployment methods ---
-            Add-Content $FullLogFilePath '<h4>Deployment Method Reference</h4>'
-            Add-Content $FullLogFilePath '<table>'
-            Add-Content $FullLogFilePath '<tr><th>Type</th><th>Deployment</th><th>Description</th></tr>'
-
-            Add-Content $FullLogFilePath '<tr><td>MarketplacePrivateCatalog</td><td>AppSource (Private/Public)</td><td>Deployed centrally by an administrator using Microsoft AppSource or Centralized Deployment. Updates managed automatically by Microsoft.</td></tr>'
-            Add-Content $FullLogFilePath '<tr><td>PrivateCatalog</td><td>Manifest (Custom XML)</td><td>Deployed manually by an admin using an uploaded manifest file. Typically used for preview or testing deployments.</td></tr>'
-            Add-Content $FullLogFilePath '<tr><td>Marketplace</td><td>User Installed</td><td>Installed directly by an individual user through Outlook "Get Add-ins" store. Managed at the user level.</td></tr>'
-
-            Add-Content $FullLogFilePath '</table>'
-
         }
         else {
-            Write-Host "`n⚠️ No Exclaimer Add-ins found for this user." -ForegroundColor Yellow
+            Write-Host "`n⚠️ No Exclaimer Cloud for Outlook Add-in found for this user." -ForegroundColor Yellow
 
-            Add-Content $FullLogFilePath '<h3>Exclaimer Add-in Information (Admin)</h3>'
+            Add-Content $FullLogFilePath '<h3>Exclaimer Cloud for Outlook Add-in Information (Admin)</h3>'
             Add-Content $FullLogFilePath '<table>'
             Add-Content $FullLogFilePath '<tr><th>Status</th><th>Details</th></tr>'
 
             Add-Content $FullLogFilePath (
-                '<tr><td class="warning">None</td><td>No Exclaimer Add-ins were found for {0}. This is expected for Shared Mailboxes, but not for User Mailboxes.</td></tr>' -f
+                '<tr><td class="warning">None</td><td>No Exclaimer Cloud for Outlook Add-in found for {0}. This is expected for Shared Mailboxes, but not for User Mailboxes.</td></tr>' -f
                 [System.Web.HttpUtility]::HtmlEncode($user)
             )
 
             Add-Content $FullLogFilePath '</table>'
         }
+
+        InspectTamperDetectionAddIn -user $user
+
+        # --- Add explanatory table for deployment methods ---
+        Add-Content $FullLogFilePath '<h4>Microsoft Add-ins Deployment Method Reference</h4>'
+        Add-Content $FullLogFilePath '<table>'
+        Add-Content $FullLogFilePath '<tr><th>Type</th><th>Deployment</th><th>Description</th></tr>'
+
+        Add-Content $FullLogFilePath '<tr><td>MarketplacePrivateCatalog</td><td>AppSource (Private/Public)</td><td>Deployed centrally by an administrator using Microsoft AppSource or Centralized Deployment. Updates managed automatically by Microsoft.</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td>PrivateCatalog</td><td>Manifest (Custom XML)</td><td>Deployed manually by an admin using an uploaded manifest file. Typically used for preview or testing deployments.</td></tr>'
+        Add-Content $FullLogFilePath '<tr><td>Marketplace</td><td>User Installed</td><td>Installed directly by an individual user through Outlook "Get Add-ins" store. Managed at the user level.</td></tr>'
+
+        Add-Content $FullLogFilePath '</table>'
 
         # --- Getting Mailbox Details ---
         Write-Host "`nCollecting mailbox configuration related to Outlook Add-ins..." -ForegroundColor Cyan
