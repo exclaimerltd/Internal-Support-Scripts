@@ -1973,6 +1973,8 @@ try {
             $addAppsSideNote = $false
             $addEwsSideNote = $false
             $addEwsAllowOutlookSideNote = $false
+            $addEwsSideNoteWarning = $false
+            $addEwsAllowOutlookSideNoteWarning = $false
 
             Add-Content $FullLogFilePath '<div class="section">'
             Add-Content $FullLogFilePath '<h3>⚙️ Organization Configuration - Add-in Compatibility</h3>'
@@ -2113,6 +2115,24 @@ try {
                     'Run this command to explicitly allow Outlook EWS access at the organization level:<br>' +
                     '<code>Set-OrganizationConfig -EwsAllowOutlook $true</code><br><br>' +
                     'Note: Mailbox-level EWS settings can still override this organization setting.' +
+                    '</span></div>'
+                Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
+
+            if ($addEwsSideNoteWarning) {
+                $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsEnabled'' is not explicitly set at org level:</b><br>' +
+                    'This Outlook build requires EWS for add-in functionality. When the value is not set, Exchange Online applies its default, and mailbox-level settings can still override it.<br><br>' +
+                    'Optional: to set it explicitly at the organization level:<br>' +
+                    '<code>Set-OrganizationConfig -EwsEnabled $true</code>' +
+                    '</span></div>'
+                Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
+
+            if ($addEwsAllowOutlookSideNoteWarning) {
+                $sideNote = '<div class="info-after-warning"><span><b>ℹ️ ''EwsAllowOutlook'' is not explicitly set at org level:</b><br>' +
+                    'This Outlook build requires EWS for add-in functionality. When the value is not set, Exchange Online applies its default, and mailbox-level settings can still override it.<br><br>' +
+                    'Optional: to set it explicitly at the organization level:<br>' +
+                    '<code>Set-OrganizationConfig -EwsAllowOutlook $true</code>' +
                     '</span></div>'
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
