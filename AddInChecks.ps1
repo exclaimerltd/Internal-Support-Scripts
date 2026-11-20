@@ -2078,23 +2078,23 @@ try {
 
             Add-Content $FullLogFilePath '</table></div>'
 
-            $anyEwsWarning = $addEwsSideNoteWarning -or $addEwsSideNote -or $addEwsAllowOutlookSideNoteWarning -or $addEwsAllowOutlookSideNote
-
-            if ($addGCCSideNote) {
-                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''OutlookMobileGCCRestrictionsEnabled'' is ''true'':</b><br>Run this command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to ''false'': <code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $false</code></span></div>'
-                Add-Content -Path $FullLogFilePath -Value $sideNote
-            }
-
-            if ($addAppsSideNote) {
-                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''AppsForOfficeEnabled'' is disabled:</b><br>Run this command in PowerShell to enable Apps for Office: <code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>'
-                Add-Content -Path $FullLogFilePath -Value $sideNote
-            }
+            $anyEwsWarning = $addEwsSideNoteWarning -or $addEwsSideNote -or $addEwsAllowOutlookSideNoteWarning -or $addEwsAllowOutlookSideNote -or $addGCCSideNote
 
             if ($anyEwsWarning) {
                 $sideNote = '<div class="info-after-note">' +
                     '<span>If you have reopened PowerShell, you may need to run first: <code>Connect-ExchangeOnline</code></span><br><br>' +
                     '<span>Once this is completed, please re-run the full script again to verify the changes made.</span>' +
                     '</div>'
+                Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
+            
+            if ($addGCCSideNote) {
+                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''OutlookMobileGCCRestrictionsEnabled'' is ''true'':</b>This prevents Add-ins from Loading on Mobile Devices<br><br>Run this command in PowerShell to set OutlookMobileGCCRestrictionsEnabled to ''false'': <code>Set-OrganizationConfig -OutlookMobileGCCRestrictionsEnabled $false</code></span></div>'
+                Add-Content -Path $FullLogFilePath -Value $sideNote
+            }
+
+            if ($addAppsSideNote) {
+                $sideNote = '<div class="info-after-error"><span><b>ℹ️ ''AppsForOfficeEnabled'' is disabled:</b><br>Run this command in PowerShell to enable Apps for Office: <code>Set-OrganizationConfig -AppsForOfficeEnabled $true</code></span></div>'
                 Add-Content -Path $FullLogFilePath -Value $sideNote
             }
 
