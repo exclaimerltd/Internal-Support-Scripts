@@ -500,14 +500,23 @@ function Get-Region {
         else {
             Write-Host "'OutlookSignaturesEndpoint' not found in response." -ForegroundColor Yellow
             Add-Content $FullLogFilePath "<p class='warn'>⚠️ 'OutlookSignaturesEndpoint' not found in response.</p>"
+            $respType = if ($null -eq $response) { 'null' } else { $response.GetType().Name }
+            $respLen = if ($response -is [string]) { $response.Length } else { 'n/a' }
+            Add-Content $FullLogFilePath "<p class='info-after-warning'>Response type: <code>$respType</code> (length: $respLen). If this is String, empty or null, the body was not usable JSON; possible causes are a proxy, web filter or SASE service holding, scanning or altering the response. If it is an object without the property, the domain may not be on the subscription, or the subscription is not synced with the Microsoft 365 tenant (<a href='https://support.exclaimer.com/hc/en-gb/articles/6389214769565-Synchronize-user-data' target='_blank'>see article</a>). The tenant regional endpoint was NOT tested below; only $hostToTest is.</p>"
             $global:OutlookSignaturesEndpoint = $hostToTest
         }
     }
     catch {
         Write-Host "No data found for domain '$domain'." -ForegroundColor Red
         Add-Content $FullLogFilePath "<p class='fail'>❌ No data found for domain '$domain'.</p>"
-        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ This may happen if your Exclaimer subscription is not synced with your Microsoft 365 tenant (` +
-            `<a href='https://support.exclaimer.com/hc/en-gb/articles/6389214769565-Synchronize-user-data' target='_blank'>see article</a>).</p>"
+        $status = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { $null }
+        $why = switch ($status) {
+            404 { "The service has no record for this domain. It may not be on an Exclaimer subscription, or the subscription is not synced with the Microsoft 365 tenant (<a href='https://support.exclaimer.com/hc/en-gb/articles/6389214769565-Synchronize-user-data' target='_blank'>see article</a>)." }
+            407 { "A proxy is asking for authentication; traffic to $hostToTest needs to bypass proxy authentication." }
+            403 { "The request was refused, most often by a proxy or web filter policy." }
+            default { "No usable HTTP response. Possible causes: DNS filtering, TLS inspection with a certificate this device does not trust, or a connection reset or held by a proxy or firewall." }
+        }
+        Add-Content $FullLogFilePath "<p class='info-after-error'>$why Detail: $([System.Net.WebUtility]::HtmlEncode($_.Exception.Message)) The tenant regional endpoint was NOT tested below; only $hostToTest is.</p>"
         $global:OutlookSignaturesEndpoint = $hostToTest
     }
 }
@@ -1318,9 +1327,9 @@ if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Ou
     InspectOutlookConfiguration
 }
 
-# --- Check Classic Outlook Encoding Configuration ---
+# --- Check Classic Outlook Configuration ---
 # Build function to search user hives
-function InspectClassicOutlookEncoding {
+function InspectClassicOutlookConfiguration {
     param([string]$userEmail)
     
     # Extract username from email (UPN - part before @)
@@ -1393,73 +1402,112 @@ function InspectClassicOutlookEncoding {
         }
     }
     
-    # Get encoding value if hive was identified
+    # Inspect Classic Outlook configuration if hive was identified
     if ($matchedHive) {
-        $encodingPath = "Registry::HKEY_USERS\$matchedHive\SOFTWARE\Microsoft\Office\16.0\Outlook\Options\MSHTML\International"
-        
+        $hiveRoot = "Registry::HKEY_USERS\$matchedHive\SOFTWARE\Microsoft\Office\16.0"
+        $rows = New-Object System.Collections.Generic.List[string]
+        $notes = New-Object System.Collections.Generic.List[string]
+
+        # --- Preferred encoding ---
+        $encodingPath = "$hiveRoot\Outlook\Options\MSHTML\International"
         try {
             $encodingReg = Get-Item $encodingPath -ErrorAction SilentlyContinue
             if ($encodingReg) {
                 $codePage = $encodingReg.GetValue('Default_CodePageOut')
-                
+
                 if ($null -ne $codePage) {
-                    # Console output
                     if ($codePage -eq 65001) {
                         Write-Host "Outlook encoding is configured to UTF-8" -ForegroundColor Green
+                        $rows.Add("<tr><td>Preferred Encoding</td><td><span class='success'>65001 (UTF-8)</span></td><td><span class='success'>OK</span></td></tr>")
+                        $notes.Add("<div class='info-after-success'>✅ Encoding is UTF-8; no action required.</div>")
                     }
                     else {
                         Write-Host "Outlook encoding code page: $codePage" -ForegroundColor White
-                    }
-                    
-                    # HTML output
-                    Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
-                    Add-Content $FullLogFilePath "<table><tr><th>Setting</th><th>Value</th><th>Notes</th></tr>"
-                    
-                    $htmlNote = $null
-                    if ($codePage -eq 65001) {
-                        Add-Content $FullLogFilePath "<tr><td>Preferred Encoding</td><td><span class='success'>65001 (UTF-8)</span></td><td><span class='success'>OK</span></td></tr>"
-                        $htmlNote = "<div class='info-after-success'>✅ Encoding is UTF-8; no action required.</div>"
-                    }
-                    else {
-                        Add-Content $FullLogFilePath "<tr><td>Preferred Encoding</td><td><span class='warning'>$codePage</span></td><td><span class='warning'>Please review</span></td></tr>"
-                        $htmlNote = "<div class='info-after-warning'>
+                        $rows.Add("<tr><td>Preferred Encoding</td><td><span class='warning'>$codePage</span></td><td><span class='warning'>Please review</span></td></tr>")
+                        $notes.Add("<div class='info-after-warning'>
                                 ⚠️ Detected code page $codePage. Please review 
                                 <a href='https://learn.microsoft.com/en-us/windows/win32/intl/code-page-identifiers' target='_blank'>Code Page Identifiers</a>.
                                <br> If you experience issues with foreign characters displaying incorrectly in emails, see 
                                 <a href='https://support.exclaimer.com/hc/en-gb/articles/6622042157085-Foreign-characters-are-not-displayed-correctly' target='_blank'>support article</a>.
-                                </div>"
+                                </div>")
                     }
-                    
-                    Add-Content $FullLogFilePath "</table>"
-                    if ($htmlNote) { Add-Content $FullLogFilePath $htmlNote }
                 }
                 else {
-                    Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
-                    Add-Content $FullLogFilePath "<p class='warning'>⚠️ Outlook encoding configuration not found. Preferred Encoding registry value is not set.</p>"
+                    $rows.Add("<tr><td>Preferred Encoding</td><td><span class='warning'>Not set</span></td><td><span class='warning'>Preferred Encoding registry value is not set</span></td></tr>")
                 }
             }
             else {
-                Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
-                Add-Content $FullLogFilePath "<p class='warning'>⚠️ Outlook encoding registry path not found for this user.</p>"
+                $rows.Add("<tr><td>Preferred Encoding</td><td><span class='warning'>Not found</span></td><td><span class='warning'>Outlook encoding registry path not found for this user</span></td></tr>")
             }
         }
         catch {
-            Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
-            Add-Content $FullLogFilePath "<p class='warning'>⚠️ Error accessing Outlook encoding configuration: $_</p>"
+            $rows.Add("<tr><td>Preferred Encoding</td><td><span class='warning'>Error</span></td><td><span class='warning'>Error accessing Outlook encoding configuration: $_</span></td></tr>")
         }
+
+        # --- Office identity settings (WAM / OneAuth) ---
+        # DisableOneAuth = 1 is flagged as an error (reproduced as the cause of the add-in authentication loop).
+        # DisableAADWAM = 1 is flagged as a warning (Microsoft does not support disabling WAM).
+        # A missing value or 0 is the default (OK).
+        $identityPath = "$hiveRoot\Common\Identity"
+        $identityKey = 'HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Identity'
+        $oneAuthProblem = $false
+        $wamProblem = $false
+        try {
+            $identityReg = Get-Item $identityPath -ErrorAction SilentlyContinue
+            foreach ($settingName in @('DisableOneAuth', 'DisableAADWAM')) {
+                $settingValue = $null
+                if ($identityReg) { $settingValue = $identityReg.GetValue($settingName) }
+
+                if ($null -eq $settingValue) {
+                    Write-Host "$settingName is not set" -ForegroundColor Green
+                    $rows.Add("<tr><td>$settingName</td><td><span class='success'>Not set</span></td><td><span class='success'>OK</span></td></tr>")
+                }
+                elseif ($settingValue -eq 0) {
+                    Write-Host "$settingName is set to 0" -ForegroundColor Green
+                    $rows.Add("<tr><td>$settingName</td><td><span class='success'>0</span></td><td><span class='success'>OK</span></td></tr>")
+                }
+                elseif ($settingName -eq 'DisableOneAuth') {
+                    $oneAuthProblem = $true
+                    Write-Host "$settingName is set to $settingValue" -ForegroundColor Red
+                    $rows.Add("<tr><td>$settingName</td><td><span class='fail'>$settingValue</span></td><td><span class='fail'>Action required</span></td></tr>")
+                }
+                else {
+                    $wamProblem = $true
+                    Write-Host "$settingName is set to $settingValue" -ForegroundColor Yellow
+                    $rows.Add("<tr><td>$settingName</td><td><span class='warning'>$settingValue</span></td><td><span class='warning'>Please review</span></td></tr>")
+                }
+            }
+        }
+        catch {
+            $rows.Add("<tr><td>DisableAADWAM / DisableOneAuth</td><td><span class='warning'>Error</span></td><td><span class='warning'>Error accessing Office identity configuration: $_</span></td></tr>")
+        }
+
+        if ($oneAuthProblem) {
+            $notes.Add("<div class='info-after-error'><span><b>❌ DisableOneAuth is set:</b><br>This can cause the Exclaimer add-in to stay on 'Loading' with a repeated Microsoft sign-in prompt in Classic Outlook.<br><br>To fix this, run the following in PowerShell as the affected Windows user (not elevated as a different account), then fully close and reopen Outlook:<br><br><code>Remove-ItemProperty -Path '$identityKey' -Name 'DisableOneAuth'</code><br><br>If the value returns after Outlook is restarted or the user signs in again, something is setting it (for example Group Policy, a login script or a device management tool), and your IT administrator will need to stop that from re-applying it.</span></div>")
+        }
+        if ($wamProblem) {
+            $notes.Add("<div class='info-after-warning'><span><b>⚠️ DisableAADWAM is set:</b><br>This setting is used to turn off Web Account Manager (WAM) for Office sign-in. Microsoft doesn't support disabling WAM as a fix for Microsoft 365 sign-in issues; see <a href='https://learn.microsoft.com/en-us/previous-versions/troubleshoot/microsoft-365/microsoft-365-apps/activation/disabling-adal-wam-not-recommended' target='_blank'>Disabling ADAL or WAM isn't supported</a>.<br><br>If it wasn't set on purpose, run the following in PowerShell as the affected Windows user (not elevated as a different account), then fully close and reopen Outlook:<br><br><code>Remove-ItemProperty -Path '$identityKey' -Name 'DisableAADWAM'</code><br><br>If the value returns after Outlook is restarted or the user signs in again, something is setting it (for example Group Policy, a login script or a device management tool), and your IT administrator will need to stop that from re-applying it.</span></div>")
+        }
+
+        # HTML output
+        Add-Content $FullLogFilePath "<h3>Classic Outlook Configuration</h3>"
+        Add-Content $FullLogFilePath "<table><tr><th>Setting</th><th>Value</th><th>Notes</th></tr>"
+        foreach ($row in $rows) { Add-Content $FullLogFilePath $row }
+        Add-Content $FullLogFilePath "</table>"
+        foreach ($note in $notes) { Add-Content $FullLogFilePath $note }
     }
     elseif ($userHives.Count -eq 0) {
-        Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
+        Add-Content $FullLogFilePath "<h3>Classic Outlook Configuration</h3>"
         Add-Content $FullLogFilePath "<p class='warning'>⚠️ No user hives found in HKEY_USERS.</p>"
     }
     else {
-        Add-Content $FullLogFilePath "<h3>Classic Outlook Encoding Configuration</h3>"
-        Add-Content $FullLogFilePath "<p class='warning'>⚠️ User hive selection was skipped. Encoding configuration could not be retrieved.</p>"
+        Add-Content $FullLogFilePath "<h3>Classic Outlook Configuration</h3>"
+        Add-Content $FullLogFilePath "<p class='warning'>⚠️ User hive selection was skipped. Classic Outlook configuration could not be retrieved.</p>"
     }
 }
 if ($Global:userInput.OutlookAffected -in @('Classic Outlook (Windows)', 'New Outlook (Windows)','Outlook Web (Windows)','Multiple / All')) {
     # Call the function with the user's email
-    InspectClassicOutlookEncoding -userEmail $Global:userInput.Email
+    InspectClassicOutlookConfiguration -userEmail $Global:userInput.Email
 }
 
 
