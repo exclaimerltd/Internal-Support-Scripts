@@ -1986,6 +1986,7 @@ function InspectTamperDetectionAddIn {
         Write-Host "`n⚠️ Signature Tamper Detection add-in not found for this user." -ForegroundColor Yellow
         if ($TamperError) { Write-Host "   Error: $TamperError" -ForegroundColor DarkGray }
 
+        $detail = if ($TamperError) { [System.Web.HttpUtility]::HtmlEncode($TamperError) } else { 'No result returned.' }
         Add-Content $FullLogFilePath '<table><tr><th>Status</th><th>Details</th></tr>'
         Add-Content $FullLogFilePath ('<tr><td class="warning">Not found</td><td>The Signature Tamper Detection add-in was not found for {0}. This is expected for Shared Mailboxes and for tenants not using Tamper Detection, but not for User Mailboxes where it should be deployed.</td></tr>' -f ` [System.Web.HttpUtility]::HtmlEncode($user))
         Add-Content $FullLogFilePath '</table>'
