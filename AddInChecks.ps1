@@ -500,14 +500,23 @@ function Get-Region {
         else {
             Write-Host "'OutlookSignaturesEndpoint' not found in response." -ForegroundColor Yellow
             Add-Content $FullLogFilePath "<p class='warn'>⚠️ 'OutlookSignaturesEndpoint' not found in response.</p>"
+            $respType = if ($null -eq $response) { 'null' } else { $response.GetType().Name }
+            $respLen = if ($response -is [string]) { $response.Length } else { 'n/a' }
+            Add-Content $FullLogFilePath "<p class='info-after-warning'>Response type: <code>$respType</code> (length: $respLen). If this is String, empty or null, the body was not usable JSON; possible causes are a proxy, web filter or SASE service holding, scanning or altering the response. If it is an object without the property, the domain may not be on the subscription, or the subscription is not synced with the Microsoft 365 tenant (<a href='https://support.exclaimer.com/hc/en-gb/articles/6389214769565-Synchronize-user-data' target='_blank'>see article</a>). The tenant regional endpoint was NOT tested below; only $hostToTest is.</p>"
             $global:OutlookSignaturesEndpoint = $hostToTest
         }
     }
     catch {
         Write-Host "No data found for domain '$domain'." -ForegroundColor Red
         Add-Content $FullLogFilePath "<p class='fail'>❌ No data found for domain '$domain'.</p>"
-        Add-Content $FullLogFilePath "<p class='info-after-error'>ℹ️ This may happen if your Exclaimer subscription is not synced with your Microsoft 365 tenant (` +
-            `<a href='https://support.exclaimer.com/hc/en-gb/articles/6389214769565-Synchronize-user-data' target='_blank'>see article</a>).</p>"
+        $status = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { $null }
+        $why = switch ($status) {
+            404 { "The service has no record for this domain. It may not be on an Exclaimer subscription, or the subscription is not synced with the Microsoft 365 tenant (<a href='https://support.exclaimer.com/hc/en-gb/articles/6389214769565-Synchronize-user-data' target='_blank'>see article</a>)." }
+            407 { "A proxy is asking for authentication; traffic to $hostToTest needs to bypass proxy authentication." }
+            403 { "The request was refused, most often by a proxy or web filter policy." }
+            default { "No usable HTTP response. Possible causes: DNS filtering, TLS inspection with a certificate this device does not trust, or a connection reset or held by a proxy or firewall." }
+        }
+        Add-Content $FullLogFilePath "<p class='info-after-error'>$why Detail: $([System.Net.WebUtility]::HtmlEncode($_.Exception.Message)) The tenant regional endpoint was NOT tested below; only $hostToTest is.</p>"
         $global:OutlookSignaturesEndpoint = $hostToTest
     }
 }
